@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+
+# Local design review captures
+/audit/
+/implementation-*.png
+/qa-*.png
+/design-comparison-*.jpg
+
+# Local backup copies created during prototyping
+/src/* 2.jsx
+/src/* 2.css

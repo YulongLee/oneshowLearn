@@ -165,7 +165,7 @@ function LandingPage({ navigate }) {
             <div className="audience-line"><span><CheckCircle size={17} weight="fill" /> 适合零基础</span><span><CheckCircle size={17} weight="fill" /> 围绕真实项目</span><span><CheckCircle size={17} weight="fill" /> 学完即可展示</span></div>
           </div>
           <figure className="marketing-visual">
-            <img src="/assets/oneshowlearn-hero.png" alt="学习者正在使用电脑实践 AI 项目" />
+            <img src="/assets/oneshowlearn-person-cutout-v2-clean.png" alt="学习者正在使用电脑实践 AI 项目" />
             <figcaption><IconBadge icon={Rocket} color="violet" size={19} /><span><small>项目式学习</small><strong>从第一个作品开始掌握 AI</strong></span></figcaption>
           </figure>
         </section>

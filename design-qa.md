@@ -1,15 +1,19 @@
 # OneShowLearn Homepage Responsive Design QA
 
 - Source visual truth:
+  - `/var/folders/2c/sdg0hxmx3b5_x84y09b7hk1w0000gn/T/codex-clipboard-9d35eeaa-463f-46d1-9247-d3951599e556.png`
   - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-1440-before.png`
   - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-1024-before.png`
   - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-390-before.png`
 - Implementation screenshots:
+  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-cutout-1440.png`
+  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-cutout-390.png`
   - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-1440-after.png`
   - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-1024-after.png`
   - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-768-after.png`
   - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-390-after.png`
 - Combined comparison evidence:
+  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-cutout-focused-comparison.png`
   - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-1440-comparison.png`
   - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-1024-comparison.png`
   - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-390-comparison.png`
@@ -21,7 +25,9 @@
 
 The before and after captures were placed side by side at matching viewport sizes. They show the intentional change from a fixed-height dashboard-like hero to a natural marketing flow. The new hierarchy remains stable across desktop, compact desktop/tablet and mobile without overlapping the subject, clipping persistent controls or creating horizontal overflow.
 
-Focused crops were not required because the matched viewport comparisons keep the navigation, headline, primary actions, hero image, proof points and first value row legible.
+Focused crops were not required for the initial responsive pass because the matched viewport comparisons keep the navigation, headline, primary actions, hero image, proof points and first value row legible.
+
+The later cutout iteration includes a focused comparison because the requested fidelity surface was specifically the person's full foreground silhouette, laptop, notebook, edge quality and layered depth.
 
 ## Required fidelity surfaces
 
@@ -42,10 +48,17 @@ Focused crops were not required because the matched viewport comparisons keep th
 - Fixes: removed personalized widgets, simplified the public navigation, rebuilt the hero as a responsive two-column/stacked grid, retained the real learning image on mobile, and moved paths into natural document flow.
 - Post-fix evidence: the three combined comparison images listed above show the corrected hierarchy and reflow.
 
+### Iteration 2
+
+- [P2][image treatment] The bounded rectangular lifestyle photograph weakened the full-person foreground depth that the selected reference established.
+- Fix: removed the UI overlay from the person asset, generated a clean chroma-key foreground, converted it to a transparent alpha PNG, and placed the full person, notebook and laptop directly on the hero canvas.
+- Post-fix evidence: `audit-home-cutout-focused-comparison.png`, `audit-home-cutout-1440.png`, and `audit-home-cutout-390.png` show the restored silhouette effect without reintroducing personalized workspace progress.
+
 ## Verification
 
 - Responsive overflow checks: passed at 1440, 1024, 768 and 390 widths.
 - Mobile menu open/close labels and visibility: passed.
+- Transparent cutout alpha, edge quality and responsive crop: passed.
 - Console errors: none.
 - Production build: passed.
 - Sites packaging tests: 4 passed, 0 failed.

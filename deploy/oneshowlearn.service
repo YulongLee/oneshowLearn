@@ -1,0 +1,21 @@
+[Unit]
+Description=OneShowLearn Commercial Learning Platform
+After=network.target
+
+[Service]
+Type=simple
+User=oneshowlearn
+Group=oneshowlearn
+WorkingDirectory=/var/www/oneshowlearn
+EnvironmentFile=/etc/oneshowlearn/oneshowlearn.env
+Environment=PATH=/opt/node-v22/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+ExecStart=/opt/node-v22/bin/npm run start:api
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/var/www/oneshowlearn/data /var/www/oneshowlearn/uploads
+
+[Install]
+WantedBy=multi-user.target

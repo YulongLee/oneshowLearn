@@ -10,7 +10,7 @@ import { z } from "zod";
 import { config } from "./config.mjs";
 import { db, row, rows, run } from "./db.mjs";
 import { optionalAuth, requireAdmin, requireAuth, signUser } from "./auth.mjs";
-import { sendVerificationCode } from "./email.mjs";
+import { sendPasswordResetCode, sendVerificationCode } from "./email.mjs";
 
 mkdirSync(config.uploadDir, { recursive: true });
 
@@ -118,11 +118,42 @@ export function createApp() {
       return res.status(201).json({ token: signUser(user), user });
     } catch (error) { db.exec("ROLLBACK"); throw error; }
   }));
+  app.post("/api/auth/password/request-code", validated(z.object({ email: z.string().email() }), async (req, res, next) => {
+    const email = normalizedEmail(req.validated.email);
+    const user = row("SELECT id,status,email_verified FROM users WHERE email=?", [email]);
+    const generic = { ok: true, message: "如果该邮箱已经注册，验证码将发送至邮箱", cooldownSeconds: 60 };
+    if (!user || user.status !== "active" || !user.email_verified) return res.status(202).json(generic);
+    const recentCount = row("SELECT COUNT(*) total FROM password_reset_codes WHERE email=? AND created_at > datetime('now','-10 minutes')", [email]).total;
+    if (recentCount >= 5) return res.status(429).json({ error: "验证码发送过于频繁，请稍后再试" });
+    const latest = row("SELECT created_at FROM password_reset_codes WHERE email=? ORDER BY id DESC LIMIT 1", [email]);
+    if (latest && Date.now() - Date.parse(`${latest.created_at}Z`) < 60000) return res.status(202).json(generic);
+    const code = String(randomInt(100000, 1000000));
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    run("INSERT INTO password_reset_codes (email,code_hash,expires_at) VALUES (?,?,?)", [email, codeHash(email, code), expiresAt]);
+    try { await sendPasswordResetCode(email, code); return res.status(202).json(generic); }
+    catch (error) { run("DELETE FROM password_reset_codes WHERE email=? AND code_hash=?", [email, codeHash(email, code)]); if (error.message === "EMAIL_NOT_CONFIGURED") return res.status(503).json({ error: "邮件服务尚未配置" }); return next(error); }
+  }));
+  app.post("/api/auth/password/reset", validated(z.object({ email: z.string().email(), code: z.string().regex(/^\d{6}$/), newPassword: z.string().min(10).max(128) }), (req, res) => {
+    const email = normalizedEmail(req.validated.email);
+    const verification = row("SELECT * FROM password_reset_codes WHERE email=? AND consumed_at IS NULL ORDER BY id DESC LIMIT 1", [email]);
+    if (!verification || Date.parse(verification.expires_at) <= Date.now()) return res.status(400).json({ error: "验证码已失效，请重新获取" });
+    if (verification.attempts >= 5) return res.status(429).json({ error: "验证次数过多，请重新获取验证码" });
+    if (!safeHashMatch(verification.code_hash, codeHash(email, req.validated.code))) { run("UPDATE password_reset_codes SET attempts=attempts+1 WHERE id=?", [verification.id]); return res.status(400).json({ error: "验证码不正确" }); }
+    const user = row("SELECT id FROM users WHERE email=? AND status='active' AND email_verified=1", [email]);
+    if (!user) return res.status(400).json({ error: "验证码已失效，请重新获取" });
+    db.exec("BEGIN IMMEDIATE");
+    try {
+      run("UPDATE users SET password_hash=?,token_version=token_version+1,updated_at=CURRENT_TIMESTAMP WHERE id=?", [bcrypt.hashSync(req.validated.newPassword, 12), user.id]);
+      run("UPDATE password_reset_codes SET consumed_at=CURRENT_TIMESTAMP WHERE email=? AND consumed_at IS NULL", [email]);
+      db.exec("COMMIT");
+      return res.json({ ok: true, message: "密码已更新，请重新登录" });
+    } catch (error) { db.exec("ROLLBACK"); throw error; }
+  }));
   app.post("/api/auth/login", validated(z.object({ email: z.string().email(), password: z.string().min(1) }), (req, res) => {
     const user = row("SELECT * FROM users WHERE email = ?", [req.validated.email]);
     if (!user || user.status !== "active" || !bcrypt.compareSync(req.validated.password, user.password_hash)) return res.status(401).json({ error: "邮箱或密码不正确" });
     if (!user.email_verified) return res.status(403).json({ error: "请先完成邮箱验证", code: "EMAIL_UNVERIFIED" });
-    const safeUser = { id: user.id, email: user.email, name: user.name, role: user.role, status: user.status };
+    const safeUser = { id: user.id, email: user.email, name: user.name, role: user.role, status: user.status, token_version: user.token_version };
     res.json({ token: signUser(safeUser), user: safeUser });
   }));
   app.get("/api/auth/me", requireAuth, (req, res) => res.json({ user: req.user }));

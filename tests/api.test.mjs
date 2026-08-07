@@ -49,8 +49,21 @@ test("commercial API supports catalog, admin CMS and orders", async (t) => {
   const code = outbox.text.match(/\b\d{6}\b/)[0];
   const verify = await fetch(`${base}/auth/register/verify`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: newAccount.email, code }) });
   assert.equal(verify.status, 201);
-  assert.ok((await verify.json()).token);
+  const verifiedAccount = await verify.json();
+  assert.ok(verifiedAccount.token);
   const reuse = await fetch(`${base}/auth/register/verify`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: newAccount.email, code }) });
   assert.notEqual(reuse.status, 201);
+
+  const resetRequest = await fetch(`${base}/auth/password/request-code`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: newAccount.email }) });
+  assert.equal(resetRequest.status, 202);
+  const resetOutbox = testDb.prepare("SELECT text FROM email_outbox WHERE recipient=? ORDER BY id DESC LIMIT 1").get(newAccount.email);
+  const resetCode = resetOutbox.text.match(/\b\d{6}\b/)[0];
+  const newPassword = "A-New-Verification-Password-2026";
+  const reset = await fetch(`${base}/auth/password/reset`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: newAccount.email, code: resetCode, newPassword }) });
+  assert.equal(reset.status, 200);
+  const staleSession = await fetch(`${base}/auth/me`, { headers: { authorization: `Bearer ${verifiedAccount.token}` } });
+  assert.equal(staleSession.status, 401);
+  const relogin = await fetch(`${base}/auth/login`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: newAccount.email, password: newPassword }) });
+  assert.equal(relogin.status, 200);
   testDb.close();
 });

@@ -303,7 +303,7 @@ export function App() {
 
   let content;
   if (route === "/") content = <LandingPage navigate={navigate} notify={notify} />;
-  else if (route === "/login" || route === "/register") content = <AuthPage navigate={navigate} initialMode={route === "/register" ? "register" : "login"} />;
+  else if (route === "/login" || route === "/register" || route === "/forgot-password") content = <AuthPage navigate={navigate} initialMode={route === "/register" ? "register" : route === "/forgot-password" ? "forgot" : "login"} />;
   else if (route === "/admin/login") content = <AdminLogin navigate={navigate} />;
   else if (route.startsWith("/admin")) {
     if (!getToken()) content = <AdminLogin navigate={navigate} />;

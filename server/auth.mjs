@@ -3,7 +3,7 @@ import { row } from "./db.mjs";
 import { config } from "./config.mjs";
 
 export function signUser(user) {
-  return jwt.sign({ sub: user.id, role: user.role, email: user.email }, config.jwtSecret, { expiresIn: "7d" });
+  return jwt.sign({ sub: user.id, role: user.role, email: user.email, ver: Number(user.token_version || 0) }, config.jwtSecret, { expiresIn: "7d" });
 }
 
 export function optionalAuth(req, _res, next) {
@@ -12,7 +12,8 @@ export function optionalAuth(req, _res, next) {
   if (!token) return next();
   try {
     const payload = jwt.verify(token, config.jwtSecret);
-    req.user = row("SELECT id,email,name,role,status FROM users WHERE id = ?", [Number(payload.sub)]);
+    req.user = row("SELECT id,email,name,role,status,email_verified,token_version FROM users WHERE id = ?", [Number(payload.sub)]);
+    if (req.user && Number(payload.ver || 0) !== Number(req.user.token_version || 0)) req.user = null;
   } catch {
     req.user = null;
   }

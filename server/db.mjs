@@ -177,15 +177,29 @@ export function migrate() {
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS password_reset_codes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT NOT NULL,
+      code_hash TEXT NOT NULL,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      expires_at TEXT NOT NULL,
+      consumed_at TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE INDEX IF NOT EXISTS idx_packs_path ON project_packs(path_id, sort_order);
     CREATE INDEX IF NOT EXISTS idx_steps_pack ON project_steps(pack_id, sort_order);
     CREATE INDEX IF NOT EXISTS idx_content_step ON content_items(step_id, sort_order);
     CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id, created_at);
     CREATE INDEX IF NOT EXISTS idx_verification_email ON email_verification_codes(email, created_at);
+    CREATE INDEX IF NOT EXISTS idx_password_reset_email ON password_reset_codes(email, created_at);
   `);
   const userColumns = db.prepare("PRAGMA table_info(users)").all();
   if (!userColumns.some((column) => column.name === "email_verified")) {
     db.exec("ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0");
+  }
+  if (!userColumns.some((column) => column.name === "token_version")) {
+    db.exec("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0");
   }
 }
 

@@ -1,6 +1,7 @@
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { createHash, randomInt, timingSafeEqual } from "node:crypto";
 import bcrypt from "bcryptjs";
 import cors from "cors";
 import express from "express";
@@ -9,6 +10,7 @@ import { z } from "zod";
 import { config } from "./config.mjs";
 import { db, row, rows, run } from "./db.mjs";
 import { optionalAuth, requireAdmin, requireAuth, signUser } from "./auth.mjs";
+import { sendVerificationCode } from "./email.mjs";
 
 mkdirSync(config.uploadDir, { recursive: true });
 
@@ -43,6 +45,14 @@ function validated(schema, handler) {
   };
 }
 
+const registrationSchema = z.object({ email: z.string().email(), password: z.string().min(10).max(128), name: z.string().min(2).max(80) });
+const normalizedEmail = (value) => String(value || "").trim().toLowerCase();
+const codeHash = (email, code) => createHash("sha256").update(`${config.jwtSecret}:${email}:${code}`).digest("hex");
+const safeHashMatch = (left, right) => {
+  const a = Buffer.from(left); const b = Buffer.from(right);
+  return a.length === b.length && timingSafeEqual(a, b);
+};
+
 function packDetails(pack, user) {
   const entitled = user && (user.role !== "learner" || row("SELECT id FROM entitlements WHERE user_id = ? AND pack_id = ? AND status = 'active'", [user.id, pack.id]));
   const steps = rows("SELECT * FROM project_steps WHERE pack_id = ? AND status != 'archived' ORDER BY sort_order,id", [pack.id]).map((step) => ({
@@ -60,16 +70,58 @@ export function createApp() {
   app.use("/uploads", express.static(config.uploadDir));
 
   app.get("/api/health", (_req, res) => res.json({ ok: true, service: "oneshowlearn-api" }));
-  app.post("/api/auth/register", validated(z.object({ email: z.string().email(), password: z.string().min(8), name: z.string().min(2) }), (req, res) => {
-    const { email, password, name } = req.validated;
-    if (row("SELECT id FROM users WHERE email = ?", [email])) return res.status(409).json({ error: "该邮箱已注册" });
-    const result = run("INSERT INTO users (email,password_hash,name,role,status) VALUES (?,?,?,?,?)", [email, bcrypt.hashSync(password, 12), name, "learner", "active"]);
-    const user = row("SELECT id,email,name,role,status FROM users WHERE id = ?", [Number(result.lastInsertRowid)]);
-    res.status(201).json({ token: signUser(user), user });
+  app.post("/api/auth/register/request-code", validated(registrationSchema, async (req, res, next) => {
+    if (!config.registrationEnabled) return res.status(503).json({ error: "邮箱注册暂未开放" });
+    const email = normalizedEmail(req.validated.email);
+    const existing = row("SELECT id,email_verified FROM users WHERE email = ?", [email]);
+    if (existing?.email_verified) return res.status(202).json({ ok: true, verificationRequired: true, message: "如果该邮箱可以注册，验证码将发送至邮箱" });
+    const recentCount = row("SELECT COUNT(*) total FROM email_verification_codes WHERE email=? AND created_at > datetime('now','-10 minutes')", [email]).total;
+    if (recentCount >= 5) return res.status(429).json({ error: "验证码发送过于频繁，请稍后再试" });
+    const latest = row("SELECT created_at FROM email_verification_codes WHERE email=? ORDER BY id DESC LIMIT 1", [email]);
+    if (latest && Date.now() - Date.parse(`${latest.created_at}Z`) < 60000) return res.status(202).json({ ok: true, verificationRequired: true, cooldownSeconds: 60 });
+    const code = String(randomInt(100000, 1000000));
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    run("INSERT INTO email_verification_codes (email,code_hash,pending_name,pending_password_hash,expires_at) VALUES (?,?,?,?,?)", [email, codeHash(email, code), req.validated.name, bcrypt.hashSync(req.validated.password, 12), expiresAt]);
+    try {
+      await sendVerificationCode(email, code);
+      return res.status(202).json({ ok: true, verificationRequired: true, cooldownSeconds: 60 });
+    } catch (error) {
+      run("DELETE FROM email_verification_codes WHERE email=? AND code_hash=?", [email, codeHash(email, code)]);
+      if (error.message === "EMAIL_NOT_CONFIGURED") return res.status(503).json({ error: "邮件服务尚未配置" });
+      return next(error);
+    }
+  }));
+  app.post("/api/auth/register/verify", validated(z.object({ email: z.string().email(), code: z.string().regex(/^\d{6}$/) }), (req, res) => {
+    const email = normalizedEmail(req.validated.email);
+    const verification = row("SELECT * FROM email_verification_codes WHERE email=? AND consumed_at IS NULL ORDER BY id DESC LIMIT 1", [email]);
+    if (!verification || Date.parse(verification.expires_at) <= Date.now()) return res.status(400).json({ error: "验证码已失效，请重新获取" });
+    if (verification.attempts >= 5) return res.status(429).json({ error: "验证次数过多，请重新获取验证码" });
+    if (!safeHashMatch(verification.code_hash, codeHash(email, req.validated.code))) {
+      run("UPDATE email_verification_codes SET attempts=attempts+1 WHERE id=?", [verification.id]);
+      return res.status(400).json({ error: "验证码不正确" });
+    }
+    const existing = row("SELECT * FROM users WHERE email=?", [email]);
+    if (existing?.email_verified) return res.status(409).json({ error: "该邮箱已经注册，请直接登录" });
+    db.exec("BEGIN IMMEDIATE");
+    try {
+      let userId;
+      if (existing) {
+        userId = existing.id;
+        run("UPDATE users SET name=?,password_hash=?,email_verified=1,status='active',updated_at=CURRENT_TIMESTAMP WHERE id=?", [verification.pending_name, verification.pending_password_hash, userId]);
+      } else {
+        const result = run("INSERT INTO users (email,password_hash,name,role,status,email_verified) VALUES (?,?,?,?,?,1)", [email, verification.pending_password_hash, verification.pending_name, "learner", "active"]);
+        userId = Number(result.lastInsertRowid);
+      }
+      run("UPDATE email_verification_codes SET consumed_at=CURRENT_TIMESTAMP WHERE email=? AND consumed_at IS NULL", [email]);
+      db.exec("COMMIT");
+      const user = row("SELECT id,email,name,role,status,email_verified FROM users WHERE id=?", [userId]);
+      return res.status(201).json({ token: signUser(user), user });
+    } catch (error) { db.exec("ROLLBACK"); throw error; }
   }));
   app.post("/api/auth/login", validated(z.object({ email: z.string().email(), password: z.string().min(1) }), (req, res) => {
     const user = row("SELECT * FROM users WHERE email = ?", [req.validated.email]);
     if (!user || user.status !== "active" || !bcrypt.compareSync(req.validated.password, user.password_hash)) return res.status(401).json({ error: "邮箱或密码不正确" });
+    if (!user.email_verified) return res.status(403).json({ error: "请先完成邮箱验证", code: "EMAIL_UNVERIFIED" });
     const safeUser = { id: user.id, email: user.email, name: user.name, role: user.role, status: user.status };
     res.json({ token: signUser(safeUser), user: safeUser });
   }));

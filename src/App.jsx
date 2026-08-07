@@ -48,7 +48,8 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { AdminCatalog, AdminContent, AdminDashboard, AdminLogin, AdminOrders, AdminShell, AdminUsers } from "./Admin.jsx";
-import { api, getToken, money, setToken } from "./api.js";
+import { api, getToken, money } from "./api.js";
+import { AuthPage, UserAuthCard } from "./Auth.jsx";
 
 const learningPaths = [
   { icon: Sparkle, title: "AI 工具入门", desc: "掌握主流 AI 工具，建立高效工作方式", level: "入门", lessons: 12, progress: 80, color: "violet" },
@@ -116,6 +117,9 @@ const sidebarItems = [
 
 function AppShell({ route, navigate, children, onSearch }) {
   const [mobileNav, setMobileNav] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  useEffect(() => { if (getToken()) api("/auth/me").then(({ user }) => setCurrentUser(user)).catch(() => {}); }, []);
+  const userName = currentUser?.name || "学习者";
   return (
     <div className="app-layout">
       <aside className={mobileNav ? "app-sidebar open" : "app-sidebar"}>
@@ -133,14 +137,14 @@ function AppShell({ route, navigate, children, onSearch }) {
           <ProgressBar value={72} />
           <span>已完成 5 / 7 个任务</span>
         </div>
-        <button className="side-profile" onClick={() => navigate("/app")}><img src="/assets/oneshowlearn-brandmark.png" alt="用户头像" /><span><strong>Yulong</strong><small>持续学习第 12 天</small></span><CaretRight size={16} /></button>
+        <button className="side-profile" onClick={() => navigate("/app")}><img src="/assets/oneshowlearn-brandmark.png" alt="用户头像" /><span><strong>{userName}</strong><small>{currentUser ? "邮箱已验证" : "登录后保存学习进度"}</small></span><CaretRight size={16} /></button>
       </aside>
 
       <section className="app-main">
         <header className="app-topbar">
           <button className="app-menu" aria-label={mobileNav ? "关闭学习中心导航" : "打开学习中心导航"} onClick={() => setMobileNav((value) => !value)}>{mobileNav ? <X size={22} /> : <List size={22} />}</button>
           <label className="global-search"><MagnifyingGlass size={18} /><input aria-label="搜索" placeholder="搜索学习路径、项目、资源…" onKeyDown={(event) => { if (event.key === "Enter") onSearch(event.currentTarget.value); }} /></label>
-          <div className="top-actions"><button aria-label="通知"><Bell size={20} /></button><button className="user-chip" onClick={() => navigate("/app")}><img src="/assets/oneshowlearn-brandmark.png" alt="" /><span>Yulong</span><CaretDown size={14} /></button></div>
+          <div className="top-actions"><button aria-label="通知"><Bell size={20} /></button><button className="user-chip" onClick={() => navigate(currentUser ? "/app" : "/login")}><img src="/assets/oneshowlearn-brandmark.png" alt="" /><span>{userName}</span><CaretDown size={14} /></button></div>
         </header>
         <div className="app-content">{children}</div>
       </section>
@@ -158,7 +162,7 @@ function LandingPage({ navigate }) {
           <nav className={menuOpen ? "marketing-links open" : "marketing-links"} aria-label="主要导航">
             <button onClick={() => navigate("/paths")}>学习路径</button><button onClick={() => navigate("/projects")}>实战项目</button><button onClick={() => navigate("/tutor")}>AI 导师</button><button onClick={() => navigate("/resources")}>资源中心</button>
           </nav>
-          <div className="marketing-actions"><button className="login" onClick={() => navigate("/app")}>登录</button><button className="start-small" onClick={() => navigate("/paths")}>免费开始</button><button className="menu-button" aria-label={menuOpen ? "关闭导航" : "打开导航"} onClick={() => setMenuOpen((value) => !value)}>{menuOpen ? <X size={22} /> : <List size={22} />}</button></div>
+          <div className="marketing-actions"><button className="login" onClick={() => navigate("/login")}>登录</button><button className="start-small" onClick={() => navigate("/login")}>免费注册</button><button className="menu-button" aria-label={menuOpen ? "关闭导航" : "打开导航"} onClick={() => setMenuOpen((value) => !value)}>{menuOpen ? <X size={22} /> : <List size={22} />}</button></div>
         </header>
         <section className="marketing-hero">
           <img className="marketing-hero-scene" src="/assets/oneshowlearn-hero.png" alt="学习者正在使用电脑实践 AI 项目" />
@@ -219,14 +223,13 @@ function PathsPage({ navigate }) {
 }
 
 function ProductPackPage({ slug, navigate, notify }) {
-  const [pack, setPack] = useState(null); const [error, setError] = useState(""); const [authOpen, setAuthOpen] = useState(false); const [mode, setMode] = useState("login"); const [auth, setAuth] = useState({ name: "", email: "", password: "" }); const [busy, setBusy] = useState(false);
+  const [pack, setPack] = useState(null); const [error, setError] = useState(""); const [authOpen, setAuthOpen] = useState(false); const [busy, setBusy] = useState(false);
   const load = () => api(`/project-packs/${slug}`).then(setPack).catch((e) => setError(e.message)); useEffect(() => { load(); }, [slug]);
   const buy = async () => { if (!getToken()) return setAuthOpen(true); setBusy(true); try { const order = await api("/orders", { method: "POST", body: JSON.stringify({ productId: pack.product_id }) }); notify(`订单 ${order.orderNo} 已创建，请完成支付`); navigate("/app"); } catch(e) { setError(e.message); } finally { setBusy(false); } };
-  const authenticate = async (event) => { event.preventDefault(); setBusy(true); setError(""); try { const result = await api(`/auth/${mode === "login" ? "login" : "register"}`, { method: "POST", body: JSON.stringify(auth) }); setToken(result.token); setAuthOpen(false); load(); notify("登录成功，可以继续购买"); } catch(e) { setError(e.message); } finally { setBusy(false); } };
   if (error && !pack) return <div className="empty-state"><h3>{error}</h3><button className="black-button" onClick={() => navigate("/paths")}>返回学习路径</button></div>;
   if (!pack) return <div className="empty-state"><p>正在加载项目包…</p></div>;
   const previewCount = pack.steps.reduce((sum, step) => sum + step.contents.filter((item) => item.is_preview).length, 0);
-  return <><button className="back-link" onClick={() => navigate(`/paths/${pack.path_slug}`)}><ArrowLeft size={16}/> 返回{pack.path_title}</button><div className="pack-sales"><section><span className="page-kicker">{pack.path_title} · 项目包</span><h2>{pack.title}</h2><p className="pack-subtitle">{pack.subtitle}</p><p>{pack.description}</p><div className="project-content-mix"><span>60% 实战文档</span><span>20% Prompt / 代码 / 模板</span><span>10% 任务清单</span><span>10% 短视频</span></div><div className="pack-outcome"><Target size={22}/><span><small>完成后你将得到</small><strong>{pack.deliverable}</strong></span></div><h3>项目步骤与资料</h3><div className="pack-steps">{pack.steps.map((step,index)=><article key={step.id}><span>{index+1}</span><div><strong>{step.title}</strong><small>{step.summary}</small><p>{step.contents.map(item=>item.title).join(" · ")}</p></div><em>{step.contents.some(item=>item.locked)?"购买后解锁":step.contents.length?"可预览":"待更新"}</em></article>)}</div></section><aside className="surface pack-buy"><img src={pack.cover_url||"/assets/cursor-practice-preview.png"} alt="项目成果预览"/><span>{pack.entitled?"你已拥有此项目包":`${previewCount} 份资料可免费预览`}</span><strong>{pack.entitled?"已解锁":money(pack.product_price_cents||pack.price_cents)}</strong><p>一次购买，永久访问当前版本及后续内容更新。</p><button className="black-button wide" disabled={busy} onClick={()=>pack.entitled?navigate("/learn/cursor"):buy()}>{pack.entitled?"进入项目学习":"立即购买"}<ArrowRight size={16}/></button><small>安全订单 · 支付成功后自动开通学习权限</small></aside></div>{authOpen&&<div className="modal-backdrop" onMouseDown={()=>setAuthOpen(false)}><form className="create-modal commerce-auth" onSubmit={authenticate} onMouseDown={e=>e.stopPropagation()}><button type="button" className="modal-close" onClick={()=>setAuthOpen(false)}><X size={20}/></button><h3>{mode==="login"?"登录后购买":"创建学习账号"}</h3><p>购买记录和学习权限将保存在你的账号中。</p>{mode==="register"&&<label>姓名<input required value={auth.name} onChange={e=>setAuth({...auth,name:e.target.value})}/></label>}<label>邮箱<input type="email" required value={auth.email} onChange={e=>setAuth({...auth,email:e.target.value})}/></label><label>密码<input type="password" minLength="8" required value={auth.password} onChange={e=>setAuth({...auth,password:e.target.value})}/></label>{error&&<div className="admin-error">{error}</div>}<button className="black-button wide" disabled={busy}>{busy?"请稍候…":mode==="login"?"登录":"注册并继续"}</button><button type="button" className="auth-switch" onClick={()=>setMode(mode==="login"?"register":"login")}>{mode==="login"?"没有账号？立即注册":"已有账号？直接登录"}</button></form></div>}</>;
+  return <><button className="back-link" onClick={() => navigate(`/paths/${pack.path_slug}`)}><ArrowLeft size={16}/> 返回{pack.path_title}</button><div className="pack-sales"><section><span className="page-kicker">{pack.path_title} · 项目包</span><h2>{pack.title}</h2><p className="pack-subtitle">{pack.subtitle}</p><p>{pack.description}</p><div className="project-content-mix"><span>60% 实战文档</span><span>20% Prompt / 代码 / 模板</span><span>10% 任务清单</span><span>10% 短视频</span></div><div className="pack-outcome"><Target size={22}/><span><small>完成后你将得到</small><strong>{pack.deliverable}</strong></span></div><h3>项目步骤与资料</h3><div className="pack-steps">{pack.steps.map((step,index)=><article key={step.id}><span>{index+1}</span><div><strong>{step.title}</strong><small>{step.summary}</small><p>{step.contents.map(item=>item.title).join(" · ")}</p></div><em>{step.contents.some(item=>item.locked)?"购买后解锁":step.contents.length?"可预览":"待更新"}</em></article>)}</div></section><aside className="surface pack-buy"><img src={pack.cover_url||"/assets/cursor-practice-preview.png"} alt="项目成果预览"/><span>{pack.entitled?"你已拥有此项目包":`${previewCount} 份资料可免费预览`}</span><strong>{pack.entitled?"已解锁":money(pack.product_price_cents||pack.price_cents)}</strong><p>一次购买，永久访问当前版本及后续内容更新。</p><button className="black-button wide" disabled={busy} onClick={()=>pack.entitled?navigate("/learn/cursor"):buy()}>{pack.entitled?"进入项目学习":"立即购买"}<ArrowRight size={16}/></button><small>安全订单 · 支付成功后自动开通学习权限</small></aside></div>{authOpen&&<div className="modal-backdrop auth-modal-backdrop" onMouseDown={()=>setAuthOpen(false)}><div onMouseDown={e=>e.stopPropagation()}><UserAuthCard initialMode="login" onClose={()=>setAuthOpen(false)} onSuccess={()=>{setAuthOpen(false);load();notify("登录成功，可以继续购买");}}/></div></div>}</>;
 }
 
 function PathDetail({ navigate }) {
@@ -300,6 +303,7 @@ export function App() {
 
   let content;
   if (route === "/") content = <LandingPage navigate={navigate} notify={notify} />;
+  else if (route === "/login" || route === "/register") content = <AuthPage navigate={navigate} initialMode={route === "/register" ? "register" : "login"} />;
   else if (route === "/admin/login") content = <AdminLogin navigate={navigate} />;
   else if (route.startsWith("/admin")) {
     if (!getToken()) content = <AdminLogin navigate={navigate} />;

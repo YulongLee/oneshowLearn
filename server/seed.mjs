@@ -41,11 +41,16 @@ export function seed() {
     run(`INSERT INTO users (email,password_hash,name,role,status)
       VALUES (?,?,?,?,?) ON CONFLICT(email) DO UPDATE SET name=excluded.name,role=excluded.role,status=excluded.status`,
       [config.adminEmail, adminHash, "OneShowLearn 管理员", "admin", "active"]);
+    run("UPDATE users SET email_verified = 1 WHERE email = ?", [config.adminEmail]);
+    if (config.adminEmail !== "admin@oneshowlearn.com") {
+      run("UPDATE users SET status = 'disabled', role = 'learner' WHERE email = 'admin@oneshowlearn.com'");
+    }
 
     const learnerHash = bcrypt.hashSync("OneShowLearn-Learner-2026", 12);
     run(`INSERT INTO users (email,password_hash,name,role,status)
       VALUES (?,?,?,?,?) ON CONFLICT(email) DO NOTHING`,
       ["learner@oneshowlearn.com", learnerHash, "Yulong", "learner", "active"]);
+    run("UPDATE users SET email_verified = 1 WHERE email = 'learner@oneshowlearn.com'");
 
     for (const [slug, title, description, level, icon, color, sortOrder] of paths) {
       run(`INSERT INTO learning_paths (slug,title,description,level,icon,color,status,sort_order)

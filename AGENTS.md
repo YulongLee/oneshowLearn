@@ -14,3 +14,7 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 - Organize the experience around learning paths, real projects, AI tutor guidance, resources, progress, and shipped outcomes.
 - Preserve the current warm off-white, minimal, professional SaaS direction with strong typography, violet accents, editorial learning photography, rounded cards, and bilingual brand language.
 - The primary web domain is `oneshowlearn.com`.
+- The commercial content model is: 60% practical documents, 20% prompts/code/templates, 10% tasks/checklists, and 10% short video demonstrations.
+- Treat the six existing learning-path categories as sellable product lines. Each path contains configurable project packs, project steps, content blocks, resources, access rules, price, publication state, and learner entitlements.
+- Course and project content must be managed through an admin CMS rather than hard-coded into the learner frontend.
+- Keep payment integrations provider-neutral until a specific payment channel is selected; model products, prices, orders, payments, refunds, and entitlements separately.

@@ -12,6 +12,12 @@ dist/
 /implementation-*.png
 /qa-*.png
 /design-comparison-*.jpg
+/audit-current-product/
+/audit-project-pack-redesign/
+
+# Local application data and uploaded course materials
+/data/
+/uploads/
 
 # Local backup copies created during prototyping
 /src/* 2.jsx

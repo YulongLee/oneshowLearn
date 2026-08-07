@@ -8,6 +8,7 @@ dist/
 
 # Local design review captures
 /audit/
+/audit-*.png
 /implementation-*.png
 /qa-*.png
 /design-comparison-*.jpg

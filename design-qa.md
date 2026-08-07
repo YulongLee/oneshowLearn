@@ -1,73 +1,57 @@
-# OneShowLearn 产品原型 Design QA
+# OneShowLearn Homepage Responsive Design QA
 
 - Source visual truth:
-  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/design-references/dashboard-reference.png`
-  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/design-references/path-detail-project-driven.png`
-  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/design-references/learning-workspace-focus.png`
+  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-1440-before.png`
+  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-1024-before.png`
+  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-390-before.png`
 - Implementation screenshots:
-  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/qa-dashboard-final.png`
-  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/qa-path-detail-final.png`
-  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/qa-learning-workspace-final.png`
+  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-1440-after.png`
+  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-1024-after.png`
+  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-768-after.png`
+  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-390-after.png`
 - Combined comparison evidence:
-  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/qa-comparison-dashboard.png`
-  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/qa-comparison-path.png`
-  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/qa-comparison-learning.png`
-- Mobile evidence:
-  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/qa-dashboard-mobile.png`
-  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/qa-learning-mobile.png`
-- Viewports: dashboard 1536 × 1024 CSS px; path detail and learning workspace 1487 × 1058 CSS px; mobile 390 × 844 CSS px.
-- Pixel dimensions and density: screenshots equal their CSS viewport dimensions at device scale factor 1; source screenshots were compared at their native pixel dimensions.
-- States: signed-in dashboard; AI 编程实战 path detail; Cursor lesson workspace; mobile dashboard and lesson; no modal open in final captures.
+  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-1440-comparison.png`
+  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-1024-comparison.png`
+  - `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-home-390-comparison.png`
+- Viewports: 1440 × 900, 1024 × 768, 768 × 900, and 390 × 844 CSS pixels.
+- Pixel density: screenshots equal CSS viewport dimensions at device scale factor 1; no density normalization was required.
+- State: signed-out public homepage, navigation closed in final captures.
 
-## Full-view and focused evidence
+## Full-view comparison evidence
 
-Each final implementation screenshot was placed beside its matching source image in a single comparison canvas. The full-view comparisons preserve legibility of navigation, headings, project cards, path milestones, learning tasks, imagery, and right-side utility areas. Separate focused crops were not required because all three comparisons retain the source's native height and expose the complete visible screen without down-cropping.
+The before and after captures were placed side by side at matching viewport sizes. They show the intentional change from a fixed-height dashboard-like hero to a natural marketing flow. The new hierarchy remains stable across desktop, compact desktop/tablet and mobile without overlapping the subject, clipping persistent controls or creating horizontal overflow.
 
-## Fidelity review
+Focused crops were not required because the matched viewport comparisons keep the navigation, headline, primary actions, hero image, proof points and first value row legible.
 
-- Fonts and typography: Chinese-first system typography keeps headings dense and confident, with clear weight, size, line-height and muted-body hierarchy matching the references.
-- Spacing and layout: the implementation preserves the references' left navigation, broad working canvas, compact cards and violet active states. The dashboard is intentionally simplified from the dense reference to emphasize the next learning action, paths and projects.
-- Colors and surfaces: warm off-white canvas, white cards, thin neutral borders, near-black primary actions and restrained violet accents consistently map to the visual direction.
-- Images and icons: project and learning previews use dedicated generated raster assets sized to their slots; interface icons use one Phosphor family. No CSS art, placeholder illustration or inline SVG substitute is used.
-- Copy and content: all visible product copy is Chinese and organized around learning paths, project outcomes, AI Tutor support and practice-first progression.
-- Responsiveness: 1536/1487 desktop and 390 mobile views were checked. No horizontal overflow, clipped controls or collapsed content was found.
-- Accessibility: semantic buttons and navigation are present; image alt text, textarea labels, focus-visible states, reduced-motion handling and dynamic mobile-menu labels are implemented.
+## Required fidelity surfaces
 
-## Interaction verification
-
-- Learning path difficulty filter updates the catalog.
-- AI 编程实战 card opens the project-driven path detail.
-- “进入项目” opens the focused Cursor workspace.
-- Practice tasks toggle completion state and update the completed count.
-- Learning workspace AI question input accepts and submits a question.
-- Project creation modal opens and closes.
-- AI Tutor quick prompts append learner and tutor messages.
-- Resource search filters to the RAG project repository.
-- Mobile navigation opens and closes with the correct accessible label.
-- Console reviewed after the final pass: no application errors.
+- Typography: the Manrope/PingFang hierarchy remains consistent; heading size now scales with `clamp()` and wraps predictably across breakpoints.
+- Spacing and layout: fixed 960px hero height, absolute utility cards and bottom-anchored path strip were removed. The new grid and normal document flow preserve rhythm at all tested widths.
+- Colors and tokens: warm neutral canvas, near-black actions and violet accents remain consistent with the established product language.
+- Image quality: the existing dedicated hero image remains sharp and now uses a bounded aspect-ratio container with controlled object position.
+- Copy and content: personalized progress content was removed from the public homepage. Public copy now explains audience fit, learning method and project outcomes.
+- Accessibility and behavior: mobile navigation exposes correct open/close labels; semantic navigation and buttons remain keyboard reachable; no horizontal overflow or console errors were found.
 
 ## Comparison history
 
 ### Iteration 1
 
-- [P2][layout] Path milestone numbers were clipped by the left edge of the card.
-- Fix: moved the number badges inside the card and increased milestone left padding.
-- Evidence: `qa-path-detail-v1.png` compared with `qa-path-detail-final.png`.
+- [P1][information architecture] Public homepage displayed signed-in workspace content: AI Tutor quick action, today's goal and continue-learning progress.
+- [P1][responsive layout] At 1024px the absolute utility cards covered the hero subject and the path strip was clipped by the viewport.
+- [P2][mobile hierarchy] At 390px the hero image disappeared while a personalized continue-learning card remained, making the page feel like an incomplete workspace.
+- Fixes: removed personalized widgets, simplified the public navigation, rebuilt the hero as a responsive two-column/stacked grid, retained the real learning image on mobile, and moved paths into natural document flow.
+- Post-fix evidence: the three combined comparison images listed above show the corrected hierarchy and reflow.
 
-### Iteration 2
+## Verification
 
-- [P2][accessibility] The mobile menu button kept the label “打开学习中心导航” after opening.
-- Fix: the label now changes to “关闭学习中心导航” while the drawer is open.
-- Evidence: browser semantic locator successfully found both open and close states at 390 × 844.
-
-## Automated verification
-
+- Responsive overflow checks: passed at 1440, 1024, 768 and 390 widths.
+- Mobile menu open/close labels and visibility: passed.
+- Console errors: none.
 - Production build: passed.
 - Sites packaging tests: 4 passed, 0 failed.
-- Final responsive overflow checks: passed.
 
 ## Findings
 
-No actionable P0, P1 or P2 issue remains. Differences in dashboard density are intentional product decisions: the prototype keeps the reference's visual language while reducing secondary widgets so the next learning action is unmistakable.
+No actionable P0, P1 or P2 issue remains in the tested homepage states.
 
 final result: passed

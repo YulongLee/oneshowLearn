@@ -144,34 +144,45 @@ function AppShell({ route, navigate, children, onSearch }) {
   );
 }
 
-function LandingPage({ navigate, notify }) {
+function LandingPage({ navigate }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [tutorOpen, setTutorOpen] = useState(false);
   return (
-    <main className="page-shell">
-      <section className="hero" aria-label="OneShowLearn 首页">
-        <img className="hero-photo" src="/assets/oneshowlearn-hero.png" alt="一位学习者正在使用电脑学习 AI 并记录笔记" />
-        <div className="hero-wash" aria-hidden="true" />
-        <header className="navbar">
+    <main className="marketing-page">
+      <section className="marketing-frame" aria-label="OneShowLearn 首页">
+        <header className="marketing-nav">
           <button className="brand" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}><BrandMark /><span>OneShowLearn</span></button>
-          <nav className={menuOpen ? "nav-links open" : "nav-links"} aria-label="主要导航">
-            <button onClick={() => navigate("/paths")}>学习</button><button onClick={() => navigate("/paths")}>学习路径</button><button onClick={() => navigate("/projects")}>实战项目</button><button onClick={() => navigate("/tutor")}>AI 导师</button><button onClick={() => navigate("/resources")}>资源库</button><button onClick={() => notify("首批学习者可免费体验")}>会员</button>
+          <nav className={menuOpen ? "marketing-links open" : "marketing-links"} aria-label="主要导航">
+            <button onClick={() => navigate("/paths")}>学习路径</button><button onClick={() => navigate("/projects")}>实战项目</button><button onClick={() => navigate("/tutor")}>AI 导师</button><button onClick={() => navigate("/resources")}>资源中心</button>
           </nav>
-          <div className="nav-actions"><button className="login" onClick={() => navigate("/app")}>登录</button><button className="start-small" onClick={() => navigate("/app")}>开始学习</button><button className="menu-button" aria-label="打开导航" onClick={() => setMenuOpen((value) => !value)}>{menuOpen ? <X size={22} /> : <List size={22} />}</button></div>
+          <div className="marketing-actions"><button className="login" onClick={() => navigate("/app")}>登录</button><button className="start-small" onClick={() => navigate("/paths")}>免费开始</button><button className="menu-button" aria-label={menuOpen ? "关闭导航" : "打开导航"} onClick={() => setMenuOpen((value) => !value)}>{menuOpen ? <X size={22} /> : <List size={22} />}</button></div>
         </header>
-        <div className="hero-content">
-          <span className="eyebrow"><Sparkle weight="fill" size={15} /> AI 应用学习平台</span>
-          <h1><span>学会 AI。</span><span>用好 AI。</span><span>做出你的 AI 产品。</span></h1>
-          <p className="hero-subtitle">从工具到产品，用清晰的学习路径和真实项目<br />快速掌握 AI 应用能力。</p>
-          <div className="hero-actions"><button className="primary-button" onClick={() => navigate("/app")}>免费开始学习 <ArrowRight size={18} weight="bold" /></button><button className="secondary-button" onClick={() => navigate("/paths")}>探索学习路径</button></div>
-          <div className="social-proof"><div className="avatar-stack" aria-hidden="true"><span className="avatar avatar-1">J</span><span className="avatar avatar-2">L</span><span className="avatar avatar-3">M</span><span className="avatar avatar-4">A</span><span className="avatar avatar-total">1万+</span></div><p><strong>10,000+</strong> 位学习者<br />正在用 AI 持续成长</p></div>
-        </div>
-        <button className="tutor-card floating-card" onClick={() => setTutorOpen(true)}><IconBadge icon={Robot} /><span className="tutor-copy"><strong>AI 导师</strong><small>随时提问，即刻获得学习建议</small></span><span className="tutor-cta">开始对话 <ArrowRight size={14} /></span></button>
-        <div className="goal-card floating-card"><div className="goal-top"><span>今日目标</span><span className="goal-check"><Check size={14} weight="bold" /></span></div><div className="goal-main"><div className="progress-ring"><span>60%</span></div><p><strong>继续保持</strong><small>已完成 2 / 3 个任务</small></p></div></div>
-        <button className="continue-card" onClick={() => navigate("/learn/cursor")}><span><small>继续学习</small><strong>Cursor 实战入门</strong></span><ProgressBar value={65} dark /><span className="percent">65%</span><span className="continue-arrow"><ArrowRight size={17} /></span></button>
-        <section className="path-section" id="paths"><div className="section-heading"><div><span className="section-kicker"><BookOpenText size={16} /> 从这里开始</span><h2>选择你的 AI 学习路径</h2></div></div><div className="path-grid">{learningPaths.map(({ icon, title, desc, lessons, color }) => <button className="path-card" key={title} onClick={() => navigate(title === "AI 编程实战" ? "/paths/ai-coding" : "/paths")}><IconBadge icon={icon} color={color} /><span className="path-copy"><strong>{title}</strong><small>{desc}</small></span><span className="path-meta">{lessons} 节 · 项目实战</span><ArrowRight className="path-arrow" size={18} /></button>)}</div></section>
+        <section className="marketing-hero">
+          <div className="marketing-copy">
+            <span className="eyebrow"><Sparkle weight="fill" size={15} /> AI 应用学习平台</span>
+            <h1><span>学会 AI。</span><span>用好 AI。</span><span>做出你的 AI 产品。</span></h1>
+            <p>从工具到产品，用清晰的学习路径和真实项目，快速建立可以真正用在工作和产品中的 AI 能力。</p>
+            <div className="hero-actions"><button className="primary-button" onClick={() => navigate("/paths")}>免费开始学习 <ArrowRight size={18} weight="bold" /></button><button className="secondary-button" onClick={() => navigate("/projects")}>看看能做什么</button></div>
+            <div className="audience-line"><span><CheckCircle size={17} weight="fill" /> 适合零基础</span><span><CheckCircle size={17} weight="fill" /> 围绕真实项目</span><span><CheckCircle size={17} weight="fill" /> 学完即可展示</span></div>
+          </div>
+          <figure className="marketing-visual">
+            <img src="/assets/oneshowlearn-hero.png" alt="学习者正在使用电脑实践 AI 项目" />
+            <figcaption><IconBadge icon={Rocket} color="violet" size={19} /><span><small>项目式学习</small><strong>从第一个作品开始掌握 AI</strong></span></figcaption>
+          </figure>
+        </section>
+
+        <section className="marketing-values" aria-label="平台特色">
+          <article><IconBadge icon={MapTrifold} color="violet" size={20} /><div><strong>清晰学习路径</strong><p>知道先学什么、接着做什么。</p></div></article>
+          <article><IconBadge icon={TerminalWindow} color="blue" size={20} /><div><strong>真实项目实践</strong><p>每条路径都以可交付作品为目标。</p></div></article>
+          <article><IconBadge icon={Robot} color="orange" size={20} /><div><strong>AI 导师陪练</strong><p>遇到问题时获得贴合当前任务的帮助。</p></div></article>
+        </section>
+
+        <section className="marketing-paths" id="paths">
+          <div className="marketing-section-heading"><div><span className="section-kicker"><BookOpenText size={16} /> 从这里开始</span><h2>选择一条路径，做出一个作品</h2><p>不必一次学完所有 AI 知识，先从与你目标最接近的方向开始。</p></div><button onClick={() => navigate("/paths")}>查看全部路径 <ArrowRight size={17} /></button></div>
+          <div className="marketing-path-grid">{learningPaths.map(({ icon, title, desc, lessons, level, color }) => <button className="marketing-path-card" key={title} onClick={() => navigate(title === "AI 编程实战" ? "/paths/ai-coding" : "/paths")}><div><IconBadge icon={icon} color={color} /><span>{level}</span></div><strong>{title}</strong><p>{desc}</p><small>{lessons} 节内容 · 项目实战</small><ArrowRight size={18} /></button>)}</div>
+        </section>
+
+        <section className="marketing-final-cta"><span className="section-kicker">Practice First</span><h2>别只看课程，开始做你的第一个 AI 项目。</h2><button className="primary-button" onClick={() => navigate("/paths")}>选择学习路径 <ArrowRight size={18} /></button></section>
       </section>
-      {tutorOpen && <div className="modal-backdrop" role="presentation" onMouseDown={() => setTutorOpen(false)}><section className="tutor-modal" role="dialog" aria-modal="true" aria-labelledby="tutor-title" onMouseDown={(event) => event.stopPropagation()}><button className="modal-close" aria-label="关闭" onClick={() => setTutorOpen(false)}><X size={20} /></button><span className="modal-icon"><Robot size={30} /></span><span className="modal-kicker">OneShowLearn AI 导师</span><h2 id="tutor-title">今天想学点什么？</h2><p>告诉我你的目标，我会为你推荐学习路径和第一个实战任务。</p><div className="prompt-options"><button onClick={() => navigate("/paths")}>我是新手，想开始学 AI</button><button onClick={() => navigate("/paths/ai-coding")}>我想构建第一个 AI 产品</button></div><button className="primary-button modal-primary" onClick={() => navigate("/tutor")}>进入 AI 导师</button></section></div>}
     </main>
   );
 }

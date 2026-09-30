@@ -2,6 +2,8 @@ import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { config } from "./config.mjs";
+import {migrateLearning} from './learning-schema.mjs';
+import {migrateAI} from './ai-schema.mjs';
 
 mkdirSync(path.dirname(config.databasePath), { recursive: true });
 
@@ -10,6 +12,16 @@ db.exec("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL; PRAGMA busy_timeou
 
 export function migrate() {
   db.exec(`
+    CREATE TABLE IF NOT EXISTS cms_audit (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      actor_id INTEGER REFERENCES users(id),
+      entity TEXT NOT NULL,
+      entity_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      action TEXT NOT NULL,
+      status TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT NOT NULL UNIQUE,
@@ -156,6 +168,22 @@ export function migrate() {
       UNIQUE(user_id, content_item_id)
     );
 
+    CREATE TABLE IF NOT EXISTS workspace_state (
+      user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      state_json TEXT NOT NULL DEFAULT '{"tasks":[],"notes":[],"favorites":[],"checkIns":[]}',
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS opc_stage_steps (
+      step_id INTEGER PRIMARY KEY REFERENCES project_steps(id) ON DELETE CASCADE,
+      phase INTEGER NOT NULL CHECK(phase BETWEEN 1 AND 5)
+    );
+    CREATE TABLE IF NOT EXISTS opc_products (
+      user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      state_json TEXT NOT NULL,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS email_verification_codes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT NOT NULL,
@@ -193,13 +221,103 @@ export function migrate() {
     CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id, created_at);
     CREATE INDEX IF NOT EXISTS idx_verification_email ON email_verification_codes(email, created_at);
     CREATE INDEX IF NOT EXISTS idx_password_reset_email ON password_reset_codes(email, created_at);
+
+    CREATE TABLE IF NOT EXISTS account_codes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT NOT NULL,
+      purpose TEXT NOT NULL CHECK(purpose IN ('register','reset')),
+      code_hash TEXT NOT NULL,
+      pending_name TEXT NOT NULL DEFAULT '',
+      pending_password_hash TEXT NOT NULL DEFAULT '',
+      token_version INTEGER NOT NULL DEFAULT 0,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      delivery_status TEXT NOT NULL DEFAULT 'pending',
+      expires_at INTEGER NOT NULL,
+      consumed_at INTEGER,
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_account_codes_email ON account_codes(email,purpose,id);
+    CREATE TABLE IF NOT EXISTS auth_rate_limits (
+      key TEXT PRIMARY KEY,
+      hits INTEGER NOT NULL,
+      expires_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_auth_limit_expiry ON auth_rate_limits(expires_at);
+    CREATE TABLE IF NOT EXISTS email_deliveries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      recipient TEXT NOT NULL,
+      purpose TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      error_code TEXT NOT NULL DEFAULT '',
+      message_id TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS account_audit (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      actor_id INTEGER REFERENCES users(id),
+      target_id INTEGER REFERENCES users(id),
+      action TEXT NOT NULL,
+      reason TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
   `);
   const userColumns = db.prepare("PRAGMA table_info(users)").all();
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS content_library (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL, type TEXT NOT NULL, body TEXT NOT NULL DEFAULT '',
+      resource_url TEXT NOT NULL DEFAULT '', duration_seconds INTEGER NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'draft', updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS practice_projects (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, slug TEXT NOT NULL UNIQUE,
+      title TEXT NOT NULL, description TEXT NOT NULL DEFAULT '', cover_url TEXT NOT NULL DEFAULT '',
+      category TEXT NOT NULL DEFAULT 'other', tags TEXT NOT NULL DEFAULT '[]',
+      deliverable TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'draft',
+      sort_order INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS practice_project_courses (
+      project_id INTEGER NOT NULL REFERENCES practice_projects(id) ON DELETE CASCADE,
+      pack_id INTEGER NOT NULL REFERENCES project_packs(id) ON DELETE RESTRICT,
+      sort_order INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(project_id,pack_id)
+    );
+    CREATE TABLE IF NOT EXISTS site_pages (
+      key TEXT PRIMARY KEY, draft_json TEXT NOT NULL, published_json TEXT,
+      version INTEGER NOT NULL DEFAULT 1, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS site_page_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, page_key TEXT NOT NULL,
+      payload TEXT NOT NULL, actor_id INTEGER REFERENCES users(id),
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+  if(!db.prepare('PRAGMA table_info(content_items)').all().some(c=>c.name==='library_id'))
+    db.exec('ALTER TABLE content_items ADD COLUMN library_id INTEGER REFERENCES content_library(id) ON DELETE RESTRICT');
+  db.exec(`
+    CREATE VIEW IF NOT EXISTS published_content_items AS
+      SELECT ci.* FROM content_items ci LEFT JOIN content_library l ON l.id=ci.library_id
+      WHERE ci.library_id IS NULL OR l.status='published';
+    CREATE TRIGGER IF NOT EXISTS library_sync AFTER UPDATE ON content_library BEGIN
+      UPDATE content_items SET title=NEW.title,type=NEW.type,body=NEW.body,resource_url=NEW.resource_url,
+        duration_seconds=NEW.duration_seconds,updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
+        WHERE library_id=NEW.id;
+    END;
+    CREATE INDEX IF NOT EXISTS idx_content_library ON content_items(library_id);
+    CREATE TRIGGER IF NOT EXISTS library_reference_guard BEFORE UPDATE ON content_items
+      WHEN NEW.library_id IS NOT NULL AND EXISTS(SELECT 1 FROM content_library l WHERE l.id=NEW.library_id AND
+        (NEW.title!=l.title OR NEW.type!=l.type OR NEW.body!=l.body OR NEW.resource_url!=l.resource_url OR NEW.duration_seconds!=l.duration_seconds))
+      BEGIN SELECT RAISE(ABORT,'Shared content must be edited in the library'); END;
+  `);
   if (!userColumns.some((column) => column.name === "email_verified")) {
     db.exec("ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0");
   }
   if (!userColumns.some((column) => column.name === "token_version")) {
     db.exec("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0");
+  }
+  if (!userColumns.some((column) => column.name === "last_login_at")) {
+    db.exec("ALTER TABLE users ADD COLUMN last_login_at TEXT");
   }
 }
 
@@ -219,3 +337,5 @@ export function run(statement, params = {}) {
 }
 
 migrate();
+migrateLearning(db);
+migrateAI(db);

@@ -46,11 +46,23 @@ export function seed() {
       run("UPDATE users SET status = 'disabled', role = 'learner' WHERE email = 'admin@oneshowlearn.com'");
     }
 
-    const learnerHash = bcrypt.hashSync("OneShowLearn-Learner-2026", 12);
-    run(`INSERT INTO users (email,password_hash,name,role,status)
-      VALUES (?,?,?,?,?) ON CONFLICT(email) DO NOTHING`,
-      ["learner@oneshowlearn.com", learnerHash, "Yulong", "learner", "active"]);
-    run("UPDATE users SET email_verified = 1 WHERE email = 'learner@oneshowlearn.com'");
+    // Local-only test account for development. Never create this weak credential in production.
+    if (!config.isProduction) {
+      const localAdminHash = bcrypt.hashSync("888888", 12);
+      run(`INSERT INTO users (email,password_hash,name,role,status)
+        VALUES (?,?,?,?,?) ON CONFLICT(email) DO UPDATE SET
+        password_hash=excluded.password_hash,name=excluded.name,role=excluded.role,status=excluded.status`,
+        ["admin@oneshowlearn.com", localAdminHash, "本地测试管理员", "admin", "active"]);
+      run("UPDATE users SET email_verified = 1 WHERE email = ?", ["admin@oneshowlearn.com"]);
+    }
+
+    if (!config.isProduction) {
+      const learnerHash = bcrypt.hashSync("OneShowLearn-Learner-2026", 12);
+      run(`INSERT INTO users (email,password_hash,name,role,status)
+        VALUES (?,?,?,?,?) ON CONFLICT(email) DO NOTHING`,
+        ["learner@oneshowlearn.com", learnerHash, "Yulong", "learner", "active"]);
+      run("UPDATE users SET email_verified = 1 WHERE email = 'learner@oneshowlearn.com'");
+    }
 
     for (const [slug, title, description, level, icon, color, sortOrder] of paths) {
       run(`INSERT INTO learning_paths (slug,title,description,level,icon,color,status,sort_order)
@@ -88,9 +100,11 @@ export function seed() {
       insertContent(step.id, "video", "首屏生成完整演示", "只演示容易卡住的关键操作。", 6, { durationSeconds: 272 });
     }
 
-    const learner = row("SELECT id FROM users WHERE email = 'learner@oneshowlearn.com'");
-    run(`INSERT INTO entitlements (user_id,pack_id,source,status)
-      VALUES (?,?,?,?) ON CONFLICT(user_id,pack_id) DO NOTHING`, [learner.id, cursorPack.id, "seed", "active"]);
+    if (!config.isProduction) {
+      const learner = row("SELECT id FROM users WHERE email = 'learner@oneshowlearn.com'");
+      run(`INSERT INTO entitlements (user_id,pack_id,source,status)
+        VALUES (?,?,?,?) ON CONFLICT(user_id,pack_id) DO NOTHING`, [learner.id, cursorPack.id, "seed", "active"]);
+    }
 
     db.exec("COMMIT");
   } catch (error) {

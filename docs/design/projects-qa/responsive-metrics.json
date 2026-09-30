@@ -1,0 +1,37 @@
+[
+  {
+    "columns": "364px 364px",
+    "height": 1024,
+    "hero": 258,
+    "scroll": 768,
+    "width": 768
+  },
+  {
+    "columns": "230px 230px 230px 230px",
+    "height": 1000,
+    "scroll": 1440,
+    "scrollY": 0,
+    "width": 1440
+  },
+  {
+    "columns": "330px 330px 330px 330px",
+    "height": 1080,
+    "scroll": 1920,
+    "scrollY": 0,
+    "width": 1920
+  },
+  {
+    "columns": "390px 390px 390px 390px",
+    "height": 1440,
+    "scroll": 2560,
+    "scrollY": 0,
+    "width": 2560
+  },
+  {
+    "columns": "292px",
+    "height": 844,
+    "scroll": 320,
+    "scrollY": 0,
+    "width": 320
+  }
+]

@@ -10,13 +10,18 @@
     "start:api": "node server/index.mjs",
     "seed": "node server/seed.mjs",
     "build": "vite build && node scripts/prepare-sites-build.mjs",
-    "test:api": "node --test tests/api.test.mjs",
-    "test": "npm run test:api && npm run test:sites",
+    "test:api": "node --test tests/api.test.mjs tests/accounts.test.mjs tests/production-seed.test.mjs tests/workspace.test.mjs tests/opc.test.mjs tests/projects.test.mjs tests/resources.test.mjs tests/personal.test.mjs tests/cms.test.mjs tests/platform-content.test.mjs tests/learning-system.test.mjs tests/demo-import.test.mjs tests/ai-admin.test.mjs tests/tutor-conversations.test.mjs tests/community.test.mjs",
+    "test": "npm run test:platforms && npm run test:api && npm run test:sites",
+    "test:platforms": "node --test tests/platforms.test.mjs tests/dashboard.test.mjs tests/workbench.test.mjs tests/learning-routes.test.mjs tests/tutor.test.mjs tests/workspace-navigation.test.mjs tests/commercial-layout.test.mjs tests/ai-provider.test.mjs tests/study-columns.test.mjs tests/navigation-save.test.mjs",
     "preview": "vite preview",
     "test:sites": "node --test tests/sites-worker.test.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
+    "@tiptap/extension-image": "^3.31.3",
+    "@tiptap/pm": "^3.31.3",
+    "@tiptap/react": "^3.31.3",
+    "@tiptap/starter-kit": "^3.31.3",
     "@vitejs/plugin-react": "5.0.4",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
@@ -30,6 +35,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "concurrently": "^10.0.4"
+    "concurrently": "^10.0.4",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   }
 }

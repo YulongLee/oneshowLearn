@@ -9,13 +9,14 @@ Group=oneshowlearn
 WorkingDirectory=/var/www/oneshowlearn
 EnvironmentFile=/etc/oneshowlearn/oneshowlearn.env
 Environment=PATH=/opt/node-v22/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
-ExecStart=/opt/node-v22/bin/npm run start:api
+ExecStart=/opt/node-v22/bin/node server/index.mjs
 Restart=always
 RestartSec=5
 NoNewPrivileges=true
 PrivateTmp=true
+ProtectHome=true
 ProtectSystem=full
-ReadWritePaths=/var/www/oneshowlearn/data /var/www/oneshowlearn/uploads
+ReadWritePaths=/var/www/oneshowlearn/data /var/www/oneshowlearn/uploads /var/www/oneshowlearn/uploads-private
 
 [Install]
 WantedBy=multi-user.target

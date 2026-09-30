@@ -1,0 +1,125 @@
+/* Shared learner chrome. Page styles must not override navigation or shell geometry. */
+/* Lessons replace the shared directory slot; saved sidebar preferences survive. */
+.ws-unified-layout [hidden] {display:none!important}
+.ws-learning-directory-slot {min-width:0;width:100%;flex:1;overflow-y:auto}
+.ws-learning-directory-slot .ls-directory {position:static;max-height:none;padding:4px 0;border:0;border-radius:0;background:transparent}
+.ws-learning-directory-slot .ls-directory-items button {font-size:14px;min-height:48px;line-height:1.7}
+.ws-learning-directory-slot .ls-directory h3 {font-size:17px;line-height:1.6}
+.ws-learning-directory-slot .ls-directory h4 {font-size:14px;margin:24px 10px 10px}
+.ws-learning-directory-slot .ls-directory>p {font-size:13px;padding:0 10px;color:#707b94}
+.ws-learning-directory-slot .ls-directory-toggle {display:none!important}
+.ws-unified-layout[data-sidebar=icons] .ws-learning-directory-slot {display:none}
+
+.ws-reference-layout { --wb-ink:#101427; --wb-muted:#69738f; --wb-violet:#7042ff; --wb-line:#edf0f7; grid-template-columns:228px minmax(0,1fr); color:var(--wb-ink); background:#f8faff; font-size:14px; }
+.ws-reference-layout .ws-sidebar { padding:10px 13px 16px; gap:26px; border-color:var(--wb-line); }
+.ws-reference-layout .ws-brand { padding:0 8px; gap:12px; min-height:38px; font-size:19px; letter-spacing:-.6px; }
+.ws-reference-layout .ws-brand img { width:36px; height:36px; }
+.ws-reference-layout .ws-brand > span { display:grid; gap:2px; text-align:left; }
+.ws-reference-layout .ws-brand small { color:#63708c; font-size:11px; font-weight:400; letter-spacing:.05px; }
+.ws-reference-layout .ws-sidebar nav { gap:0; }
+.ws-reference-layout .ws-sidebar nav > button, .wb-nav-group > button { display:flex; align-items:center; gap:16px; width:100%; min-height:42px; padding:10px 16px; border:0; border-radius:8px; background:transparent; text-align:left; font-size:14px; color:#27314e; }
+.ws-reference-layout .ws-sidebar nav > button.is-active { background:linear-gradient(110deg,#f0ebff,#f6f2ff); color:var(--wb-violet); font-size:16px; }
+.wb-nav-group { display:grid; gap:1px; margin-top:15px; }
+.wb-nav-group > span { margin:0 16px 7px; color:#63708c; font-size:12px; }
+.wb-nav-group > button:hover { background:#f5f2ff; color:var(--wb-violet); }
+.wb-nav-group svg { flex-shrink:0; }
+.ws-reference-layout .ws-sidebar-bottom { gap:24px; }
+.wb-access { margin:0 7px; padding:19px 17px 17px; border:1px solid #eeeafe; border-radius:9px; background:linear-gradient(125deg,#f1edff,#f6f5ff); }
+.wb-access h3 { display:flex; align-items:center; gap:9px; margin:0 0 13px; font-size:19px; color:var(--wb-violet); }
+.wb-access h3 svg { color:#f5ad3a; }
+.wb-access p { display:flex; align-items:center; gap:6px; margin:8px 0; color:#68708c; font-size:12px; }
+.wb-access > button { display:flex; align-items:center; justify-content:center; gap:12px; width:100%; margin-top:17px; padding:10px; border:0; border-radius:7px; background:#0f1022; color:#fff; font-size:13px; }
+.ws-reference-layout .wb-settings { justify-content:flex-start; gap:16px; margin:0 -13px -16px; padding:21px 29px; border-top:1px solid var(--wb-line); border-radius:0; color:#303b5a; background:transparent; font-size:14px; }
+.ws-reference-layout .ws-topbar { height:58px; padding:0 24px; background:rgba(255,255,255,.96); }
+.ws-reference-layout .ws-search { width:min(532px,65%); height:35px; gap:10px; padding:0 10px; background:#f0f2f8; border-radius:6px; color:#465376; }
+.ws-reference-layout .ws-search input { font-size:12px; }
+.ws-reference-layout .ws-search kbd { padding:2px 6px; border:1px solid #e3e7f2; border-radius:4px; white-space:nowrap; font-family:inherit; color:#75819b; font-size:11px; }
+.ws-reference-layout .ws-profile small { display:none; }
+.ws-reference-layout .ws-profile strong { max-width:160px; font-size:14px; }
+.ws-reference-layout .ws-avatar { width:35px; height:35px; font-size:15px; }
+.ws-reference-layout .ws-user-actions { gap:25px; }
+.ws-reference-layout .ws-icon-button { color:#222d4b; }
+.ws-reference-layout .ws-content { max-width:1840px; padding:20px 17px 22px 25px; }
+.ws-reference-layout .ws-search-results { top:50px; }
+.ws-reference-layout .ws-sidebar nav > button, .wb-nav-group > button { font-size:15px; }
+@media(max-width:1000px) { .ws-reference-layout { grid-template-columns:minmax(0,1fr); } .ws-reference-layout .ws-sidebar { position:fixed; top:0; bottom:0; left:0; width:228px; transform:translateX(-105%); transition:transform .2s; box-shadow:10px 0 50px #18203a16; } .ws-reference-layout .ws-sidebar.is-open { transform:translateX(0); } .ws-reference-layout .ws-mobile-menu { display:inline-grid; flex-shrink:0; } .ws-reference-layout .ws-topbar { gap:14px; padding:0 18px; } .ws-reference-layout .ws-search { flex:1; width:auto; max-width:532px; } .ws-reference-layout .ws-user-actions { gap:10px; } .ws-reference-layout .ws-profile strong { max-width:120px; } .ws-reference-layout .ws-search-results { left:18px; width:min(540px,calc(100vw - 36px)); } }
+@media(max-width:699px) { .ws-reference-layout .ws-topbar { padding:0 13px; gap:10px; } .ws-reference-layout .ws-content { padding:17px 14px; } .ws-reference-layout .ws-profile > span:nth-child(2), .ws-reference-layout .ws-profile > svg, .ws-reference-layout .ws-user-actions > .ws-icon-button, .ws-reference-layout .ws-search kbd { display:none; } .ws-reference-layout .ws-user-actions { gap:0; } .ws-reference-layout .ws-avatar { width:32px; height:32px; } .ws-reference-layout .ws-search { height:34px; } }
+@media(max-width:1000px) {
+  .ws-reference-layout .ws-sidebar { display:none; }
+  .ws-reference-layout .ws-sidebar.is-open { display:flex; }
+  .ws-reference-layout .ws-scrim { left:228px; width:calc(100% - 228px); }
+}
+@media(prefers-reduced-motion:reduce) { .ws-reference-layout .ws-sidebar { transition:none; } }
+
+/* One geometry contract across all learner pages and all active states. */
+html:has(.ws-unified-layout) { scrollbar-gutter:stable; }
+.ws-layout.ws-unified-layout { grid-template-columns:var(--sidebar-width,228px) minmax(0,1fr); }
+.ws-unified-layout .ws-brand { font-size:18px; gap:10px; }
+.ws-unified-layout .ws-sidebar { padding:10px 13px 16px; gap:24px; }
+.ws-unified-layout .ws-sidebar nav > button,
+.ws-unified-layout .wb-nav-group > button { min-height:48px; padding:12px 16px; gap:14px; font-size:16px; line-height:24px; font-weight:500; }
+.ws-unified-layout .ws-sidebar nav > button.is-active,
+.ws-unified-layout .wb-nav-group > button.is-active { background:#eee8ff; color:#7042ff; font-size:16px; font-weight:650; }
+.ws-unified-layout .wb-nav-group { margin-top:15px; }
+.ws-unified-layout .wb-nav-group > span { display:block; font-size:13px; line-height:20px; font-weight:500; color:#59657d; }
+.ws-unified-layout .ws-sidebar nav button>svg,
+.ws-unified-layout .wb-settings>svg { width:22px; height:22px; flex-shrink:0; }
+.ws-unified-layout .wb-settings { min-height:48px; padding:12px 29px; font-size:16px; line-height:24px; font-weight:500; }
+.ws-unified-layout .ws-topbar { height:58px; padding:0 24px; }
+.ws-unified-layout .ws-content { width:100%; max-width:1840px; margin-inline:auto; padding:28px clamp(20px,2vw,40px) 40px; container:learner / inline-size; }
+/* Course tools fill the workspace; public/admin and discovery pages keep their geometry. */
+.ws-unified-layout .ws-content:has(.cl-course-page) { max-width:none; margin-inline:0; padding-inline:clamp(16px,1.5vw,28px); }
+.ws-unified-layout .wb-access { margin:0; padding:16px 12px; }
+.ws-unified-layout .wb-access h3 { font-size:17px; white-space:nowrap; }
+.ws-unified-layout .ws-sidebar-bottom { gap:18px; }
+.ws-unified-layout .ws-drawer-close { position:absolute; top:55px; right:13px; display:grid; place-items:center; width:28px; height:28px; border:0; border-radius:6px; color:#7042ff; background:#f0eaff; }
+.ws-unified-layout button:focus-visible { outline:2px solid #9a7bff; outline-offset:2px; }
+.ws-sidebar-frame { position:sticky; top:0; height:100dvh; min-width:0; z-index:30; }
+.ws-unified-layout .ws-sidebar-frame .ws-sidebar { position:relative; height:100%; }
+.ws-desktop-nav-controls { display:flex; align-items:center; gap:2px; flex-shrink:0; }
+.ws-desktop-nav-controls .ws-icon-button { width:36px; height:44px; }
+.ws-sidebar-resize { position:absolute; top:0; bottom:0; right:-4px; width:9px; cursor:col-resize; touch-action:none; z-index:31; }
+.ws-sidebar-resize::before { content:''; position:absolute; top:0; bottom:0; left:4px; width:1px; background:transparent; }
+.ws-sidebar-resize::after { content:''; position:absolute; top:calc(50% - 22px); left:3px; width:3px; height:44px; border-radius:4px; background:#b9b1ce; opacity:0; transition:opacity .15s; }
+.ws-sidebar-resize:hover::after,.ws-sidebar-resize:focus-visible::after,[data-resizing] .ws-sidebar-resize::after { opacity:1; }
+.ws-sidebar-resize:focus { outline:none; }
+.ws-sidebar-resize:focus-visible::after { outline:2px solid #9675ff; outline-offset:3px; }
+[data-resizing] .ws-sidebar-resize::before { background:#c4b4ef; }
+[data-resizing] .ws-sidebar-resize::after { background:#8a70c9; outline:none; }
+.ws-unified-layout[data-resizing] { cursor:col-resize; user-select:none; }
+.ws-unified-layout .ws-compact-access { display:none; }
+@media(min-width:1001px) {
+  .ws-unified-layout[data-sidebar="icons"] { grid-template-columns:72px minmax(0,1fr); }
+  .ws-unified-layout[data-sidebar="hidden"] { grid-template-columns:minmax(0,1fr); }
+  .ws-unified-layout[data-sidebar="hidden"] .ws-sidebar-frame { display:none; }
+  .ws-unified-layout[data-sidebar="icons"] .ws-sidebar { padding:10px; gap:20px; }
+  .ws-unified-layout[data-sidebar="icons"] .ws-brand { justify-content:center; padding:0; }
+  .ws-unified-layout[data-sidebar="icons"] .ws-brand>span,
+  .ws-unified-layout[data-sidebar="icons"] nav button>span,
+  .ws-unified-layout[data-sidebar="icons"] .wb-nav-group>span,
+  .ws-unified-layout[data-sidebar="icons"] .wb-access,
+  .ws-unified-layout[data-sidebar="icons"] .wb-settings>span { display:none; }
+  .ws-unified-layout[data-sidebar="icons"] nav button,
+  .ws-unified-layout[data-sidebar="icons"] .wb-settings,
+  .ws-unified-layout[data-sidebar="icons"] .ws-compact-access { display:flex; justify-content:center; align-items:center; padding:10px; min-height:48px; border:0; border-radius:8px; background:transparent; color:#6551a2; }
+  .ws-unified-layout[data-sidebar="icons"] nav button.is-active { background:#eee8ff; color:#7042ff; }
+  .ws-unified-layout[data-sidebar="icons"] nav button:hover { background:#f4f0ff; }
+  .ws-unified-layout[data-sidebar="icons"] .wb-nav-group { margin-top:12px; padding-top:10px; border-top:1px solid #f0eef7; }
+}
+@media(max-width:1000px) {
+  .ws-sidebar-frame { display:contents; }
+  .ws-desktop-nav-controls { display:none; }
+  .ws-layout.ws-unified-layout { grid-template-columns:minmax(0,1fr); }
+  .ws-unified-layout .ws-sidebar-frame .ws-sidebar { display:none; position:fixed; inset:0 auto 0 0; width:228px; height:100dvh; transform:translateX(-100%); }
+  .ws-unified-layout .ws-sidebar-frame .ws-sidebar.is-open { display:flex; transform:translateX(0); }
+  .ws-unified-layout .ws-sidebar.is-open { display:flex; transform:translateX(0); }
+  .ws-unified-layout .ws-mobile-menu { display:inline-grid; flex-shrink:0; }
+  .ws-unified-layout .ws-scrim { display:block; left:228px; width:calc(100% - 228px); }
+  .ws-unified-layout .ws-topbar { padding-inline:18px; gap:14px; }
+  .ws-unified-layout .ws-content { padding:20px 18px 28px; }
+  .ws-unified-layout .ws-search { flex:1; width:auto; max-width:532px; }
+}
+@media(max-width:699px) {
+  .ws-unified-layout .ws-topbar { padding-inline:14px; gap:10px; }
+  .ws-unified-layout .ws-content { padding:18px 14px 24px; }
+}

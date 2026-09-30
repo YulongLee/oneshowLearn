@@ -1,0 +1,64 @@
+import {useEffect,useRef,useState} from 'react';
+import {api} from './api.js';
+import {ContentEditor} from './AdminCms.jsx';
+import {AdminPagePreview} from './AdminPagePreview.jsx';
+import {PROJECT_CATEGORIES} from './project-model.js';
+import {HOME_CARDS} from '../server/homepage-cards.mjs';
+import './admin-cms.css';
+
+const stateLabels={draft:'草稿',published:'已发布',archived:'已归档'};
+function useGuard(dirty){useEffect(()=>{const before=e=>{if(dirty){e.preventDefault();e.returnValue='';}};const navigate=e=>{if(dirty&&!window.confirm('存在未保存的内容，确定放弃吗？'))e.preventDefault();};window.addEventListener('beforeunload',before);window.addEventListener('oneshowlearn:before-navigate',navigate);return()=>{window.removeEventListener('beforeunload',before);window.removeEventListener('oneshowlearn:before-navigate',navigate);};},[dirty]);}
+import {Dialog} from './AdminDialog.jsx';
+const emptyLibrary={title:'',type:'document',body:'',resource_url:'',duration_seconds:0,status:'draft'};
+const emptyProject={title:'',slug:'',description:'',cover_url:'',category:'other',tags:[],deliverable:'',status:'draft',sort_order:0,courseIds:[]};
+function ProjectEditor({initial,courses,close,saved}){
+  const [form,setForm]=useState(initial),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+  const dirty=JSON.stringify(form)!==JSON.stringify(initial);useGuard(dirty);
+  const set=(k,v)=>setForm(x=>({...x,[k]:v}));
+  const exit=()=>{if(!busy&&(!dirty||window.confirm('放弃未保存的项目修改？')))close();};
+  return <Dialog title={form.id?'编辑实战项目':'新建实战项目'} close={exit}><form className="platform-form" onSubmit={async e=>{e.preventDefault();setBusy(true);setError('');try{await api(`/admin/platform/projects${form.id?`/${form.id}`:''}`,{method:form.id?'PUT':'POST',headers:form.id?{'If-Match':form.version}:{},body:JSON.stringify({...form,tags:form.tags.filter(Boolean)})});saved();}catch(e){setError(e.message);}finally{setBusy(false);}}}><fieldset disabled={busy}>
+    <label>项目名称<input required maxLength={120} value={form.title} onChange={e=>set('title',e.target.value)}/></label>
+    <div className="cms-form-row"><label>英文标识<input required pattern="[a-z0-9]+(-[a-z0-9]+)*" value={form.slug} onChange={e=>set('slug',e.target.value)}/></label><label>发布状态<select value={form.status} onChange={e=>set('status',e.target.value)}>{Object.entries(stateLabels).map(([v,t])=><option key={v} value={v}>{t}</option>)}</select></label></div>
+    <label>项目介绍<textarea rows={5} value={form.description} onChange={e=>set('description',e.target.value)}/></label><label>成果要求<textarea rows={3} value={form.deliverable} onChange={e=>set('deliverable',e.target.value)}/></label>
+    <label>封面图片（HTTPS 或 /assets/ 路径）<input value={form.cover_url} onChange={e=>set('cover_url',e.target.value)}/></label>
+    <div className="cms-form-row"><label>项目分类<select value={form.category} onChange={e=>set('category',e.target.value)}>{PROJECT_CATEGORIES.slice(1).map(([id,t])=><option key={id} value={id}>{t}</option>)}</select></label><label>排序<input type="number" min="0" max="100000" value={form.sort_order} onChange={e=>set('sort_order',Number(e.target.value))}/></label></div>
+    <label>技术标签（用英文逗号分隔，最多 8 个）<input value={form.tags.join(',')} onChange={e=>set('tags',e.target.value.split(',').map(x=>x.trim()))}/></label>
+    <fieldset><legend>关联课程（按勾选先后排列）</legend><p className="cms-hint">项目介绍独立维护，课程正文复用原课程，不复制内容、不额外授予权限。至少一门已发布课程才能发布项目。</p>{courses.map(c=><label className="cms-checkbox" key={c.id}><input type="checkbox" checked={form.courseIds.includes(c.id)} onChange={e=>set('courseIds',e.target.checked?[...form.courseIds,c.id]:form.courseIds.filter(id=>id!==c.id))}/>{c.title} · {stateLabels[c.status]}</label>)}</fieldset>
+    {error&&<p className="admin-error" role="alert">{error}</p>}<button className="admin-primary">{busy?'保存中…':'保存项目'}</button>
+  </fieldset></form></Dialog>;
+}
+
+
+export function AdminPlatform({mode,navigate}){
+  const [items,setItems]=useState([]),[courses,setCourses]=useState([]),[editing,setEditing]=useState(null),[query,setQuery]=useState(''),[error,setError]=useState(''),[loading,setLoading]=useState(true);
+  const revision=useRef(0);
+  const load=async()=>{const r=++revision.current;setLoading(true);setError('');try{const [a,b]=await Promise.all([api(`/admin/platform/${mode}`),api('/admin/cms/snapshot')]);if(r===revision.current){setItems(a.items);setCourses(b.packs);}}catch(e){if(r===revision.current)setError(e.message);}finally{if(r===revision.current)setLoading(false);}};
+  useEffect(()=>{setEditing(null);setQuery('');load();return()=>{revision.current++;};},[mode]);
+  const title=mode==='library'?'统一资料库':'实战项目管理';
+  return <div className="cms-page"><div className="admin-page-head"><div><span>PLATFORM CONTENT</span><h1>{title}</h1><p>{mode==='library'?'一份原资料，多处引用；内容更新统一生效':'项目独立展示，关联课程提供学习内容'}</p></div><button className="admin-primary" onClick={()=>setEditing(mode==='library'?emptyLibrary:emptyProject)}>新建{mode==='library'?'资料':'项目'}</button></div>{error&&<p role="alert" className="admin-error">{error}<button onClick={load}>重试</button></p>}{loading&&<p>正在加载…</p>}<div className="cms-filters"><label><input aria-label="搜索资料或项目" placeholder="搜索名称…" value={query} onChange={e=>setQuery(e.target.value)}/></label><button onClick={load}>刷新</button></div><p className="cms-hint">{mode==='library'?'已有课程资料可在“课程资料 → 编辑资料 → 纳入统一资料库”迁入，保留原有学习记录和权限。':'新建项目不会自动生成课程内容。归档项目只隐藏项目介绍，不删除关联课程。'}</p><div className="cms-course-grid">{items.filter(i=>i.title.toLowerCase().includes(query.toLowerCase())).map(i=><article key={i.id}><div className="cms-course-top"><span>#{i.id}</span><span className={`admin-status ${i.status}`}>{stateLabels[i.status]}</span></div><h2>{i.title}</h2><p>{mode==='library'?`${i.type} · ${i.references.length} 处引用`:i.description||'未填写介绍'}</p>{mode==='library'?<ul className="platform-references">{i.references.map(r=><li key={r.id}>{r.course} / {r.chapter}<small> · {stateLabels[r.status]} · {r.is_preview?'免费预览':'课程权限'}</small></li>)}</ul>:<small>{i.courseIds.length} 门关联课程 · {i.tags.join(' / ')}</small>}<footer><button onClick={()=>setEditing(i)}>编辑{mode==='library'?'原资料':'项目'}</button>{mode==='library'&&<button onClick={()=>navigate('/admin/content')}>到章节引用 →</button>}</footer></article>)}</div>{!loading&&!items.length&&<div className="cms-empty">尚未配置{title}。不会自动生成示例内容。</div>}{editing&&(mode==='library'?<ContentEditor key={editing.id||'new'} entity="library" initial={editing} onClose={()=>setEditing(null)} onSaved={()=>{setEditing(null);load();}}/>:<ProjectEditor key={editing.id||'new'} initial={editing} courses={courses} close={()=>setEditing(null)} saved={()=>{setEditing(null);load();}}/>)}</div>;
+}
+
+function HomepageCardEditor({cards,courses,onChange}){
+  const update=(index,key,value)=>onChange(cards.map((card,i)=>i===index?{...card,[key]:value}:card));
+  return <fieldset><legend>首页热门课程 · 四张展示卡片</legend><p className="cms-hint">展示文案和插图独立维护，不随课程标题或封面自动变化。关联课程后才显示真实资料数量；未关联或课程未发布时，引导查看学习路线。修改需保存草稿并确认发布。</p><div className="platform-home-cards">{cards.map((card,index)=><fieldset key={index}><legend>卡片 {index+1}</legend><img src={card.image} alt={`卡片 ${index+1} 插图预览`}/><label>分类标签<input required maxLength={20} value={card.tag} onChange={e=>update(index,'tag',e.target.value)}/></label><label>标题（可换行）<textarea required rows={2} maxLength={80} value={card.title} onChange={e=>update(index,'title',e.target.value)}/></label><label>一句话说明<input maxLength={120} value={card.description} onChange={e=>update(index,'description',e.target.value)}/></label><label>独立插图（HTTPS 或 /assets/ 路径）<input required value={card.image} onChange={e=>update(index,'image',e.target.value)}/></label><label>关联课程<select value={card.courseId??''} onChange={e=>update(index,'courseId',e.target.value?Number(e.target.value):null)}><option value="">不关联 · 展示学习方向</option>{courses.map(course=><option key={course.id} value={course.id}>{course.title} · {stateLabels[course.status]}</option>)}</select></label></fieldset>)}</div></fieldset>;
+}
+
+export function AdminPages(){
+  const [key,setKey]=useState('public'),[data,setData]=useState(null),[form,setForm]=useState(null),[catalog,setCatalog]=useState({packs:[],projects:[]}),[error,setError]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[preview,setPreview]=useState(null);
+  const rev=useRef(0);const dirty=Boolean(form&&data&&JSON.stringify(form)!==JSON.stringify(data.draft));useGuard(dirty);
+  const load=async()=>{const r=++rev.current;setData(null);setForm(null);setError('');try{const [d,c,p]=await Promise.all([api(`/admin/platform/pages/${key}`),api('/admin/cms/snapshot'),api('/admin/platform/projects')]);if(r===rev.current){setData(d);setForm(d.draft);setCatalog({packs:c.packs,projects:p.items});}}catch(e){if(r===rev.current)setError(e.message);}};
+  useEffect(()=>{load();return()=>{rev.current++;};},[key]);
+  const set=(k,v)=>setForm(f=>({...f,[k]:v}));
+  const action=async(type)=>{setBusy(true);setError('');setMessage('');try{
+    if(type==='preview'){setPreview(await api(`/admin/platform/pages/${key}/preview`,{method:'POST',body:JSON.stringify(form)}));return;}
+    if(type==='save'){const d=await api(`/admin/platform/pages/${key}`,{method:'PUT',headers:{'If-Match':data.version},body:JSON.stringify(form)});setData({...data,draft:form,version:d.version});setMessage('草稿已保存，用户端尚未改变。');}
+    else {await api(`/admin/platform/pages/${key}/publish`,{method:'POST',headers:{'If-Match':data.version}});await load();setMessage('页面已发布。用户端刷新后读取此版本。');}
+  }catch(e){setError(e.message);}finally{setBusy(false);}};
+  const field=(k,title,area=false)=><label>{title}{area?<textarea rows={3} value={form[k]} maxLength={1000} onChange={e=>set(k,e.target.value)}/>:<input value={form[k]} maxLength={2000} onChange={e=>set(k,e.target.value)}/>}</label>;
+  return <div className="cms-page"><div className="admin-page-head"><div><span>PAGE PUBLISHING</span><h1>页面配置与发布</h1><p>配置官网及工作台主横幅、按钮和推荐内容；不改变页面布局。</p></div></div><label>管理页面<select disabled={busy} value={key} onChange={e=>{if(!dirty||window.confirm('放弃当前未保存修改并切换页面？'))setKey(e.target.value);}}><option value="public">官网首页（未登录）</option><option value="workbench">工作台（登录后）</option></select></label>{error&&<p className="admin-error" role="alert">{error}<button onClick={load}>重新加载</button></p>}{message&&<p className="admin-success" role="status">{message}</p>}{form?<form className="admin-panel platform-form" onSubmit={e=>{e.preventDefault();action('save');}}><fieldset disabled={busy}>{field('eyebrow','横幅标签')}{field('title','横幅标题（换行控制标题分行）',true)}{field('description','横幅说明',true)}{field('image','横幅图片（HTTPS 或 /assets/ 路径；工作台留空使用当前插图）')}<div className="cms-form-row">{field('ctaLabel','主按钮文字')}{field('ctaPath','主按钮站内地址')}</div><div className="cms-form-row">{field('secondaryLabel','次按钮文字')}{field('secondaryPath','次按钮站内地址')}</div>{field('footerTitle','底部 / 右侧行动区标题')}{field('footerDescription','行动区说明',true)}
+      {key==='public'?<HomepageCardEditor cards={form.hotCourseCards??HOME_CARDS} courses={catalog.packs} onChange={cards=>set('hotCourseCards',cards)}/>:<fieldset><legend>推荐实战项目（按勾选顺序）</legend><p className="cms-hint">未选时自动展示前四项已发布项目。</p>{catalog.projects.map(c=><label className="cms-checkbox" key={c.id}><input type="checkbox" checked={form.projectIds.includes(c.id)} onChange={e=>set('projectIds',e.target.checked?[...form.projectIds,c.id]:form.projectIds.filter(id=>id!==c.id))}/>{c.title} · {stateLabels[c.status]}</label>)}</fieldset>}
+      <div className="cms-actions"><button type="button" onClick={()=>action('preview')}>预览未发布内容</button><button type="submit">保存草稿</button><button className="admin-primary" type="button" disabled={dirty||!Number(data.version)} onClick={()=>action('publish')}>确认发布</button></div><p className="cms-hint">{dirty?'存在未保存修改，请先保存草稿再发布。':data.published?'已有已发布版本；编辑草稿不会影响用户端。':'尚未发布配置，用户端使用默认文案与插图；首页卡片的课程需明确关联。'}</p>
+    </fieldset><section><h2>发布历史</h2><p>载入历史只替换当前编辑草稿，保存并发布后才回退用户端。</p>{data.history.map(h=><button type="button" disabled={busy} key={h.id} onClick={async()=>{if(dirty&&!window.confirm('以历史版本替换未保存草稿？'))return;setBusy(true);try{setForm((await api(`/admin/platform/pages/${key}/history/${h.id}`)).draft);setMessage('历史版本已载入草稿，尚未发布。');}catch(e){setError(e.message);}finally{setBusy(false);}}}>版本 #{h.id} · {h.created_at}</button>)}</section></form>:!error&&<p>正在加载页面配置…</p>}
+    {preview&&<Dialog title="仅管理员可见 · 未发布预览" close={()=>setPreview(null)}>{key==='public'?<AdminPagePreview configuration={preview}/>:<div className="platform-workbench-preview"><span>{preview.eyebrow}</span><h1 style={{whiteSpace:'pre-line'}}>{preview.title}</h1><p>{preview.description}</p>{preview.image&&<img src={preview.image} alt="横幅预览"/>}<div className="cms-actions"><button>{preview.ctaLabel}</button><button>{preview.secondaryLabel}</button></div><h2>推荐实战项目</h2>{preview.projects.map(p=><p key={p.id}>{p.title}</p>)}<p className="cms-hint">这里只预览可配置区域，不模拟用户的私人学习数据。</p></div>}</Dialog>}
+  </div>;
+}

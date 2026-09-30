@@ -1,0 +1,20 @@
+.cl-study-page .ls-courseware-panel { padding:0 16px 16px; overflow:hidden; }
+.cl-study-page .ls-courseware-panel > .ls-tabs { margin:0 -16px 16px; padding:0 18px; gap:24px; min-height:54px; background:#fff; }
+.cl-study-page .ls-courseware-panel > .ls-tabs button { font-size:15px; min-width:54px; min-height:54px; padding:12px 8px; }
+.cl-study-page .ls-study-subtabs { display:flex; flex-wrap:wrap; gap:6px; padding:0 0 14px; margin:0 0 4px; }
+.cl-study-page .ls-study-subtabs button { min-height:36px; background:#f6f7fb; color:#666b82; border:1px solid transparent; border-radius:7px; padding:7px 12px; font-size:13px; }
+.cl-study-page .ls-study-subtabs button[aria-pressed=true] { color:#7043f3; background:#f0ebff; border-color:#e2d9ff; }
+.cl-study-page .ls-material { border-radius:10px; padding:18px; margin:0 0 12px; background:#fcfcfe; }
+.cl-study-page .ls-material h3 { font-size:16px; margin:4px 0 14px; }
+.cl-study-page .ls-material pre { color:#e4e3f5; background:#1c1d2c; border:1px solid #303145; border-radius:10px; padding:18px; line-height:1.8; font-size:13px; white-space:pre-wrap; overflow-wrap:anywhere; }
+.cl-study-page .ls-note-actions { display:flex; flex-wrap:wrap; gap:6px; }
+.cl-study-page .ls-note-actions button { min-height:40px; padding:8px 10px; font-size:13px; }
+.cl-study-page .ls-note-actions .ls-timestamp-action { flex:1; color:#7347ec; background:#f1edff; border-color:#e5dcff; white-space:nowrap; }
+.cl-study-page .ls-ai-note-entry { display:flex; align-items:center; gap:10px; background:#f5f2ff; border:1px solid #eae3ff; border-radius:10px; padding:14px; margin-top:18px; color:#7443ed; }
+.cl-study-page .ls-ai-note-entry div { flex:1; min-width:0; }
+.cl-study-page .ls-ai-note-entry strong { display:block; font-size:14px; }
+.cl-study-page .ls-ai-note-entry small { display:block; font-size:11px; color:#79768c; margin-top:4px; line-height:1.5; }
+.cl-study-page .ls-ai-note-entry button { background:#fff; border:1px solid #e7dfff; border-radius:8px; color:#7347ec; min-width:36px; min-height:36px; }
+.cl-study-page .ls-notes .ls-note { padding:14px 0; border-top:1px solid #eeeef5; }
+.cl-study-page .ls-notes .ls-note > button { background:#f3efff; color:#7750de; border:0; border-radius:5px; font-size:12px; padding:4px 8px; }
+@media (max-width:600px) { .cl-study-page .ls-study-subtabs button,.cl-study-page .ls-note-actions button { min-height:44px; } }

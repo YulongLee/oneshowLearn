@@ -1,0 +1,45 @@
+// Explicitly isolated UI fixtures. Never imports or writes the normal database.
+import {mkdtempSync,copyFileSync,mkdirSync,existsSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import path from 'node:path';
+import {spawnSync} from 'node:child_process';
+import bcrypt from 'bcryptjs';
+if(process.env.NODE_ENV==='production')throw Error('Development preview is forbidden in production');
+const directory=mkdtempSync(path.join(tmpdir(),'oneshowlearn-learning-preview-'));
+Object.assign(process.env,{NODE_ENV:'test',DATABASE_PATH:path.join(directory,'preview.db'),UPLOAD_DIR:path.join(directory,'uploads'),API_PORT:'8798',APP_ORIGIN:'http://127.0.0.1:4178',JWT_SECRET:'isolated-preview-only-not-production'});
+const {db,row,run}=await import('../server/db.mjs');
+const {createApp}=await import('../server/index.mjs');
+const root=path.resolve(import.meta.dirname,'..');
+const add=(sql,args=[])=>Number(run(sql,args).lastInsertRowid);
+const password=bcrypt.hashSync('Learning-Preview-2026',10);
+const admin=add("INSERT INTO users(email,password_hash,name,role,email_verified) VALUES('preview-admin@example.com',?,'预览管理员','admin',1)",[password]);
+const learner=add("INSERT INTO users(email,password_hash,name,role,email_verified) VALUES('preview@example.com',?,'隔离测试账号','learner',1)",[password]);
+const lp=add("INSERT INTO learning_paths(slug,title,status) VALUES('preview','隔离测试学习路径','published')");
+const course=add("INSERT INTO project_packs(path_id,slug,title,status) VALUES(?,'preview-course','开发测试 · AI 产品开发课程','published')",[lp]);
+const chapter=add("INSERT INTO project_steps(pack_id,title,status) VALUES(?,'第一章 产品与开发','published')",[course]);
+run("INSERT INTO entitlements(user_id,pack_id,status) VALUES(?,?,'active')",[learner,course]);
+mkdirSync(`${directory}/uploads-private`,{recursive:true});
+const asset=(source,name,mime)=>{const dest=path.join(`${directory}/uploads-private`,name);copyFileSync(source,dest);const id=add('INSERT INTO assets(filename,original_name,mime_type,size_bytes,url,uploaded_by) VALUES(?,?,?,?,?,?)',[name,name,mime,10000,'',admin]);run('UPDATE assets SET url=? WHERE id=?',[`/api/materials/${id}`,id]);return id;};
+const slide1=asset(path.join(root,'src/assets/resources-prd-v1.webp'),'slide1.webp','image/webp');
+const slide2=asset(path.join(root,'src/assets/project-web-cover-v1.webp'),'slide2.webp','image/webp');
+const videoPath=path.join(directory,'fixture.mp4');
+const media=spawnSync('/opt/homebrew/bin/ffmpeg',['-y','-loop','1','-i',path.join(root,'src/assets/projects-hero-v1.webp'),'-t','22','-vf','scale=960:-2','-r','12','-c:v','libx264','-pix_fmt','yuv420p',videoPath],{stdio:'ignore'});
+const videoId=media.status===0&&existsSync(videoPath)?asset(videoPath,'fixture.mp4','video/mp4'):null;
+const library=add("INSERT INTO content_library(type,title,body,status) VALUES('prompt','开发测试 · 阅读项目指令','先阅读项目结构，列出需要实现的功能与验证步骤。此内容仅用于开发测试。','published')");
+const revision=add('INSERT INTO prompt_revisions(library_id,version,title,body) SELECT id,1,title,body FROM content_library WHERE id=?',[library]);
+const titles=['AI 面试助手','AI 工具聚合站','AI 健康饮食管理 App','AI SEO 自动化工具','微信 AI 小程序','AI Agent 自动化工作流'];
+const categories=['AI SaaS','工具网站','移动 App','AI Agent','小程序'];
+categories.forEach((name,i)=>run('INSERT INTO project_categories(slug,name,sort_order) VALUES(?,?,?)',[`category-${i}`,name,i]));
+const lessonConfig={videoAssetId:videoId,pptAssetId:null,subtitleAssetId:null,slides:[{id:'page1',assetId:slide1,text:'明确产品需求和目标用户。'},{id:'page2',assetId:slide2,text:'开发可用产品并验证。'}],mappings:[{slideId:'page1',start:0,end:10},{slideId:'page2',start:10,end:22}],tasks:[{id:'task-1',title:'已阅读项目结构并运行测试',required:true}],operations:[{id:'op-1',title:'先理解需求，再开始开发',body:'这是隔离测试资料，不代表真实课程内容。'}]};
+const lesson=add("INSERT INTO learning_lessons(title,subtitle,config,status) VALUES('1.1 从需求到第一个 AI 产品','开发测试课时 · 视频、课件、笔记与实践',?,'published')",[JSON.stringify(lessonConfig)]);
+const placement=add("INSERT INTO lesson_placements(lesson_id,chapter_id,is_preview,status) VALUES(?,?,1,'published')",[lesson,chapter]);
+for(const [i,title] of titles.entries()){
+  const project=add("INSERT INTO practice_projects(title,slug,description,deliverable,status,tags,sort_order) VALUES(?,?,?,?,?,?,?)",[`开发测试 · ${title}`,`preview-project-${i+1}`,'隔离测试项目：跟随教程完成需求分析、开发与阶段验收。','整理自己的 MVP 与部署记录，不自动声称产品已上线。','published',JSON.stringify(['开发测试','AI']),i]);
+  run("INSERT INTO practice_project_settings(project_id,category_id,tech_stack,difficulty,estimated_minutes,access_type,is_recommended) VALUES(?,?,?,?,?,'free',?)",[project,i%5+1,JSON.stringify(['React','FastAPI']),i%3+1,60*(i+1),i===0?1:0]);
+  const stage=add("INSERT INTO practice_project_stages(project_id,title,description,checklist,status) VALUES(?,'项目准备','完成本阶段课时并核对可运行结果',?,'published')",[project,JSON.stringify([{id:'accept-1',title:'已经实际运行并检查结果',required:true}])]);
+  const p=add("INSERT INTO lesson_placements(lesson_id,stage_id,status) VALUES(?,?,'published')",[lesson,stage]);
+  run("INSERT INTO lesson_materials(placement_id,library_id,role) VALUES(?,?,'prompt')",[p,library]);run('INSERT INTO lesson_prompt_versions(placement_id,library_id,revision_id) VALUES(?,?,?)',[p,library,revision]);
+}
+run("INSERT INTO lesson_materials(placement_id,library_id,role) VALUES(?,?,'prompt')",[placement,library]);run('INSERT INTO lesson_prompt_versions(placement_id,library_id,revision_id) VALUES(?,?,?)',[placement,library,revision]);
+const server=createApp().listen(8798,'127.0.0.1',()=>console.log(`Isolated preview API ready :8798. Database: ${directory}/preview.db. Test-only account: preview@example.com / Learning-Preview-2026`));
+process.on('SIGTERM',()=>server.close(()=>{db.close();process.exit(0);}));

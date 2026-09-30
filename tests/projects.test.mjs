@@ -1,0 +1,72 @@
+import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import test from 'node:test';
+import { projectCategory, projectStatus, projectStats, filterProjects, estimatedTime } from '../src/project-model.js';
+
+test('project discovery uses CMS metadata and preserves honest account progress',()=>{
+  const packs=[{id:1,title:'AI SaaS',contentCount:2,completedCount:0,startedCount:1,estimated_minutes:90,created_at:'2025-01-01'}, {id:2,title:'微信小程序',contentCount:2,completedCount:2,estimated_minutes:40,created_at:'2026-01-01'}, {id:3,title:'移动 App'}, {id:4,title:'没有映射的项目',contentCount:0}];
+  assert.deepEqual(packs.map(projectCategory),['saas','mini','mobile','other']);
+  assert.equal(projectCategory({title:'助手',path_slug:'ai-agent'}),'agent');
+  assert.equal(projectStatus(packs[0]),'started');
+  assert.equal(projectStatus(packs[3]),'new');
+  assert.deepEqual(projectStats(packs.slice(0,2)),{started:1,completed:1,new:0});
+  assert.deepEqual(filterProjects(packs,'mini').map(p=>p.id),[2]);
+  assert.deepEqual(filterProjects(packs,'all','recommended',true,[packs[0]]).map(p=>p.id),[1]);
+  assert.equal(filterProjects(packs,'all','newest')[0].id,2);
+  assert.equal(filterProjects(packs,'all','shortest')[0].id,2);
+  assert.equal(packs[0].id,1);
+  assert.equal(estimatedTime(90),'1.5h');
+  assert.equal(estimatedTime(0),'时长待定');
+});
+
+test('project reader respects publishing, pack ownership and account isolation',async t=>{
+  const temp=mkdtempSync(path.join(tmpdir(),'oneshowlearn-projects-test-'));
+  Object.assign(process.env,{NODE_ENV:'test',DATABASE_PATH:path.join(temp,'test.db'),UPLOAD_DIR:path.join(temp,'uploads'),JWT_SECRET:'projects-tests-only'});
+  const {db,row,run}=await import('../server/db.mjs');
+  const {signUser}=await import('../server/auth.mjs');
+  const {createApp}=await import('../server/index.mjs');
+  const server=createApp().listen(0,'127.0.0.1');await new Promise(resolve=>server.once('listening',resolve));
+  t.after(async()=>{await new Promise(resolve=>server.close(resolve));db.close();rmSync(temp,{recursive:true,force:true});});
+  const base=`http://127.0.0.1:${server.address().port}/api`;
+  const req=async(route,token,body)=>{const res=await fetch(base+route,{method:body?'PUT':'GET',headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},...(body?{body:JSON.stringify(body)}:{})});return {status:res.status,data:await res.json(),cache:res.headers.get('cache-control')};};
+  const user=(name,role='learner')=>{const id=Number(run("INSERT INTO users(email,password_hash,name,role,email_verified) VALUES(?,?,?,?,1)",[`${name}@example.com`,'unused',name,role]).lastInsertRowid);return{id,token:signUser(row('SELECT * FROM users WHERE id=?',[id]))};};
+  const student=user('project-student'),other=user('project-other'),admin=user('project-admin','admin');
+  const pathId=Number(run("INSERT INTO learning_paths(slug,title,status) VALUES('test','Test','published')").lastInsertRowid);
+  const pack=Number(run("INSERT INTO project_packs(path_id,slug,title,status) VALUES(?,'test-project','Project','published')",[pathId]).lastInsertRowid);
+  const chapter=Number(run("INSERT INTO project_steps(pack_id,title,status) VALUES(?,'Chapter','published')",[pack]).lastInsertRowid);
+  const add=(status,preview=0)=>Number(run("INSERT INTO content_items(step_id,type,title,body,resource_url,status,is_preview) VALUES(?,'document','Lesson','PRIVATE_PROJECT_BODY','javascript:alert(1)',?,?)",[chapter,status,preview]).lastInsertRowid);
+  const paid=add('published'),free=add('published',1),draft=add('draft');
+  const catalog=await req('/projects/test-project');
+  assert.equal(catalog.cache,'private, no-store');
+  assert.deepEqual(catalog.data.chapters[0].items.map(i=>i.id),[paid,free]);
+  assert.equal(JSON.stringify(catalog).includes('PRIVATE_PROJECT_BODY'),false);
+  assert.equal(catalog.data.chapters[0].items[0].locked,true);
+  assert.equal((await req(`/projects/test-project/content/${paid}`,student.token)).status,403);
+  assert.equal((await req(`/projects/test-project/content/${free}`)).data.item.resource_url,'');
+  assert.equal((await req(`/projects/wrong-project/content/${free}`)).status,404);
+  assert.equal((await req(`/projects/test-project/content/${draft}`,admin.token)).status,404);
+  run("INSERT INTO entitlements(user_id,pack_id,status,starts_at,expires_at) VALUES(?,?,'active','2000-01-01','2001-01-01')",[student.id,pack]);
+  assert.equal((await req(`/projects/test-project/content/${paid}`,student.token)).status,403);
+  run("UPDATE entitlements SET starts_at='2999-01-01',expires_at=NULL WHERE user_id=?",[student.id]);
+  assert.equal((await req('/projects/test-project',student.token)).data.entitled,false);
+  run("UPDATE entitlements SET starts_at='2000-01-01' WHERE user_id=?",[student.id]);
+  assert.equal((await req(`/projects/test-project/content/${paid}`,student.token)).data.item.body,'PRIVATE_PROJECT_BODY');
+  assert.equal((await req(`/me/progress/${paid}`,student.token,{status:'started'})).status,200);
+  const workspace=(await req('/me/workspace',student.token)).data;
+  assert.equal(workspace.library[0].startedCount,1);
+  assert.equal(workspace.library[0].chapterCount,1);
+  assert.equal(workspace.library[0].contentCount,2);
+  assert.equal(workspace.library[0].progressPercent,0);
+  assert.equal((await req('/projects/test-project',other.token)).data.chapters[0].items[0].progress,null);
+  assert.equal((await req(`/me/progress/${paid}`,student.token,{status:'completed'})).status,200);
+  assert.equal((await req('/projects/test-project',student.token)).data.chapters[0].items[0].progress,'completed');
+  for(const [table,id] of [['project_steps',chapter],['project_packs',pack],['learning_paths',pathId]]){
+    run(`UPDATE ${table} SET status='draft' WHERE id=?`,[id]);
+    assert.equal((await req(`/projects/test-project/content/${free}`,admin.token)).status,404);
+    const result=await req('/projects/test-project',admin.token);
+    if(table==='project_steps')assert.equal(result.data.chapters.length,0);else assert.equal(result.status,404);
+    run(`UPDATE ${table} SET status='published' WHERE id=?`,[id]);
+  }
+});

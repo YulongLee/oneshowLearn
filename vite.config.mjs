@@ -1,6 +1,8 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
+const apiPort = process.env.API_PORT || "8787";
+
 export default defineConfig({
   build: {
     outDir: "dist/client",
@@ -12,8 +14,8 @@ export default defineConfig({
     host: "0.0.0.0",
     allowedHosts: ["terminal.local"],
     proxy: {
-      "/api": "http://127.0.0.1:8787",
-      "/uploads": "http://127.0.0.1:8787",
+      "/api": `http://127.0.0.1:${apiPort}`,
+      "/uploads": `http://127.0.0.1:${apiPort}`,
     },
     warmup: {
       clientFiles: ["./src/main.jsx"],

@@ -24,6 +24,7 @@ export const config = {
   allowDevEmail: process.env.ALLOW_DEV_EMAIL_DELIVERY === "true",
   registrationEnabled: process.env.REGISTRATION_ENABLED !== "false",
   isProduction: process.env.NODE_ENV === "production",
+  emailDailyLimit: Math.max(1, Number(process.env.EMAIL_DAILY_LIMIT) || 200),
 };
 
 if (config.isProduction && !process.env.JWT_SECRET) {
@@ -41,3 +42,5 @@ export const emailConfigured = config.emailProvider === "smtp"
 if (config.isProduction && config.registrationEnabled && !emailConfigured) {
   throw new Error("Email provider is required when registration is enabled in production");
 }
+
+export const emailAvailable = emailConfigured || (config.allowDevEmail && !config.isProduction);

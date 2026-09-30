@@ -1,62 +1,44 @@
-# OneShowLearn Project-Pack Redesign QA
+# Resources and personal learning pages — Design QA
 
-## Comparison target
+final result: passed for the local UI and account-persistence scope
 
-- Source visual truth: `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-current-product/04-practice.png`
-- Implementation screenshot: `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-project-pack-redesign/03-practice-document.png`
-- Full-view comparison: `/Users/liyulong/Documents/ChatGPT/OneshowLearn/audit-project-pack-redesign/08-reference-comparison.png`
-- Additional implementation states:
-  - `audit-project-pack-redesign/01-workspace.png`
-  - `audit-project-pack-redesign/02-path-detail.png`
-  - `audit-project-pack-redesign/04-toolkit.png`
-  - `audit-project-pack-redesign/05-checklist-complete.png`
-  - `audit-project-pack-redesign/06-tutor-answer.png`
-  - `audit-project-pack-redesign/07-practice-mobile.png`
-- Desktop viewport and pixel dimensions: 1440 × 900 CSS pixels, 1440 × 900 image pixels, device scale factor 1.
-- Mobile viewport and pixel dimensions: 390 × 844 CSS pixels, 390 × 844 image pixels, device scale factor 1.
-- Density normalization: none required.
-- State: signed-in project workspace, project 01, step 02; document tab selected for the primary comparison.
+Date: September 26, 2026. Subsequently deployed at the owner's request; see `deploy/README.md` for production verification and rollback details. Local visual checks and production HTTP/API checks are distinct; online browser inspection timed out.
 
-## Full-view comparison evidence
+## Reference and evidence
 
-The side-by-side comparison confirms that the redesign preserves the selected product visual system: the same three-column learning workspace, warm neutral canvas, violet active states, white bordered surfaces, top progress region, icon treatment, typography hierarchy and compact navigation rhythm.
+- Source: `docs/design/resources/reference.png` and `docs/design/personal/{community,notes,favorites,achievements}-reference.png`.
+- Final personal captures: matching `*-1536-final.png` (1536×1024), with 1:1 `*-comparison.png`. See `desktop-contact.png` and `mobile-contact.png`. Mechanical assembly: `scripts/personal-compare.py`.
+- Resource final: `docs/design/resources/implementation-final-1536.png`; earlier comparisons and focused crops retained.
+- Populated screenshots use an opt-in temporary database (`tests/fixtures/personal-preview.mjs`), not real data. Test data was never seeded into the user's database.
+- Actual local preview: http://127.0.0.1:4176/achievements ; live empty-account capture `docs/design/personal/live-empty.png`. Existing API port 8799 remains running.
+- Geometry checked at 320, 390, 768, 1440, 1920, 2560 CSS px: no horizontal overflow or broken loaded images on the four personal routes. Measurements: `responsive-checks.json`.
+- Initial very-early resize/loading frames are not visual pass evidence. Final 390px contact sheet, recaptured 320/768 images and 1536px comparisons were used for visual evaluation.
+- Previous tutor report preserved at `docs/design/tutor-qa-20260926.md`.
 
-The central learning content intentionally changes from a generic task-and-preview layout into a document-first project workspace. This is a product-model change requested by the user, not unintentional visual drift.
+## Resolved findings
 
-Focused region comparison was not required because the 1:1 desktop captures keep the navigation, tabs, content panel, project resources and AI tutor controls readable. Additional screenshots cover the toolkit, completed checklist, tutor-answer and mobile states at useful scale.
+1. P2: Mobile community art was washed out behind heading text. Moved the full-opacity illustration below copy at narrow widths; verified in final mobile capture.
+2. P2: Excess desktop spacing above achievement metrics. Tightened the action-row spacing without crowding mobile controls.
+3. P2: Sidebar image/copy contrast. Limited headline width and added a scoped subtle violet gradient; copy stays editable HTML.
+4. P1: Native discard-confirm blocked the embedded browser. Replaced application discard prompts with accessible in-page dialogs. Verified “继续编辑” retains note text and “放弃修改” is required before navigating away. Native before-unload protection remains for browser refresh/close.
+5. P2: Legacy note edits would invent a creation date. Preserve absent legacy creation dates; only new records get real timestamps.
+6. Earlier resource QA resolved phone/tablet artwork cropping, active-tab treatment and filter/card density; see v1/v2 and final resource captures.
 
-## Required fidelity surfaces
+## Verified behavior
 
-- Fonts and typography: Manrope and the existing Chinese fallbacks remain unchanged. Heading hierarchy, weights and line lengths stay consistent with the source. No truncation was found in the tested desktop or mobile states.
-- Spacing and layout rhythm: the original 250px / flexible / 270px desktop grid is preserved. New content tabs and panels use the established 8–18px spacing rhythm, radii and border tokens. Mobile reflows to one column without horizontal overflow.
-- Colors and visual tokens: warm neutral backgrounds, near-black primary actions and violet selected/success states remain mapped to the existing CSS variables.
-- Image quality and assets: the existing Cursor project preview is reused for the project result and short-video poster. Brand and project assets remain sharp; no placeholder art, custom SVG or low-resolution replacement was introduced.
-- Copy and content: labels now consistently use project language—project pack, project steps, deliverable, Prompt and code, checklist and short video. The visible 60% / 20% / 10% / 10% model is represented in the path detail and practice workspace.
+- Notes: create/save, refresh persistence, Markdown checklist update, star/unstar, recoverable trash/restore, search/tags, unsaved-input navigation guard. Editor toolbar, text/Markdown import and Markdown export implemented. Markdown uses safe React text, not injected HTML.
+- Favorites: real saved account courses/projects, live starred notes and published resource bookmarks; category counts, search, tags, sort, grid/list switch, note/resource detail readers and cancellation without deleting content.
+- Resource bookmarks: cancel/add and refresh verified in browser; paid body/attachment access still uses existing entitlement checks.
+- Achievements: private create/edit, category/search, HTTP(S) link validation, archive/restore, honest metrics and milestones. No fabricated certificates, views or comments.
+- Community: labeled discussion-layout examples and composer saving private learning-note drafts. No public posting, comments, following or fake users.
+- Resource center: CMS publication filtering, category/tag searches, sorting, reader/export/copy/completion and guest/entitlement checks covered by prior browser QA and API tests.
+- Automated tests: 54 pass (20 models/platforms, 30 API, 4 Sites). New regressions cover legacy state compatibility, persistence, account isolation, version conflicts, trash/restore, duplicates and unsafe URL/certificate rejection.
+- Build passed. Required dist/client/index.html, dist/server/index.js, dist/.openai/hosting.json emitted. Protected Sites source files unchanged. Final checked views have no console errors.
 
-## Interaction verification
+## Scope and remaining limitations
 
-- Document → Prompt and code → checklist navigation: passed.
-- Copy/resource actions show visible confirmation: passed.
-- Checklist completion changes progress and enables “完成本步骤”: passed.
-- Suggested AI question fills the composer and produces a visible contextual answer: passed.
-- Short-video poster has a working play/pause state: passed.
-- Desktop and 390px mobile layouts have no horizontal overflow: passed.
-- Production build: passed.
-- Sites packaging tests: 4 passed, 0 failed.
-
-## Findings
-
-No actionable P0, P1 or P2 mismatch remains.
-
-- [P3] The prototype uses one shared project preview as both the outcome image and video poster. A dedicated recorded thumbnail can replace it when real video content exists.
-- [P3] Some supporting text remains intentionally compact to match the established dashboard style; later accessibility testing should validate contrast and 200% zoom behavior.
-
-## Comparison history
-
-### Iteration 1
-
-- Earlier source issue: the central page presented three generic tasks and a large preview, while clicking “开始实践” directly advanced completion and AI Tutor returned only an acknowledgement.
-- Fixes: introduced four content modes with the requested proportions, separated learning material from completion checks, disabled step completion until all checks pass, and added a visible contextual AI answer.
-- Post-fix evidence: `03-practice-document.png`, `04-toolkit.png`, `05-checklist-complete.png`, and `06-tutor-answer.png`.
-
-final result: passed
+- Public homepage and existing workbench/OPC/paths/projects/tutor layouts were not redesigned. Shared “我的成果” now links to /achievements; /courses remains the course library. Deleted notes no longer count or appear in global note search/tutor history.
+- Community data, reference people, certificates and popularity metrics are not real records. Actual empty accounts show honest empty states. Generic cover art is labeled “分类示意”.
+- Public community publishing/moderation, real AI responses/summarization/voice transcription, official certificates and public outcome sharing still need backend/product work. No payment or subscription integration was added.
+- Nonblocking P3: the existing single application bundle exceeds Vite's 500KB warning threshold (about 711KB uncompressed). Route splitting remains future work.
+- Built-in ImageGen provided project-bound illustrations. Final saved paths and prompt set: `docs/design/personal/generated-assets.md`; resource prompts remain under `docs/design/resources/`.

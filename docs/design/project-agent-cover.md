@@ -1,0 +1,14 @@
+# AI Agent project cover — v1
+
+- Created: 2026-09-26
+- Method: built-in `image_gen` tool, new-image generation (not CLI).
+- Reference: project-card art direction in `/var/folders/2c/sdg0hxmx3b5_x84y09b7hk1w0000gn/T/codex-clipboard-b6d08e91-ff26-4054-88ea-84ccb9a78ba9.png`, lower row second card. Inspected before generation; reference was not treated as an edit target.
+- Original: `/Users/liyulong/.codex/generated_images/01a0dce6-0ccf-7772-b4a6-d2b8e4b4a8f0/exec-5adc09cf-c8a5-4223-9b5d-bb6f96b616b6.png`
+- Project files: `src/assets/project-agent-cover-v1.png` and `src/assets/project-agent-cover-v1.webp`.
+- WebP conversion: quality 84; source preserved.
+- Intended use: conceptual fallback illustration for AI Agent projects **only when no real CMS cover exists**. Label the displayed concept art `界面示意`. This asset is not evidence of a shipped project or connected AI service.
+- Visual check: inspected the generated output. Wide 1.90:1 composition; dark navy UI windows, central abstract blue glass orb, small workflow nodes; no human/hooded figure, title, badge, brand logo or watermark.
+
+## Final prompt
+
+Use case: product-mockup. Create a single polished reusable AI Agent project thumbnail for an AI product learning platform, wide landscape image 1.9:1 aspect ratio, target 1200x630. This is ONLY a cover image asset, not a whole web page or course card. Scene: deep midnight navy blue seamless studio backdrop with a subtly reflective dark surface. Subject: two elegant floating desktop app windows with dark blue interfaces, one at left showing a sparse workflow of small interconnected tool nodes, one at right showing clean chat and task panels, both slightly angled inward in realistic 3D perspective. In the center above a small subdued platform is a restrained luminous abstract glass AI assistant orb, cool cyan rim light and gentle blue inner glow, no face, no human silhouette. Small connected tool chips around the lower center hint at an agent workflow. Composition: a unified centered group of high quality commercial SaaS product visual objects, fills approximately 85% of width, good breathing room, readable at a thumbnail size of 200x105. Lighting: refined controlled cool blue studio glow, restrained highlights, professional not cinematic fantasy. Materials: thin glass interface panels, realistic screen reflections, matte dark navy surfaces. Palette: midnight navy and blue, small violet/cyan accents, subtle white UI details. There must be NO main title, NO course text, NO oversized letters, NO logos, NO watermarks, NO badges. Tiny interface labels may be minimal English generic words but should be visually secondary. Avoid hooded figures, humans, robots, skulls, hacker imagery, excessive bloom, sci-fi machinery, busy cyberpunk details. Generate a sharp high-resolution commercial 3D product-interface render.

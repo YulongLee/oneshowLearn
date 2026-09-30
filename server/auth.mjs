@@ -13,7 +13,7 @@ export function optionalAuth(req, _res, next) {
   try {
     const payload = jwt.verify(token, config.jwtSecret);
     req.user = row("SELECT id,email,name,role,status,email_verified,token_version FROM users WHERE id = ?", [Number(payload.sub)]);
-    if (req.user && Number(payload.ver || 0) !== Number(req.user.token_version || 0)) req.user = null;
+    if (req.user && (req.user.status !== "active" || !req.user.email_verified || Number(payload.ver || 0) !== Number(req.user.token_version || 0))) req.user = null;
   } catch {
     req.user = null;
   }
@@ -30,6 +30,13 @@ export function requireAuth(req, res, next) {
 export function requireAdmin(req, res, next) {
   requireAuth(req, res, () => {
     if (!req.user || !["admin", "editor"].includes(req.user.role)) return res.status(403).json({ error: "没有管理权限" });
+    next();
+  });
+}
+
+export function requireOwner(req, res, next) {
+  requireAuth(req, res, () => {
+    if (req.user.role !== "admin") return res.status(403).json({ error: "仅管理员可以管理用户和邮件" });
     next();
   });
 }

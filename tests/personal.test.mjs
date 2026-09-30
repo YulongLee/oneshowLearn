@@ -1,0 +1,36 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import {randomUUID} from 'node:crypto';
+import {mkdtempSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import path from 'node:path';
+import {liveNotes,liveAchievements,tagsFromText,tagCounts,matchText,monthCount} from '../src/personal-model.js';
+test('personal models hide recoverable records and derive real counts',()=>{
+ const state={notes:[{id:'a',title:'Codex',body:'实践',tags:['AI','AI'],starred:true,createdAt:'2026-09-01'},{id:'b',title:'移除',deletedAt:'2026-09-02',tags:['隐藏']}],achievements:[{id:'a'},{id:'b',deletedAt:'2026-09-02'}]};
+ assert.equal(liveNotes(state).length,1);assert.equal(liveAchievements(state).length,1);
+ assert.deepEqual(tagsFromText(' AI, Codex，AI\n产品 '),['AI','Codex','产品']);assert.deepEqual(tagCounts(liveNotes(state)),[['AI',1]]);
+ assert.ok(matchText(state.notes[0],'codex'));assert.ok(matchText(state.notes[0],'实践'));assert.equal(monthCount(liveNotes(state),new Date('2026-09-20')),1);
+});
+test('personal API preserves old notes, new metadata and account isolation',async t=>{
+ const temp=mkdtempSync(path.join(tmpdir(),'oneshowlearn-personal-test-'));
+ Object.assign(process.env,{NODE_ENV:'test',DATABASE_PATH:path.join(temp,'test.db'),UPLOAD_DIR:path.join(temp,'uploads'),JWT_SECRET:'personal-api-tests-only',REGISTRATION_ENABLED:'false',ALLOW_DEV_EMAIL_DELIVERY:'false'});
+ const {db,row,run}=await import('../server/db.mjs');const {signUser}=await import('../server/auth.mjs');const {createApp}=await import('../server/index.mjs');
+ const server=createApp().listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
+ t.after(async()=>{await new Promise(r=>server.close(r));db.close();rmSync(temp,{recursive:true,force:true});});
+ const tokens=['owner','other'].map(name=>{const id=run("INSERT INTO users(email,password_hash,name,email_verified) VALUES(?,?,?,1)",[`${name}@example.com`,'test-only',name]).lastInsertRowid;return signUser(row('SELECT * FROM users WHERE id=?',[id]));});
+ const req=async(token,state,version)=>{const response=await fetch(`http://127.0.0.1:${server.address().port}/api/me/workspace${state?'/state':''}`,{method:state?'PUT':'GET',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`,...(version?{'If-Match':version}:{})},...(state?{body:JSON.stringify(state)}:{})});return {status:response.status,...await response.json()};};
+ const now=new Date().toISOString(),old={id:randomUUID(),title:'旧版笔记',body:'保留正文',updatedAt:now};
+ const base={tasks:[],notes:[old],favorites:[],checkIns:[]};assert.equal((await req(tokens[0],base)).status,200);
+ const before=await req(tokens[0]);assert.deepEqual(before.state.notes,[old]);
+ const achievement={id:randomUUID(),title:'我的原型',description:'个人记录',type:'product',stage:'building',url:'https://example.com/project',tags:['AI'],createdAt:now,updatedAt:now};
+ const updated={...base,notes:[{...old,createdAt:now,tags:['Codex'],starred:true,deletedAt:null}],resourceFavorites:[{id:1,savedAt:now}],achievements:[achievement]};
+ let saved=await req(tokens[0],updated,before.version);assert.equal(saved.status,200);assert.deepEqual((await req(tokens[0])).state,updated);
+ assert.equal((await req(tokens[1])).state.notes.length,0);assert.equal((await req(tokens[1])).state.achievements,undefined);
+ assert.equal((await req(tokens[0],base,before.version)).status,409);
+ const recycled={...updated,notes:[{...updated.notes[0],deletedAt:now}],achievements:[{...achievement,deletedAt:now}]};
+ saved=await req(tokens[0],recycled,saved.version);assert.equal(saved.status,200);assert.equal(liveNotes(saved.state).length,0);assert.equal(liveAchievements(saved.state).length,0);
+ saved=await req(tokens[0],updated,saved.version);assert.equal(saved.status,200);assert.equal(liveNotes(saved.state).length,1);
+ for(const url of ['javascript:alert(1)','file:///etc/passwd','https://user:pass@example.com']) assert.equal((await req(tokens[0],{...updated,achievements:[{...achievement,url}]})).status,400);
+ for(const bad of [{...updated,resourceFavorites:[updated.resourceFavorites[0],updated.resourceFavorites[0]]},{...updated,achievements:[achievement,achievement]},{...updated,notes:[{...old,tags:['a'.repeat(25)]}]},{...updated,achievements:[{...achievement,type:'certificate'}]}])assert.equal((await req(tokens[0],bad)).status,400);
+ assert.deepEqual((await req(tokens[0])).state,updated);
+});

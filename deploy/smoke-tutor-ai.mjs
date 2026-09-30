@@ -1,0 +1,27 @@
+// Production verification: existing published demo only; no saved notes or progress writes.
+import assert from 'node:assert/strict';
+process.loadEnvFile('/etc/oneshowlearn/oneshowlearn.env');
+const base=process.argv[2];
+assert.equal(base,'https://oneshowlearn.com');
+const request=(route,options={})=>fetch(base+'/api'+route,{signal:AbortSignal.timeout(60000),...options});
+const endpoint='/learning/ai/tutor';
+assert.equal((await request(endpoint,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({question:'test',mode:'knowledge'})})).status,401);
+const login=await request('/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:process.env.ADMIN_EMAIL,password:process.env.ADMIN_PASSWORD})});
+assert.equal(login.status,200);
+const {token}=await login.json(),headers={authorization:`Bearer ${token}`,'content-type':'application/json'};
+const entry=await request('/learning/entry',{headers});assert.equal(entry.status,200);
+const lesson=(await entry.json()).lessons.find(l=>l.title.includes('演示')&&l.owner_title.includes('演示')&&l.kind==='course'&&!l.locked);
+assert.ok(lesson,'Need existing published demo course');
+const detail=await request(`/learning/placements/${lesson.id}`,{headers});assert.equal(detail.status,200);
+const slides=(await detail.json()).config.slides.filter(s=>s.text.trim());assert.ok(slides.length);
+const ask=body=>request(endpoint,{method:'POST',headers,body:JSON.stringify(body)});
+assert.equal((await ask({question:'test',mode:'invalid'})).status,400);
+assert.equal((await ask({question:'test',context:{sources:[]}})).status,400);
+const missing=await ask({question:'zxqv728493nofind',courseId:lesson.owner_id,mode:'knowledge'});
+assert.equal(missing.status,200);const insufficient=await missing.json();assert.equal(insufficient.grounded,false);assert.deepEqual(insufficient.sources,[]);assert.equal(insufficient.retrieval.included,0);
+const probe=await ask({question:`请仅摘录课件中与“${slides[0].text.slice(0,80)}”对应的一句原文，注明 [S编号]，不要补充建议。`,courseId:lesson.owner_id,mode:'knowledge'});
+assert.equal(probe.status,200,'Real tutor retrieval reply');const data=await probe.json();
+assert.equal(data.mode,'knowledge');assert.equal(data.grounded,true);assert.equal(data.retrieval.method,'keyword-bm25');
+assert.ok(data.sources.some(s=>s.placementId===lesson.id&&slides.some(slide=>slide.id===s.slideId&&s.excerpt===slide.text)));
+assert.ok(data.sources.every(s=>s.href.startsWith('/learn/')&&s.excerpt));assert.match(data.answer,/\[S\d+/);
+console.log('PASS HTTPS tutor real-model retrieval with valid demo slide citation; missing evidence, invalid mode/client context and anonymous guards; no course/progress/notes changed');

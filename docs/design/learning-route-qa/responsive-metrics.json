@@ -1,0 +1,32 @@
+[
+  {
+    "overflow": [],
+    "scroll": 320,
+    "stages": "264px",
+    "width": 320
+  },
+  {
+    "overflow": [],
+    "scroll": 1024,
+    "stages": "147.188px 147.203px 147.203px 147.203px 147.188px",
+    "width": 1024
+  },
+  {
+    "overflow": [],
+    "scroll": 1440,
+    "stages": "184px 184px 184px 184px 184px",
+    "width": 1440
+  },
+  {
+    "overflow": [],
+    "scroll": 1920,
+    "stages": "256px 256px 256px 256px 256px",
+    "width": 1920
+  },
+  {
+    "overflow": [],
+    "scroll": 2560,
+    "stages": "304px 304px 304px 304px 304px",
+    "width": 2560
+  }
+]

@@ -1,0 +1,2 @@
+import {useEffect,useRef} from 'react';
+export function Dialog({title,children,close}){const ref=useRef(null);useEffect(()=>{const d=ref.current;d.showModal();return()=>d.close();},[]);return <dialog ref={ref} className="cms-dialog platform-dialog" onCancel={e=>{e.preventDefault();close();}} aria-label={title}><header><h2>{title}</h2><button onClick={close} aria-label="关闭窗口">关闭</button></header><div className="cms-editor-body">{children}</div></dialog>;}

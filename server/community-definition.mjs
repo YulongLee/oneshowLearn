@@ -1,0 +1,3 @@
+export const COMMUNITY_CATEGORIES = [['all','全部'],['idea','产品机会'],['development','AI 开发'],['launch','上线合规'],['business','商业化'],['growth','运营增长'],['resources','资源分享']];
+export const COMMUNITY_SETTINGS = {title:'AI OPC 学习广场',description:'官方精选 AI 产品开发、上线、商业化与增长实战内容',eyebrow:'OneShowLearn 学习社区',tagline:'从想法到上线，和你一起把一个人的产品公司变成现实。',heroImage:'',groupTitle:'加入会员学习群',groupDescription:'和更多 AI OPC 学员一起交流成长',groupInstructions:'使用微信扫描二维码，按群内提示加入。',groupExpiresAt:'',qrUrl:'',groupEnabled:false,groupAudience:'entitled',resourceIds:[]};
+export const EMPTY_ARTICLE = {title:'',summary:'',body:'',category:'idea',topic:'',coverUrl:'',pinned:false,recommended:false};

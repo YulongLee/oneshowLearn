@@ -1,11 +1,20 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, BookOpenText, ChartBar, Check, FileText, FolderOpen, House, List, Package, Plus, SignOut, Users, X } from "@phosphor-icons/react";
 import { api, money, setToken } from "./api.js";
+import { AuthPage } from "./Auth.jsx";
+import { canManage } from "./platforms.js";
 import "./admin.css";
+export { AdminUsers, AdminEmail, AdminAccountAudit } from "./AccountAdmin.jsx";
 
 const nav = [
-  ["/admin", "经营概览", ChartBar], ["/admin/catalog", "产品与路径", Package], ["/admin/content", "课程资料", BookOpenText],
+  ["/admin", "内容运营", ChartBar], ["/admin/catalog", "课程与路径", Package], ["/admin/content", "课程资料", BookOpenText],
+  ["/admin/library", "统一资料库", FileText], ["/admin/projects", "实战项目管理", Package], ["/admin/pages", "页面配置", House],
+  ["/admin/community", "官方社区内容", Users],
+  ["/admin/learning", "课时与项目编排", BookOpenText],
+  ["/admin/ai", "AI 配置", ChartBar],
+  ["/admin/opc", "AI OPC 编排", BookOpenText], ["/admin/assets", "附件库", FolderOpen], ["/admin/content-audit", "内容操作记录", FileText],
   ["/admin/orders", "订单管理", FileText], ["/admin/users", "用户管理", Users],
+  ["/admin/email", "邮件服务", FileText], ["/admin/account-audit", "账号操作记录", FileText], ["/admin/account", "账号安全", Users],
 ];
 
 function useLoad(loader, deps = []) {
@@ -16,16 +25,18 @@ function useLoad(loader, deps = []) {
 }
 
 export function AdminLogin({ navigate }) {
-  const [form, setForm] = useState({ email: "liyulong19950316@163.com", password: "" });
-  const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
-  const submit = async (event) => { event.preventDefault(); setBusy(true); setError(""); try { const result = await api("/auth/login", { method: "POST", body: JSON.stringify(form) }); if (!['admin','editor'].includes(result.user.role)) throw new Error("该账号没有管理权限"); setToken(result.token); navigate("/admin"); } catch (e) { setError(e.message); } finally { setBusy(false); } };
-  return <main className="admin-login"><section><button className="admin-back" onClick={() => navigate("/")}><House size={18} /> 返回网站</button><img src="/assets/oneshowlearn-brandmark.png" alt="" /><span>OneShowLearn 管理后台</span><h1>登录管理后台</h1><p>配置学习路径、项目包、资料、价格与订单。</p><form onSubmit={submit}><label>管理员邮箱<input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></label><label>密码<input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="输入管理员密码" /></label><button type="button" className="admin-forgot" onClick={() => navigate("/forgot-password")}>忘记密码？通过邮箱重置</button>{error && <div className="admin-error">{error}</div>}<button disabled={busy}>{busy ? "正在登录…" : "进入管理后台"} <ArrowRight size={17} /></button></form><small>管理员与学习者使用同一套邮箱安全验证流程。</small></section></main>;
+  return <AuthPage navigate={navigate} platform="admin" />;
 }
 
 export function AdminShell({ route, navigate, children }) {
   const [open, setOpen] = useState(false);
-  const logout = () => { setToken(""); navigate("/admin/login"); };
-  return <div className="admin-layout"><aside className={open ? "open" : ""}><button className="admin-brand" onClick={() => navigate("/admin")}><img src="/assets/oneshowlearn-brandmark.png" alt="" /><span><strong>OneShowLearn</strong><small>运营管理后台</small></span></button><nav>{nav.map(([path,label,Icon])=><button key={path} className={route===path?"active":""} onClick={()=>{navigate(path);setOpen(false);}}><Icon size={19}/>{label}</button>)}</nav><button className="admin-logout" onClick={logout}><SignOut size={19}/>退出登录</button></aside><main><header><button onClick={()=>setOpen(!open)} aria-label="打开管理导航">{open?<X size={22}/>:<List size={22}/>}</button><div><strong>内容与商业化管理</strong><small>所有前台课程资料均由这里配置</small></div><button onClick={() => navigate("/")}>查看网站 <ArrowRight size={15}/></button></header><div className="admin-content">{children}</div></main></div>;
+  const [user, setUser] = useState(null);
+  const [error, setError] = useState("");
+  useEffect(() => { let active = true; api("/auth/me").then(({ user }) => { if (!active) return; if (!canManage(user)) { navigate("/app"); return; } setUser(user); }).catch((e) => { if (!active) return; if (e.status === 401) { setToken(""); navigate("/admin/login"); } else setError(e.message); }); return () => { active = false; }; }, []);
+  const logout = async () => { try { await api("/auth/logout", { method: "POST" }); } catch (e) { if (e.status !== 401) { setError(e.message); return; } } setToken(""); navigate("/admin/login"); };
+  if (!user) return <div className="admin-state">{error || "正在验证管理权限…"}</div>;
+  const visibleNav = nav.filter(([path]) => user.role === "admin" || !["/admin/ai", "/admin/users", "/admin/email", "/admin/account-audit"].includes(path));
+  return <div className="admin-layout"><aside className={open ? "open" : ""}><button className="admin-brand" onClick={() => navigate("/admin")}><img src="/assets/oneshowlearn-brandmark.png" alt="" /><span><strong>OneShowLearn</strong><small>运营管理后台</small></span></button><nav>{visibleNav.map(([path,label,Icon])=><button key={path} className={route===path?"active":""} onClick={()=>{navigate(path);setOpen(false);}}><Icon size={19}/>{label}</button>)}</nav><button className="admin-logout" onClick={logout}><SignOut size={19}/>退出登录</button></aside><main><header><button onClick={()=>setOpen(!open)} aria-label="打开管理导航">{open?<X size={22}/>:<List size={22}/>}</button><div><strong>内容与商业化管理</strong><small>所有前台课程资料均由这里配置</small></div><button className="admin-platform-switch" onClick={() => navigate("/app")}>切换到用户平台 <ArrowRight size={15}/></button></header><div className="admin-content">{error && <p className="admin-error" role="alert">{error}</p>}{children}</div></main></div>;
 }
 
 function Loading({ state }) { if(state.loading)return <div className="admin-state">正在加载…</div>; if(state.error)return <div className="admin-state error">{state.error}</div>; return null; }
@@ -54,4 +65,3 @@ export function AdminContent() {
 }
 
 export function AdminOrders() { const [state,reload]=useLoad(()=>api("/admin/orders")); const paid=async(id)=>{await api(`/admin/orders/${id}/mark-paid`,{method:"POST"});reload();}; return <><Header kicker="商业化" title="订单管理" copy="查看订单并在测试或线下收款场景中手动确认到账。"/><Loading state={state}/><section className="admin-panel"><div className="admin-table orders"><div className="tr head"><span>订单</span><span>用户</span><span>商品</span><span>金额</span><span>状态</span><span></span></div>{state.data?.items.map(o=><div className="tr" key={o.id}><span><strong>{o.order_no}</strong><small>{o.created_at}</small></span><span><strong>{o.name}</strong><small>{o.email}</small></span><span>{o.item_titles}</span><span>{money(o.amount_cents)}</span><span><Status value={o.status}/></span><span>{o.status==="pending"&&<button onClick={()=>paid(o.id)}>确认收款</button>}</span></div>)}{!state.data?.items.length&&<div className="admin-state">还没有订单</div>}</div></section></>; }
-export function AdminUsers() { const [state]=useLoad(()=>api("/admin/users")); return <><Header kicker="用户资产" title="用户管理" copy="查看学习者、已购项目包和订单数量。"/><Loading state={state}/><section className="admin-panel"><div className="admin-table users"><div className="tr head"><span>用户</span><span>角色</span><span>已购项目包</span><span>订单</span><span>状态</span></div>{state.data?.items.map(u=><div className="tr" key={u.id}><span><strong>{u.name}</strong><small>{u.email}</small></span><span>{u.role}</span><span>{u.pack_count}</span><span>{u.order_count}</span><span><Status value={u.status}/></span></div>)}</div></section></>; }

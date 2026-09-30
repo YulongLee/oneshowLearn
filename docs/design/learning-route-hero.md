@@ -1,0 +1,15 @@
+# Learning route hero — v1
+
+- Date: 2026-09-26
+- Tool: built-in `image_gen` (not CLI)
+- Intended placement: signed-in learning-route page hero only. Keep the public homepage and workbench assets unchanged.
+- Reference: `codex-clipboard-6ba6d1eb-9d0f-4a7b-b4d8-630405ccac64.png`, mountain/backpack hero at x206, y185, width774, height205.
+- Original generated artifact: `/Users/liyulong/.codex/generated_images/01a0dcc0-6d67-7cf2-8efa-a454bfd880ff/exec-625d7560-8287-4233-8ff1-6ce6cd7d3e7c.png`.
+- Workspace originals: `src/assets/learning-route-hero-v1.png` and optimized `src/assets/learning-route-hero-v1.webp`.
+- Output dimensions: 2050 × 767. The requested ratio was 2322 × 615, but the built-in image tool returned a taller composition. Use `object-fit: cover` with centered/right positioning inside the shallow reference banner; retain the image's natural proportions. The handwritten text and person's head are within the central vertical safe zone. Do not stretch.
+- Optimization: `cwebp -q 86 -m 6`, no raster compositing or image alteration.
+- Visual inspection: rear-view backpack figure on right; blue/lavender mountain vista and peach dawn; pale left negative space; English and Chinese annotations verified. No dashboard, main headline, badges, or interface text baked in.
+
+## Final generation prompt
+
+Use case: photorealistic-natural. Asset type: wide shallow banner artwork for a Chinese AI product learning roadmap dashboard. Generate a NEW image inspired by the attached reference screenshot, extracting the creative direction of ONLY the mountain/person hero region near the top, not the UI. Canvas target 2322 x 615 px (3.77:1), use that very wide shallow banner proportion. Calm premium editorial photographic composition: a young black-haired Asian man viewed entirely from behind, dark black casual jacket and realistic black hiking backpack, positioned at horizontal 78% of the canvas; head around 22% from top, torso continues below bottom edge. He is looking out toward layers of expansive snow-tipped jagged blue/lavender mountains, warm soft dawn peach light near horizon and muted blue sky. Left 55% is almost blank near-white pale lavender (#f5f3ff) with a seamless gradual photographic fade from white to mountain scene between 45% and 63%; it must remain clean enough for black HTML title and icons, do not put text or objects on the left 55%. All detailed mountains and figure remain in right half. Include ONLY these intentional modest black handwritten annotations within the right half: at x61%-72% upper-middle: 'Better' on first line, 'Products' second line, 'A Brighter You' third line; upper far right at x87%-98%: '一个人' then '也可以做出' then '伟大的产品。', with a small simple violet underline beneath final Chinese line. Friendly elegant pen writing, not bold typography, no box behind it. Do not include a main AI OPC title, no interface mockup, no icon row, no card edges or rounded corners, no frame, no brandmarks or watermark. Real photography-like texture and graceful soft atmosphere, matching the screenshot's quiet white/lavender SaaS art direction. Output the flat full-bleed banner image only.

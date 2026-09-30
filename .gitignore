@@ -5,6 +5,7 @@ dist/
 .env
 .env.*
 !.env.example
+.ai-config.key
 
 # Local design review captures
 /audit/
@@ -18,6 +19,14 @@ dist/
 # Local application data and uploaded course materials
 /data/
 /uploads/
+/uploads-private/
+
+# Generated course decks and local visual QA captures (not application assets)
+/*.pptx
+/docs/**/*.png
+/docs/**/*.jpg
+/docs/**/*.jpeg
+/docs/**/*.webp
 
 # Local backup copies created during prototyping
 /src/* 2.jsx

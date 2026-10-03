@@ -147,3 +147,97 @@
   .wd-refined .wd-hero-actions>button { min-height:44px; }
   .wd-refined :is(.wd-task-add,.wd-question) button { min-height:44px; min-width:44px; }
 }
+
+/* Owner-selected visual fidelity: rich course artwork, clear primary action,
+   quieter tools, and five recognizable chapters. Shared chrome is untouched. */
+.wd-refined .wd-main { gap:22px; }
+.wd-refined .wd-panel { border-radius:14px; }
+.wd-refined .wd-workspace-tag { display:none; }
+.wd-refined .wd-product-hero { grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); gap:20px; padding:24px; border-radius:18px; background:radial-gradient(ellipse at 82% 0%,#e4e0ff80,transparent 60%),linear-gradient(115deg,#f2edff,#fafaff 70%); box-shadow:0 8px 28px #4c348308; }
+.wd-refined .wd-hero-eyebrow { color:#7548de; margin-bottom:10px; font-size:14px; }
+.wd-refined .wd-hero-copy h2 { font-size:clamp(28px,2.05vw,38px); line-height:1.35; letter-spacing:-.7px; color:#11152e; margin-bottom:13px; }
+.wd-refined .wd-current-lesson { font-size:15px; font-weight:650; color:#262d4b; line-height:1.7; margin:0 0 8px; overflow-wrap:anywhere; }
+.wd-refined .wd-hero-goal { font-size:15px; line-height:1.7; margin-bottom:8px; }
+.wd-refined .wd-hero-actions { gap:10px; margin-top:13px; }
+.wd-refined .wd-hero-actions .wd-link { padding:9px 14px; border:1px solid #dfd5fb; border-radius:8px; min-height:46px; }
+.wd-course-preview { position:relative; min-width:0; width:100%; aspect-ratio:16/9; padding:0; overflow:hidden; border-radius:12px; border:1px solid #ddd8ef; background:#141731; align-self:center; box-shadow:0 12px 24px #38266720; color:white; text-align:left; }
+.wd-course-preview>img { width:100%; height:100%; object-fit:cover; display:block; }
+.wd-preview-copy { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:flex-start; padding:6%; background:linear-gradient(90deg,#0d102a65,transparent 65%); pointer-events:none; }
+.wd-preview-brand { display:flex; align-items:center; gap:5px; position:absolute; top:7%; left:6%; }
+.wd-preview-brand .osl-brand-symbol { width:20px; height:20px; }
+.wd-preview-brand .osl-brand-wordmark { font-size:10px; color:white; }
+.wd-preview-brand .osl-brand-wordmark em { color:#c3a4ff; }
+.wd-preview-brand .osl-brand-tagline { display:none; }
+.wd-refined .wd-preview-brand .osl-brand-copy { display:block; }
+.wd-refined .wd-preview-brand .osl-brand-wordmark { color:white; font-size:10px; line-height:1.4; }
+.wd-refined .wd-preview-brand .osl-brand-wordmark em { color:#c3a4ff; background:none; -webkit-text-fill-color:currentColor; }
+.wd-refined .wd-preview-brand .osl-brand-tagline { display:none; }
+.wd-refined .wd-preview-brand .osl-brand-symbol { width:20px; height:20px; }
+.wd-preview-copy>strong { font-size:clamp(25px,2.5vw,50px); line-height:1.1; letter-spacing:-1px; margin-top:6%; }
+.wd-preview-copy>span:not(.wd-preview-brand) { font-size:clamp(13px,1.15vw,23px); font-weight:650; margin-top:6px; }
+.wd-preview-copy>small { font-size:clamp(11px,.9vw,15px); line-height:1.55; color:#e6ddff; margin-top:12px; }
+.wd-preview-play { display:grid; place-items:center; position:absolute; top:50%; left:55%; transform:translate(-50%,-50%); width:54px; height:54px; border-radius:50%; border:1px solid #ffffff5c; color:white; background:#c0a9ff35; backdrop-filter:blur(8px); box-shadow:0 4px 16px #100c5140; }
+.wd-preview-label { position:absolute; right:6%; bottom:7%; padding:3px 8px; background:#191a3e99; border:1px solid #ffffff2b; border-radius:5px; font-size:12px; color:white; }
+.wd-refined .wd-course-meter { font-size:13px; gap:10px; margin-top:0; }
+.wd-refined .wd-course-meter>span { white-space:nowrap; }
+.wd-learning-phases li { --phase-tone:#8350f4; --phase-soft:#f1eaff; }
+.wd-learning-phases .wd-phase-2 { --phase-tone:#427df0; --phase-soft:#eaf3ff; }
+.wd-learning-phases .wd-phase-3 { --phase-tone:#1ab489; --phase-soft:#e7faf2; }
+.wd-learning-phases .wd-phase-4 { --phase-tone:#e98b19; --phase-soft:#fff0de; }
+.wd-learning-phases .wd-phase-5 { --phase-tone:#9255ef; --phase-soft:#f0e9ff; }
+.wd-refined .wd-learning-phases button { position:relative; overflow:hidden; gap:6px; padding:15px 13px; min-height:124px; border-color:var(--phase-soft); background:linear-gradient(135deg,var(--phase-soft),#fff); }
+.wd-refined .wd-learning-phases li:not(:last-child)::after { display:none; }
+.wd-refined .wd-learning-phases button>span { font-style:normal; color:var(--phase-tone); font-size:18px; }
+.wd-refined .wd-learning-phases strong { position:relative; z-index:1; margin-top:2px; font-size:14px; }
+.wd-refined .wd-learning-phases small { position:relative; z-index:1; font-size:12px; }
+.wd-refined .wd-phase-icon { position:absolute; top:8px; right:8px; width:43px; height:44px; border-radius:12px; display:grid; place-items:center; color:var(--phase-tone); background:var(--phase-soft); opacity:.65; }
+.wd-refined .wd-learning-phases :is(.current,.started) button { border-color:#9a71fa; box-shadow:0 3px 12px #8256df0d; }
+.wd-refined .wd-project-card { transition:border-color .15s,box-shadow .15s; }
+.wd-refined .wd-project-card:hover { box-shadow:0 6px 18px #63479512; }
+.wd-refined .wd-project-card>.wd-cover { aspect-ratio:2; }
+.wd-demo-badge { position:absolute; top:8px; left:8px; padding:3px 8px; font-size:12px; color:#fff; border:1px solid #ffffff2b; background:#20264088; border-radius:6px; }
+.wd-refined .wd-project-card p { -webkit-line-clamp:2; min-height:3.5em; }
+.wd-project-tags { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:6px; }
+.wd-project-tags>span { padding:2px 6px; font-size:12px; line-height:1.6; border-radius:5px; color:#595cc5; background:#f0f0ff; overflow-wrap:anywhere; }
+.wd-refined .wd-project-demo { display:block; color:#6b7189; font-size:12px; line-height:1.6; margin:2px 0 5px; }
+.wd-refined .wd-recent-row { grid-template-columns:105px minmax(0,1fr) auto; gap:15px; padding:12px 0; }
+.wd-refined .wd-recent-row:last-child { border-bottom:0; padding-bottom:0; }
+.wd-recent-thumbnail { position:relative; display:grid; place-items:center; background:linear-gradient(135deg,#efeaff,#f7f9ff); border-radius:7px; color:#8854f3; width:105px; aspect-ratio:16/9; overflow:hidden; }
+.wd-recent-thumbnail>img { width:100%; height:100%; object-fit:cover; }
+.wd-recent-thumbnail>b { position:absolute; left:8px; top:18px; color:white; font-size:16px; }
+.wd-recent-content { min-width:0; }
+.wd-recent-content>strong { font-size:15px; line-height:1.6; font-weight:600; overflow-wrap:anywhere; }
+.wd-refined .wd-recent-progress { display:block; width:min(100%,240px); margin-top:7px; }
+.wd-refined .wd-recent-content time { display:block; text-align:left; margin-top:5px; font-size:12px; color:#69728e; }
+.wd-recent-action { display:flex; align-items:center; gap:7px; padding:8px 10px; border:1px solid #eae2ff; border-radius:7px; color:#7851da; background:#f8f5ff; font-size:13px; }
+.wd-refined .wd-rail .wd-section-heading h2>svg { color:#8450f5; }
+.wd-task-empty-art { margin:16px auto 12px; color:#b9a7f6; width:90px; height:76px; display:grid; place-items:center; background:linear-gradient(145deg,#f5f0ff,#fff); border-radius:16px; }
+.wd-refined .wd-task-suggestion-label { display:block; text-align:center; font-size:14px; }
+.wd-refined .wd-task-suggestion { padding:0; margin:16px 0; border:0; background:transparent; }
+.wd-tutor-heading { display:flex; align-items:center; gap:10px; }
+.wd-tutor-heading>img { width:46px; height:50px; object-fit:contain; object-position:center top; }
+.wd-tutor-heading>.wd-section-heading { flex:1; min-width:0; flex-wrap:wrap; gap:0 8px; }
+.wd-refined .wd-tutor-scope { margin-top:10px; }
+.wd-refined .wd-inspiration { position:relative; isolation:isolate; min-height:155px; overflow:hidden; background:linear-gradient(135deg,#eee6ff,#edf0ff); }
+.wd-inspiration::after { position:absolute; content:''; inset:35% 0 0; z-index:-1; background:linear-gradient(#ece3ff44,#c7b0ff40),url('./assets/workspace-mountain-v1.webp') center 65%/cover; opacity:.35; mask-image:linear-gradient(transparent,#000 70%); }
+.wd-refined .wd-inspiration strong { font-style:normal; }
+@container workbench-main (max-width:760px) {
+  .wd-refined .wd-product-hero { grid-template-columns:minmax(0,1fr) minmax(0,.95fr); padding:20px; gap:16px; }
+  .wd-refined .wd-hero-copy h2 { font-size:28px; }
+  .wd-refined .wd-hero-actions .wd-link { padding:7px 10px; }
+  .wd-refined .wd-learning-phases button { padding:13px 10px; }
+  .wd-refined .wd-phase-icon { width:32px; height:34px; opacity:.4; }
+}
+@container workbench-main (max-width:550px) {
+  .wd-refined .wd-product-hero { display:block; padding:20px; }
+  .wd-refined .wd-course-preview { display:none; }
+  .wd-refined .wd-course-meter { margin-top:20px; flex-wrap:wrap; }
+  .wd-refined .wd-course-meter>.wd-progress { min-width:60px; }
+  .wd-refined .wd-learning-phases strong { font-size:15px; }
+  .wd-refined .wd-phase-icon { width:44px; height:46px; opacity:.65; }
+  .wd-refined .wd-recent-row { grid-template-columns:64px minmax(0,1fr); gap:10px; }
+  .wd-refined .wd-recent-thumbnail { width:64px; }
+  .wd-recent-thumbnail>b { font-size:10px; top:10px; left:5px; }
+  .wd-recent-action { grid-column:2; justify-self:start; min-height:44px; }
+}
+@media(prefers-reduced-motion:reduce) { .wd-refined .wd-project-card { transition:none; } }

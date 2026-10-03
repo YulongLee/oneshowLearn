@@ -5,8 +5,8 @@ umask 077
 staging="${1:?Verified staging directory required}"
 app=/var/www/oneshowlearn
 node=/opt/node-v22/bin/node
-live_entry=0d2b24d02c35cd5a6e794d07d13340a9fb85974dc7e9a5c639af7a7b6fed3bae
-new_entry=1319a6903030297682b3169644c5760f4f8a111b8aecb2dad75e19f095a83030
+live_entry=1319a6903030297682b3169644c5760f4f8a111b8aecb2dad75e19f095a83030
+new_entry=15c4d7d8460829a5f7beb466d1ccc3ca261990af39231105360ddb9eb478bea0
 [[ "$EUID" -eq 0 && "$staging" == /tmp/oneshowlearn-workbench-* && -d "$staging" && ! -L "$staging" ]] || exit 1
 test -f "$staging/client/index.html"
 test -d "$staging/client/assets"

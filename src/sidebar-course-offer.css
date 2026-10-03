@@ -3,13 +3,18 @@
 .ws-unified-layout .ws-sidebar:has(.ws-course-offer)>.ws-brand,
 .ws-unified-layout .ws-sidebar:has(.ws-course-offer)>.ws-sidebar-bottom { flex-shrink:0; }
 .ws-unified-layout .ws-course-offer {
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
   padding:17px 14px 13px;
   border:1px solid #7141cb;
   border-radius:14px;
-  background:radial-gradient(ellipse at 105% 0%,#9b72ff66,transparent 60%),linear-gradient(150deg,#35205f,#582da0);
+  background:radial-gradient(ellipse at 105% 0%,#956aff60,transparent 65%),linear-gradient(150deg,#17123f,#382374 65%,#5327a8);
   color:#fff;
   box-shadow:0 6px 18px #49277614;
 }
+.ws-course-offer::before { content:''; position:absolute; z-index:-1; pointer-events:none; inset:55% 0 0; opacity:.42; background:url('./assets/workspace-mountain-v1.webp') center bottom/cover; mask-image:linear-gradient(transparent,#000 65%); }
+.ws-offer-account { display:inline-block; margin-bottom:9px; padding:3px 8px; border-radius:5px; color:#efe7ff; background:#ffffff16; font-size:12px; line-height:1.5; }
 .ws-course-offer .ws-offer-eyebrow { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; color:#e6d9ff; font-size:12px; }
 .ws-course-offer .ws-offer-eyebrow>span { display:flex; align-items:center; gap:5px; }
 .ws-unified-layout .ws-course-offer h3 { color:#fff; font-size:18px; line-height:1.4; margin:0 0 5px; white-space:normal; letter-spacing:.01em; }
@@ -39,10 +44,7 @@
   .ws-course-offer .ws-offer-price { margin-top:8px; }
   .ws-unified-layout .ws-course-offer { padding:12px; }
 }
-.ws-unified-layout .ws-course-offer.ws-course-unlocked { background:linear-gradient(135deg,#f0ebff,#f9f7ff); border-color:#e4dcfb; color:#28203f; box-shadow:none; }
-.ws-unified-layout .ws-course-unlocked h3 { display:flex; align-items:center; gap:7px; color:#302044; font-size:16px; }
-.ws-course-unlocked h3 svg { color:#8251f8; flex-shrink:0; }
-.ws-unified-layout .ws-course-unlocked :is(p.ws-offer-value,.ws-offer-eyebrow) { color:#675b84; }
-.ws-course-unlocked .ws-unlocked-course { margin:12px 0 0; font-size:14px; color:#645b7c; line-height:1.7; overflow-wrap:anywhere; }
+.ws-unified-layout .ws-course-unlocked h3 { display:flex; align-items:center; gap:7px; font-size:17px; }
+.ws-course-unlocked h3 svg { color:#cfbaff; flex-shrink:0; }
+.ws-course-unlocked .ws-unlocked-course { margin:12px 0 0; font-size:14px; color:#e8ddff; line-height:1.7; overflow-wrap:anywhere; }
 .ws-unified-layout .ws-course-unlocked>button { border:1px solid #e3dafa; color:#633bd0; }
-.ws-course-unlocked>small { color:#706885; }

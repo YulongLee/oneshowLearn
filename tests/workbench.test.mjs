@@ -2,6 +2,35 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { calendarMonth, learningEntries, recentStudyItems, currentProject, currentProductAchievement, phaseState, watchPercent,workbenchSelection,workbenchPhaseState,sidebarCourseAccess } from "../src/workbench-model.js";
 import {prepareTutorQuestion,takeTutorIntent,peekTutorIntent} from '../src/tutor-navigation.js';
+import {workbenchProjectVisual,workbenchProjectSummary} from '../src/workbench-visual-model.js';
+import {readFileSync} from 'node:fs';
+
+test('workbench differentiates labeled generic demo art while preserving real CMS covers',()=>{
+  assert.equal(workbenchProjectVisual({title:'[演示] AI 面试助手'}).key,'interview');
+  assert.equal(workbenchProjectVisual({title:'【演示】 AI 工具聚合站'}).key,'directory');
+  assert.equal(workbenchProjectVisual({title:'AI 健康 App'}).key,'mobile');
+  assert.equal(workbenchProjectVisual({title:'AI Agent'}).key,'agent');
+  const demo={title:'【演示】 AI 面试助手',cover_url:'/assets/project-web-cover-v1-A1b2.webp',tags:['React'],settings:{tech_stack:['React','RAG']}};
+  assert.equal(workbenchProjectVisual(demo).useIllustration,true);
+  assert.equal(workbenchProjectVisual(demo).title,'AI 面试助手');
+  assert.deepEqual(workbenchProjectVisual(demo).tags,['React','RAG']);
+  assert.equal(workbenchProjectVisual({...demo,cover_url:'https://cms.example/real-cover.webp'}).useIllustration,false);
+  assert.equal(workbenchProjectVisual({...demo,title:'正式项目'}).useIllustration,false);
+  assert.equal(workbenchProjectVisual({...demo,cover_url:'/api/assets/12'}).useIllustration,false);
+  assert.equal(workbenchProjectSummary({description:'项目需求与开发。演示内容，非正式课程。当前共用素材。'}),'项目需求与开发。');
+});
+test('selected workbench keeps actual lesson, explicit demo status and non-payment previews',()=>{
+  const ui=readFileSync(new URL('../src/Workbench.jsx',import.meta.url),'utf8');
+  const sidebar=readFileSync(new URL('../src/SidebarCourseOffer.jsx',import.meta.url),'utf8');
+  assert.match(ui,/id="wd-current-lesson"/);
+  assert.match(ui,/lesson\?\.is_demo_media\?'演示素材'/);
+  assert.match(ui,/正式教学内容待补充/);
+  assert.match(ui,/illustratedOpc=opc&&\(!source\|\|failed\)/);
+  assert.match(ui,/src=\{source&&!failed\?source:opc\?coursePreviewArt:courseArt\(course\)\}/);
+  assert.match(sidebar,/learning=access==='unlocked'/);
+  assert.match(sidebar,/管理员预览 · 不代表购买记录/);
+  assert.doesNotMatch(sidebar,/commerce\/orders|priceCents:49900/);
+});
 
 test('personal product selects the latest non-archived product without mutating account data',()=>{
   const items=[

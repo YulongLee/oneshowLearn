@@ -52,3 +52,43 @@ Scope: local development of /app from the owner's reference 9a5080f8. No product
 - API health, public offer/login status/resource/course/project metadata and anonymous account/identity/order/project-run guards verified. Existing account/private-record identities and historical order identities/amounts preserved; provider configurations, pricing, content and CMS settings equal the backup.
 - Backend/environment/package/nginx/systemd hashes and service PIDs/restart counts match before release. OneShowLearn/nginx/OneShowSEO/PocketLedger remained active without restart. No authenticated production save, order creation/closure, SMS/email/AI/payment gateway call, fixture upload or database migration was performed.
 - In-app browser navigation did not complete its accessibility inspection within the tool timeout; this is not counted as a successful visual production check. Release acceptance is based on the exact HTTPS entry/asset checks and the isolated built-version visual/interaction regressions above.
+
+## October 4 selected mock fidelity (supersedes the plain refinement)
+
+Owner approval: richer workbench based on selected mock `exec-a57373fb-91ba-4995-b9be-364290304c6a.png`, then self-test, Git push and frontend-only production publication.
+
+- Keep the persistent learner shell and all existing private learning/task/product/tutor actions. Use a lavender hero with a clear brand headline, actual current lesson and server-derived progress, plus a naturally proportioned dark course preview. Generated artwork is not a playable teaching video or evidence of completion.
+- Five tinted chapter cards have distinct icons and real course status. Compact recent learning is rendered only for actual account records. Three project cards use distinct interview/directory/mobile illustrations, actual metadata and explicit demonstration labels; generic artwork never becomes a real delivered project.
+- Prefer real CMS cover URLs, including future uploaded OPC course covers. Substitute only absent/failed covers or explicitly identified generic demo project assets. No CMS record is edited to introduce the artwork.
+- Restore a deep-violet sidebar offer across roles. The current server offer is ¥499 / original ¥999; no hard-coded price replaces it. Administrators see a labeled price preview, not purchase evidence. Owned courses show unlocked/continue without another purchase demand. Last successful offers remain visible during failed route revalidation.
+- Supporting tools retain explicit suggested tasks, course-context AI drafts (never automatic requests), private learning records and quiet mountain artwork. Small-screen and wide-sidebar layouts reflow without scaling text.
+
+### Artwork provenance and final prompts
+
+Mode: built-in `image_gen`, three separate generation jobs; no CLI/API fallback. Outputs were visually inspected and mechanically converted to quality-84 WebP without cropping or image content edits. These are generic classification illustrations; brand text, prices and progress remain real HTML and data.
+
+Final workspace assets:
+
+- `src/assets/workbench-course-preview-v1.webp` — 46,484 bytes.
+- `src/assets/workbench-interview-v1.webp` — 47,180 bytes.
+- `src/assets/workbench-directory-v1.webp` — 30,318 bytes.
+
+Final prompt — course preview:
+
+> Use case: product-mockup. Asset type: landscape 16:9 course-cover background for OneShowLearn AI product teaching. Dark navy-to-electric-violet studio backdrop, premium naturally proportioned silver laptop on the RIGHT half showing softly luminous code editor, purple ambient lighting, tiny restrained four-point sparkle near upper right. LEFT 50% clean dark navy negative space for real HTML course title. Straight horizon, laptop not stretched. No words, letters, logos, numbers, text, buttons or play icon anywhere. Buildable teaching preview artwork, elegant, high contrast, not neon sci-fi, no people.
+
+Final prompt — interview:
+
+> Use case: ui-mockup. Asset type: landscape 16:9 generic illustration for an AI interview assistant demonstration project cover. Premium periwinkle-blue and violet background, large naturally proportioned white conversational interview app window on RIGHT side, chat bubbles and tiny round generic portrait icon, abstract blank lines in bubbles, restrained subtle shadow. LEFT third has two floating chat bubbles with microphone/speech icons. Distinct interview scene not a dashboard. No text, words, letters, numbers, progress percentages, logos or watermarks. Crisp polished SaaS product illustration, fully contained composition.
+
+Final prompt — directory:
+
+> Use case: ui-mockup. Asset type: landscape 16:9 generic demonstration cover for AI tools directory project. Dark navy-violet premium product backdrop, front-facing naturally proportioned dark tool catalogue window on RIGHT two-thirds, broad search input bar and 3x2 tool tiles with distinct violet blue pink orange green simple abstract tool glyphs, no brand logos, no text letters numbers anywhere. LEFT third soft navy negative space and one tasteful glowing purple folder/card shape. Clearly a searchable tools directory, not interview chat or business analytics dashboard. Restrained ambient light, elegant commercial SaaS illustration, fully contained.
+
+### Final verification and publication guard
+
+- Complete regression: 363 tests passed. Production build passed; existing main-bundle size advisory remains, and no dependency/backend changes are included.
+- Workbench browser suite: 79 checks passed; covers fresh/returning/trial/admin/guest identities, 320–2560 px, sidebar modes, actual lesson/progress, private account changes, task save/completion, AI context/draft preservation without provider calls, unavailable/route-failure states, restored pricing, distinct cover assets, cover brand contrast and real CMS cover precedence.
+- Commercial browser regression: 56 checks passed. Disposable fixture databases only; no production fixture upload, provider request or merchant configuration write.
+- Visual checks: final screenshots for 390/1440/1536/1920 px, plus in-app local preview. Corrected the cover wordmark's inherited dark color and removed the tagline at thumbnail size. Screenshots remain ignored under `artifacts/workbench-refinement/`.
+- Frontend-only release expects live entry `1319a6903030297682b3169644c5760f4f8a111b8aecb2dad75e19f095a83030`, new entry `15c4d7d8460829a5f7beb466d1ccc3ca261990af39231105360ddb9eb478bea0`. Reuse backup/version-lock/atomic replacement/rollback and exact HTTPS verification. Preserve all production data, pricing, configuration, backend hashes and running services.

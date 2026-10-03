@@ -26,6 +26,7 @@ export const lessonSchema = z
     status: status.default("draft"),
     config: z
       .object({
+        isDemoMedia: z.boolean().default(false),
         videoAssetId: id.nullable().default(null),
         pptAssetId: id.nullable().default(null),
         subtitleAssetId: id.nullable().default(null),
@@ -267,6 +268,7 @@ export function lessonMetadata(p, user) {
   return {
     id: p.id,
     title: p.title,
+    is_demo_media: Boolean(p.config.isDemoMedia),
     duration_seconds: p.config.durationSeconds || 0,
     subtitle: p.subtitle,
     chapter: p.chapter_title,

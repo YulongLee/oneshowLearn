@@ -270,7 +270,9 @@ export function learningRouter() {
       JOIN project_steps s ON s.id=l.chapter_id
       LEFT JOIN opc_stage_steps m ON m.step_id=s.id ORDER BY s.sort_order,s.id,l.sort_order,l.id`)
       .map(item => {const p=placement(item.id);return p?{...lessonMetadata(p,req.user),phase:item.phase}:null;}).filter(Boolean);
-    res.json({courses,chapters,lessons});
+    const selected=row('SELECT course_id FROM learning_entry_settings WHERE id=1')?.course_id;
+    const defaultCourseId=courses.some(c=>c.id===selected)?selected:null;
+    res.json({courses,chapters,lessons,defaultCourseId});
   });
   router.get("/learning/placements/:id", optionalAuth, (req, res) => {
     const p = readPlacement(req);
@@ -376,6 +378,7 @@ export function learningRouter() {
         .strict(),
       req.body,
     );
+    if (d.complete && p.config.isDemoMedia) fail(409,'当前为演示素材，替换正式教学内容后才能标记课时完成');
     if (d.slide_id && !p.config.slides.some((s) => s.id === d.slide_id))
       fail(400, "课件页不存在");
     if (
@@ -393,6 +396,7 @@ export function learningRouter() {
       fail(400, "任务编号无效");
     if (
       d.complete &&
+      p.kind === "project" &&
       p.config.tasks.some((t) => t.required && !d.tasks.includes(t.id))
     )
       fail(409, "请先完成本节必需实践任务");
@@ -626,8 +630,20 @@ export function learningRouter() {
   });
 
   router.use("/admin/learning", requireAdmin);
+  router.put('/admin/learning/default-course',(req,res)=>{
+    const d=parse(z.object({courseId:z.number().int().positive().nullable()}).strict(),req.body);
+    const saved=transaction(()=>{
+      const current=row('SELECT * FROM learning_entry_settings WHERE id=1');match(req,current);
+      if(d.courseId&&!row("SELECT p.id FROM project_packs p JOIN learning_paths l ON l.id=p.path_id WHERE p.id=? AND p.status='published' AND l.status='published'",[d.courseId]))fail(400,'默认学习课程必须已经发布');
+      run('INSERT INTO learning_entry_settings(id,course_id,version) VALUES(1,?,1) ON CONFLICT(id) DO UPDATE SET course_id=excluded.course_id,version=learning_entry_settings.version+1',[d.courseId]);
+      audit(req,'learning-entry',1,'默认学习课程','saved');
+      return row('SELECT * FROM learning_entry_settings WHERE id=1');
+    });res.json({courseId:saved.course_id,version:saved.version});
+  });
   router.get("/admin/learning/snapshot", (_req, res) =>
     res.json({
+      entrySettings: (()=>{const s=row('SELECT * FROM learning_entry_settings WHERE id=1');return {courseId:s?.course_id??null,version:s?.version??0};})(),
+      courses: rows('SELECT id,title,slug,status FROM project_packs ORDER BY sort_order,id'),
       lessons: rows("SELECT * FROM learning_lessons ORDER BY id DESC").map(
         (l) => ({ ...l, config: JSON.parse(l.config) }),
       ),
@@ -641,7 +657,7 @@ export function learningRouter() {
         ),
       })),
       chapters: rows(
-        "SELECT s.id,s.title,p.title course FROM project_steps s JOIN project_packs p ON p.id=s.pack_id ORDER BY p.id,s.sort_order",
+        "SELECT s.id,s.title,s.pack_id,p.title course FROM project_steps s JOIN project_packs p ON p.id=s.pack_id ORDER BY p.id,s.sort_order",
       ),
       projects: rows(
         "SELECT id,title,slug,status FROM practice_projects ORDER BY id",

@@ -60,6 +60,22 @@ test('learning route chooses accessible work and keeps phase deep links valid', 
 });
 
 const entryFixture=()=>({courses:[{id:1,slug:'owned',entitled:true},{id:2,slug:'discovery',entitled:false}],chapters:[{id:1,pack_id:1,phase:1},{id:2,pack_id:1,phase:2}],lessons:[{id:1,kind:'course',owner_id:2,owner_slug:'discovery',phase:1,locked:false},{id:2,kind:'course',owner_id:1,owner_slug:'owned',phase:2,locked:false},{id:3,kind:'course',owner_id:1,owner_slug:'owned',phase:1,locked:true}]});
+test('directory toggle stores previous open state as next closed state',()=>{
+  const ui=readFileSync(new URL('../src/CourseLearningUi.jsx',import.meta.url),'utf8');
+  // Exercise the actual updater, not a second implementation of the toggle.
+  const updater=ui.match(/setClosed\(\(v\) => \(\{ \.\.\.v, \[g\.id\]: ([^}]+) \}\)\)/);
+  assert.ok(updater,'Chapter toggle updater must be covered');
+  const nextClosed=new Function('open',`return (${updater[1]});`);
+  for(const initialOpen of [true,false]){
+    let open=initialOpen;
+    for(let click=0;click<4;click++){
+      const nextOpen=!nextClosed(open);
+      assert.equal(nextOpen,!open,'Each click must change expanded state');open=nextOpen;
+    }
+    assert.equal(open,initialOpen);
+  }
+  assert.match(ui,/\[current.chapter_id \|\| current.stage_id\]: false/,'Current lesson chapter remains expanded on navigation');
+});
 test('course entry prefers entitled unfinished study, resumes actual history and respects explicit links',()=>{
   const data=entryFixture();
   assert.equal(chooseEntry(data).lesson.id,2);
@@ -120,5 +136,26 @@ test('course study keeps directory/materials only and removes redundant return a
   assert.doesNotMatch(page,/你的学习空间已就绪|查看我的课程|查看已有学习笔记/);
   assert.match(page,/roadmapOpen \|\| route === "\/paths"/);
   assert.match(page,/cl-video-empty/);assert.match(page,/cl-courseware-empty/);
-  assert.match(page,/待选择课时的笔记/);
+  assert.match(page,/选择可访问的课时后，可结合课程资料提问和整理笔记/);
+});
+
+test('reference course reader separates private notes below video and grounded assistant in the rail',()=>{
+  const page=readFileSync(new URL('../src/LessonWorkspace.jsx',import.meta.url),'utf8');
+  const frame=readFileSync(new URL('../src/CourseStudyFrame.jsx',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../src/course-study-reference.css',import.meta.url),'utf8');
+  const directory=readFileSync(new URL('../src/CourseLearningUi.jsx',import.meta.url),'utf8');
+  assert.match(page,/const Layout = CourseStudyFrame/);
+  assert.match(page,/variant="rail"/);
+  assert.match(page,/本阶段/);
+  assert.match(page,/footer && <div hidden=\{!isCourse && contentTab !== 'experiment'\}/);
+  assert.match(page,/hidden=\{contentTab!=='notes'\}/); // hide without unmounting autosave/editor
+  assert.match(page,/notesOnly revision=\{notesRevision\}/);
+  assert.match(page,/compact onNote=\{\(\)=>setNotesRevision/);
+  assert.match(page,/\/learning\/placements\/\$\{lesson.id\}\/ai/);
+  assert.match(page,/cs-resource-list/); assert.match(page,/cs-slide-preview/);
+  assert.match(directory,/items.slice\(0,5\)/);
+  assert.match(directory,/findIndex\(l => l.id === currentId\) >= 5/);
+  for(const feature of ['setPointerCapture','onPointerCancel','onLostPointerCapture','aria-valuenow','Escape','localStorage']) assert.ok(frame.includes(feature));
+  assert.match(css,/@container courseStudy \(max-width:960px\)/);
+  assert.match(css,/\.cs-course-page \[hidden\]/);
 });

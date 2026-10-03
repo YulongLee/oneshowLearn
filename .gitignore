@@ -6,6 +6,9 @@ dist/
 .env.*
 !.env.example
 .ai-config.key
+.payment-config.key
+.auth-config.key
+*.before-login-*.bak
 
 # Local design review captures
 /audit/
@@ -20,6 +23,9 @@ dist/
 /data/
 /uploads/
 /uploads-private/
+
+# Generated media, isolated browser captures and temporary authoring output
+/artifacts/
 
 # Generated course decks and local visual QA captures (not application assets)
 /*.pptx

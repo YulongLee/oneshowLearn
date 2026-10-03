@@ -19,8 +19,10 @@ export function validCommunityImage(url){
   if(!['.png','.jpg','.jpeg','.webp'].includes(ext))return false;
   let fd;
   try{
-    fd=openSync(path.join(`${config.uploadDir}-private`,path.basename(asset.filename)),'r');
-    const bytes=Buffer.alloc(12);if(readSync(fd,bytes,0,12,0)<12)return false;
+    const remote=row('SELECT header_hex FROM asset_storage WHERE asset_id=?',[asset.id]);
+    const bytes=remote?Buffer.from(remote.header_hex,'hex'):Buffer.alloc(12);
+    if(remote){if(bytes.length<12)return false;}
+    else {fd=openSync(path.join(`${config.uploadDir}-private`,path.basename(asset.filename)),'r');if(readSync(fd,bytes,0,12,0)<12)return false;}
     if(ext==='.png')return bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]));
     if(ext==='.webp')return bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WEBP';
     return bytes[0]===255&&bytes[1]===216&&bytes[2]===255;

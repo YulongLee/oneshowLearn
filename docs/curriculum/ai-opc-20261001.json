@@ -1,0 +1,1601 @@
+{
+  "schemaVersion": 1,
+  "sourceSha256": "515f05bec46fa74e028f0496ec418c5ef5d607fe708768bd24586f46007c4ee1",
+  "slug": "ai-opc-product-company",
+  "title": "AI OPC｜一个人的 AI 产品公司",
+  "positioning": "从 0 到 1，借助 AI 独立完成一个真实 AI 产品。",
+  "graduationGoal": "拥有一个真正上线、可以收钱、并获得真实用户的 AI 产品。",
+  "notice": "课程大纲已更新，视频、PPT、Demo、实操材料及模板/Prompt 将陆续补充。当前页面为课程规划，不代表完整教学内容已经交付，也不保证学习者的收入或获客结果。",
+  "teachingTemplate": [
+    "课程目标",
+    "核心知识",
+    "Demo",
+    "实操",
+    "作业",
+    "模板/Prompt",
+    "阶段成果",
+    "下一章"
+  ],
+  "chapters": [
+    {
+      "number": 1,
+      "title": "产品与机会",
+      "goal": "找到一个值得做的 AI 产品",
+      "question": "做什么？",
+      "outcome": "Idea + 用户 + 需求验证 + 竞品 + 定位 + 商业模式 + MVP + PRD + 原型",
+      "sections": [
+        {
+          "number": "1.1",
+          "title": "AI OPC：一个人的产品公司",
+          "topics": [
+            {
+              "number": "1.1.1",
+              "title": "什么是 OPC"
+            },
+            {
+              "number": "1.1.2",
+              "title": "为什么 AI 让一个人做公司成为可能"
+            },
+            {
+              "number": "1.1.3",
+              "title": "AI OPC 与传统创业有什么区别"
+            },
+            {
+              "number": "1.1.4",
+              "title": "一个人做产品需要哪些能力"
+            },
+            {
+              "number": "1.1.5",
+              "title": "AI 能替代什么，不能替代什么"
+            },
+            {
+              "number": "1.1.6",
+              "title": "AI 产品公司的完整生命周期"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "1.2",
+          "title": "寻找产品机会",
+          "topics": [
+            {
+              "number": "1.2.1",
+              "title": "好的产品 Idea 从哪里来"
+            },
+            {
+              "number": "1.2.2",
+              "title": "从自己的痛点寻找需求"
+            },
+            {
+              "number": "1.2.3",
+              "title": "从行业和垂直场景寻找需求"
+            },
+            {
+              "number": "1.2.4",
+              "title": "从搜索关键词寻找需求"
+            },
+            {
+              "number": "1.2.5",
+              "title": "从 Reddit / 小红书 / 知乎 / B站等社区寻找需求"
+            },
+            {
+              "number": "1.2.6",
+              "title": "从竞品差评寻找机会"
+            },
+            {
+              "number": "1.2.7",
+              "title": "从海外市场寻找机会"
+            },
+            {
+              "number": "1.2.8",
+              "title": "AI for X：传统行业如何 AI 化"
+            },
+            {
+              "number": "1.2.9",
+              "title": "用 AI 批量寻找产品 Idea"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "1.3",
+          "title": "产品机会筛选",
+          "topics": [
+            {
+              "number": "1.3.1",
+              "title": "什么样的需求值得做"
+            },
+            {
+              "number": "1.3.2",
+              "title": "刚需、频次与市场规模"
+            },
+            {
+              "number": "1.3.3",
+              "title": "用户付费意愿"
+            },
+            {
+              "number": "1.3.4",
+              "title": "开发难度"
+            },
+            {
+              "number": "1.3.5",
+              "title": "获客难度"
+            },
+            {
+              "number": "1.3.6",
+              "title": "自身优势"
+            },
+            {
+              "number": "1.3.7",
+              "title": "实战：20 个 Idea 筛选到 3 个"
+            },
+            {
+              "number": "1.3.8",
+              "title": "实战：3 个 Idea 筛选到 1 个"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "1.4",
+          "title": "需求验证",
+          "topics": [
+            {
+              "number": "1.4.1",
+              "title": "为什么不要一开始就写代码"
+            },
+            {
+              "number": "1.4.2",
+              "title": "用户访谈怎么做"
+            },
+            {
+              "number": "1.4.3",
+              "title": "如何验证真实需求"
+            },
+            {
+              "number": "1.4.4",
+              "title": "搜索数据验证"
+            },
+            {
+              "number": "1.4.5",
+              "title": "社区验证"
+            },
+            {
+              "number": "1.4.6",
+              "title": "Landing Page 验证"
+            },
+            {
+              "number": "1.4.7",
+              "title": "Waitlist 验证"
+            },
+            {
+              "number": "1.4.8",
+              "title": "手工服务验证"
+            },
+            {
+              "number": "1.4.9",
+              "title": "如何验证用户愿不愿意付钱"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "1.5",
+          "title": "竞品分析",
+          "topics": [
+            {
+              "number": "1.5.1",
+              "title": "如何找到真正的竞品"
+            },
+            {
+              "number": "1.5.2",
+              "title": "功能分析"
+            },
+            {
+              "number": "1.5.3",
+              "title": "用户分析"
+            },
+            {
+              "number": "1.5.4",
+              "title": "定价分析"
+            },
+            {
+              "number": "1.5.5",
+              "title": "用户评价分析"
+            },
+            {
+              "number": "1.5.6",
+              "title": "流量来源分析"
+            },
+            {
+              "number": "1.5.7",
+              "title": "市场空缺分析"
+            },
+            {
+              "number": "1.5.8",
+              "title": "AI 实战：自动生成 Competitor Matrix"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "1.6",
+          "title": "产品定位与商业模式",
+          "topics": [
+            {
+              "number": "1.6.1",
+              "title": "如何定义目标用户"
+            },
+            {
+              "number": "1.6.2",
+              "title": "用户真正的问题是什么"
+            },
+            {
+              "number": "1.6.3",
+              "title": "一句话产品定位"
+            },
+            {
+              "number": "1.6.4",
+              "title": "产品差异化"
+            },
+            {
+              "number": "1.6.5",
+              "title": "产品价值主张"
+            },
+            {
+              "number": "1.6.6",
+              "title": "第一版商业模式"
+            },
+            {
+              "number": "1.6.7",
+              "title": "第一版收费假设"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "1.7",
+          "title": "MVP、PRD 与原型",
+          "topics": [
+            {
+              "number": "1.7.1",
+              "title": "什么是真正的 MVP"
+            },
+            {
+              "number": "1.7.2",
+              "title": "Must / Should / Could / Not Now"
+            },
+            {
+              "number": "1.7.3",
+              "title": "如何砍掉不必要功能"
+            },
+            {
+              "number": "1.7.4",
+              "title": "用 AI 写 PRD"
+            },
+            {
+              "number": "1.7.5",
+              "title": "Sitemap"
+            },
+            {
+              "number": "1.7.6",
+              "title": "User Flow"
+            },
+            {
+              "number": "1.7.7",
+              "title": "Wireframe"
+            },
+            {
+              "number": "1.7.8",
+              "title": "用 AI 生成产品原型"
+            },
+            {
+              "number": "1.7.9",
+              "title": "毕业作业：完成产品立项包"
+            }
+          ],
+          "context": ""
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "title": "AI 产品开发",
+      "goal": "用 AI Coding 做出真正可运行的 MVP",
+      "question": "怎么做？",
+      "outcome": "GitHub + 前端 + 后端 + 数据库 + AI + 用户系统 + 可运行 MVP",
+      "sections": [
+        {
+          "number": "2.1",
+          "title": "AI Coding 基础",
+          "topics": [
+            {
+              "number": "2.1.1",
+              "title": "AI Coding 到底改变了什么"
+            },
+            {
+              "number": "2.1.2",
+              "title": "Codex"
+            },
+            {
+              "number": "2.1.3",
+              "title": "Cursor"
+            },
+            {
+              "number": "2.1.4",
+              "title": "Claude Code"
+            },
+            {
+              "number": "2.1.5",
+              "title": "Git / GitHub"
+            },
+            {
+              "number": "2.1.6",
+              "title": "Prompt / Context"
+            },
+            {
+              "number": "2.1.7",
+              "title": "Agentic Coding"
+            },
+            {
+              "number": "2.1.8",
+              "title": "Skills"
+            },
+            {
+              "number": "2.1.9",
+              "title": "MCP"
+            },
+            {
+              "number": "2.1.10",
+              "title": "Prompt Driven vs Spec Driven Development"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "2.2",
+          "title": "AI 开发方法论",
+          "topics": [
+            {
+              "number": "2.2.1",
+              "title": "为什么“一句话开发整个产品”经常失败"
+            },
+            {
+              "number": "2.2.2",
+              "title": "如何把需求讲清楚"
+            },
+            {
+              "number": "2.2.3",
+              "title": "Requirement → Spec"
+            },
+            {
+              "number": "2.2.4",
+              "title": "Spec → Plan"
+            },
+            {
+              "number": "2.2.5",
+              "title": "Plan → Task"
+            },
+            {
+              "number": "2.2.6",
+              "title": "如何让 AI 理解已有项目"
+            },
+            {
+              "number": "2.2.7",
+              "title": "如何控制 AI 修改范围"
+            },
+            {
+              "number": "2.2.8",
+              "title": "如何验收 AI 生成的代码"
+            },
+            {
+              "number": "2.2.9",
+              "title": "如何避免 AI 把项目改崩"
+            }
+          ],
+          "context": "Requirement → Spec → Plan → Task → Code → Test → Review"
+        },
+        {
+          "number": "2.3",
+          "title": "Web AI SaaS 开发",
+          "topics": [
+            {
+              "number": "2.3.1",
+              "title": "从 PRD 到技术方案"
+            },
+            {
+              "number": "2.3.2",
+              "title": "用 AI 搭建前端"
+            },
+            {
+              "number": "2.3.3",
+              "title": "用 AI 搭建后端"
+            },
+            {
+              "number": "2.3.4",
+              "title": "数据库设计"
+            },
+            {
+              "number": "2.3.5",
+              "title": "用户注册登录"
+            },
+            {
+              "number": "2.3.6",
+              "title": "AI API 接入"
+            },
+            {
+              "number": "2.3.7",
+              "title": "文件上传"
+            },
+            {
+              "number": "2.3.8",
+              "title": "后台管理"
+            },
+            {
+              "number": "2.3.9",
+              "title": "权限系统"
+            },
+            {
+              "number": "2.3.10",
+              "title": "实战：完成一个 AI SaaS"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "2.4",
+          "title": "微信小程序",
+          "topics": [
+            {
+              "number": "2.4.1",
+              "title": "小程序架构"
+            },
+            {
+              "number": "2.4.2",
+              "title": "AI Coding 开发小程序"
+            },
+            {
+              "number": "2.4.3",
+              "title": "微信登录"
+            },
+            {
+              "number": "2.4.4",
+              "title": "API"
+            },
+            {
+              "number": "2.4.5",
+              "title": "云服务"
+            },
+            {
+              "number": "2.4.6",
+              "title": "发布准备"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "2.5",
+          "title": "App 开发",
+          "topics": [
+            {
+              "number": "2.5.1",
+              "title": "Native / React Native / Flutter 怎么选"
+            },
+            {
+              "number": "2.5.2",
+              "title": "AI Coding 开发 App"
+            },
+            {
+              "number": "2.5.3",
+              "title": "App 登录与 API"
+            },
+            {
+              "number": "2.5.4",
+              "title": "推送"
+            },
+            {
+              "number": "2.5.5",
+              "title": "本地存储"
+            },
+            {
+              "number": "2.5.6",
+              "title": "App 内购"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "2.6",
+          "title": "桌面客户端",
+          "topics": [
+            {
+              "number": "2.6.1",
+              "title": "Electron"
+            },
+            {
+              "number": "2.6.2",
+              "title": "Tauri"
+            },
+            {
+              "number": "2.6.3",
+              "title": "Web → Desktop"
+            },
+            {
+              "number": "2.6.4",
+              "title": "macOS"
+            },
+            {
+              "number": "2.6.5",
+              "title": "Windows"
+            },
+            {
+              "number": "2.6.6",
+              "title": "打包、签名、更新"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "2.7",
+          "title": "AI 能力",
+          "topics": [
+            {
+              "number": "2.7.1",
+              "title": "LLM"
+            },
+            {
+              "number": "2.7.2",
+              "title": "Structured Output"
+            },
+            {
+              "number": "2.7.3",
+              "title": "Vision"
+            },
+            {
+              "number": "2.7.4",
+              "title": "ASR"
+            },
+            {
+              "number": "2.7.5",
+              "title": "TTS"
+            },
+            {
+              "number": "2.7.6",
+              "title": "Embedding"
+            },
+            {
+              "number": "2.7.7",
+              "title": "RAG"
+            },
+            {
+              "number": "2.7.8",
+              "title": "Agent"
+            },
+            {
+              "number": "2.7.9",
+              "title": "Tool Calling"
+            },
+            {
+              "number": "2.7.10",
+              "title": "如何选择 AI 模型"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "2.8",
+          "title": "数据库与基础设施",
+          "topics": [
+            {
+              "number": "2.8.1",
+              "title": "PostgreSQL"
+            },
+            {
+              "number": "2.8.2",
+              "title": "Redis"
+            },
+            {
+              "number": "2.8.3",
+              "title": "OSS"
+            },
+            {
+              "number": "2.8.4",
+              "title": "Cache"
+            },
+            {
+              "number": "2.8.5",
+              "title": "Queue"
+            },
+            {
+              "number": "2.8.6",
+              "title": "日志"
+            },
+            {
+              "number": "2.8.7",
+              "title": "监控"
+            },
+            {
+              "number": "2.8.8",
+              "title": "备份"
+            },
+            {
+              "number": "2.8.9",
+              "title": "OPC 如何控制成本"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "2.9",
+          "title": "Debug 与测试",
+          "topics": [
+            {
+              "number": "2.9.1",
+              "title": "AI Debug"
+            },
+            {
+              "number": "2.9.2",
+              "title": "日志定位"
+            },
+            {
+              "number": "2.9.3",
+              "title": "错误复现"
+            },
+            {
+              "number": "2.9.4",
+              "title": "自动化测试"
+            },
+            {
+              "number": "2.9.5",
+              "title": "Code Review"
+            },
+            {
+              "number": "2.9.6",
+              "title": "基础安全检查"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "2.10",
+          "title": "MVP 实战",
+          "topics": [
+            {
+              "number": "2.10.1",
+              "title": "Demo 与 MVP 的区别"
+            },
+            {
+              "number": "2.10.2",
+              "title": "整合核心业务流程"
+            },
+            {
+              "number": "2.10.3",
+              "title": "MVP 验收"
+            },
+            {
+              "number": "2.10.4",
+              "title": "发布自己的 MVP"
+            }
+          ],
+          "context": ""
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "title": "上线与合规",
+      "goal": "把 MVP 变成真正存在于互联网的产品",
+      "question": "怎么上线？",
+      "outcome": "域名 + HTTPS + 服务器 + 生产环境 + 合规材料 + 正式上线",
+      "sections": [
+        {
+          "number": "3.1",
+          "title": "云服务器",
+          "topics": [
+            {
+              "number": "3.1.1",
+              "title": "国内还是海外"
+            },
+            {
+              "number": "3.1.2",
+              "title": "ECS / 轻量服务器 / Serverless"
+            },
+            {
+              "number": "3.1.3",
+              "title": "CPU / 内存 / 磁盘 / 带宽"
+            },
+            {
+              "number": "3.1.4",
+              "title": "服务器成本"
+            },
+            {
+              "number": "3.1.5",
+              "title": "OPC 如何选择服务器"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "3.2",
+          "title": "域名与网络",
+          "topics": [
+            {
+              "number": "3.2.1",
+              "title": "域名选择"
+            },
+            {
+              "number": "3.2.2",
+              "title": "DNS"
+            },
+            {
+              "number": "3.2.3",
+              "title": "A / CNAME"
+            },
+            {
+              "number": "3.2.4",
+              "title": "HTTPS"
+            },
+            {
+              "number": "3.2.5",
+              "title": "SSL"
+            },
+            {
+              "number": "3.2.6",
+              "title": "CDN"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "3.3",
+          "title": "正式部署",
+          "topics": [
+            {
+              "number": "3.3.1",
+              "title": "本地环境 → 生产环境"
+            },
+            {
+              "number": "3.3.2",
+              "title": "Docker"
+            },
+            {
+              "number": "3.3.3",
+              "title": "Nginx"
+            },
+            {
+              "number": "3.3.4",
+              "title": "前后端部署"
+            },
+            {
+              "number": "3.3.5",
+              "title": "数据库部署"
+            },
+            {
+              "number": "3.3.6",
+              "title": "环境变量"
+            },
+            {
+              "number": "3.3.7",
+              "title": "CI/CD"
+            },
+            {
+              "number": "3.3.8",
+              "title": "日志"
+            },
+            {
+              "number": "3.3.9",
+              "title": "Backup"
+            },
+            {
+              "number": "3.3.10",
+              "title": "Rollback"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "3.4",
+          "title": "国内网站上线",
+          "topics": [
+            {
+              "number": "3.4.1",
+              "title": "网站上线前准备"
+            },
+            {
+              "number": "3.4.2",
+              "title": "ICP 备案"
+            },
+            {
+              "number": "3.4.3",
+              "title": "公安备案等适用流程"
+            },
+            {
+              "number": "3.4.4",
+              "title": "AI 产品合规判断"
+            },
+            {
+              "number": "3.4.5",
+              "title": "合规 Checklist"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "3.5",
+          "title": "小程序 / App 发布",
+          "topics": [
+            {
+              "number": "3.5.1",
+              "title": "微信小程序"
+            },
+            {
+              "number": "3.5.2",
+              "title": "小程序隐私"
+            },
+            {
+              "number": "3.5.3",
+              "title": "小程序提审"
+            },
+            {
+              "number": "3.5.4",
+              "title": "Apple Developer"
+            },
+            {
+              "number": "3.5.5",
+              "title": "App Store Connect"
+            },
+            {
+              "number": "3.5.6",
+              "title": "iOS 审核"
+            },
+            {
+              "number": "3.5.7",
+              "title": "Google Play"
+            },
+            {
+              "number": "3.5.8",
+              "title": "国内 App 上架"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "3.6",
+          "title": "AI 产品基础合规",
+          "topics": [
+            {
+              "number": "3.6.1",
+              "title": "用户协议"
+            },
+            {
+              "number": "3.6.2",
+              "title": "隐私政策"
+            },
+            {
+              "number": "3.6.3",
+              "title": "数据收集"
+            },
+            {
+              "number": "3.6.4",
+              "title": "数据删除"
+            },
+            {
+              "number": "3.6.5",
+              "title": "AI 内容提示"
+            },
+            {
+              "number": "3.6.6",
+              "title": "第三方模型服务"
+            },
+            {
+              "number": "3.6.7",
+              "title": "内容安全"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "3.7",
+          "title": "正式发布",
+          "topics": [
+            {
+              "number": "3.7.1",
+              "title": "上线 Checklist"
+            },
+            {
+              "number": "3.7.2",
+              "title": "Internal Test"
+            },
+            {
+              "number": "3.7.3",
+              "title": "Beta"
+            },
+            {
+              "number": "3.7.4",
+              "title": "小范围发布"
+            },
+            {
+              "number": "3.7.5",
+              "title": "正式发布"
+            },
+            {
+              "number": "3.7.6",
+              "title": "把自己的产品正式发布出去"
+            }
+          ],
+          "context": ""
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "title": "收款与商业化",
+      "goal": "让产品完成第一笔真实收入",
+      "question": "怎么赚钱？",
+      "outcome": "Pricing + 支付 + 订单 + 会员 + 权益 + 商业数据 + 第一笔收入",
+      "sections": [
+        {
+          "number": "4.1",
+          "title": "商业模式",
+          "topics": [
+            {
+              "number": "4.1.1",
+              "title": "AI 产品有哪些商业模式"
+            },
+            {
+              "number": "4.1.2",
+              "title": "Freemium"
+            },
+            {
+              "number": "4.1.3",
+              "title": "Subscription"
+            },
+            {
+              "number": "4.1.4",
+              "title": "Credits"
+            },
+            {
+              "number": "4.1.5",
+              "title": "One-time Purchase"
+            },
+            {
+              "number": "4.1.6",
+              "title": "Usage Based"
+            },
+            {
+              "number": "4.1.7",
+              "title": "SaaS + Service"
+            },
+            {
+              "number": "4.1.8",
+              "title": "如何选择收费模式"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "4.2",
+          "title": "定价",
+          "topics": [
+            {
+              "number": "4.2.1",
+              "title": "产品到底应该卖多少钱"
+            },
+            {
+              "number": "4.2.2",
+              "title": "竞品定价"
+            },
+            {
+              "number": "4.2.3",
+              "title": "用户价值定价"
+            },
+            {
+              "number": "4.2.4",
+              "title": "Free / Pro / Team"
+            },
+            {
+              "number": "4.2.5",
+              "title": "月付 / 年付"
+            },
+            {
+              "number": "4.2.6",
+              "title": "免费试用"
+            },
+            {
+              "number": "4.2.7",
+              "title": "Pricing Page"
+            },
+            {
+              "number": "4.2.8",
+              "title": "实战：设计自己的价格体系"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "4.3",
+          "title": "订单与权益",
+          "topics": [
+            {
+              "number": "4.3.1",
+              "title": "Order"
+            },
+            {
+              "number": "4.3.2",
+              "title": "Payment"
+            },
+            {
+              "number": "4.3.3",
+              "title": "Subscription"
+            },
+            {
+              "number": "4.3.4",
+              "title": "Entitlement"
+            },
+            {
+              "number": "4.3.5",
+              "title": "Credits"
+            },
+            {
+              "number": "4.3.6",
+              "title": "Feature Limit"
+            },
+            {
+              "number": "4.3.7",
+              "title": "Expiration"
+            },
+            {
+              "number": "4.3.8",
+              "title": "为什么不能直接依赖支付状态"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "4.4",
+          "title": "国内支付",
+          "topics": [
+            {
+              "number": "4.4.1",
+              "title": "微信支付"
+            },
+            {
+              "number": "4.4.2",
+              "title": "微信支付完整流程"
+            },
+            {
+              "number": "4.4.3",
+              "title": "支付宝"
+            },
+            {
+              "number": "4.4.4",
+              "title": "Callback / Webhook"
+            },
+            {
+              "number": "4.4.5",
+              "title": "幂等"
+            },
+            {
+              "number": "4.4.6",
+              "title": "退款"
+            },
+            {
+              "number": "4.4.7",
+              "title": "支付失败"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "4.5",
+          "title": "海外支付",
+          "topics": [
+            {
+              "number": "4.5.1",
+              "title": "Stripe"
+            },
+            {
+              "number": "4.5.2",
+              "title": "Paddle"
+            },
+            {
+              "number": "4.5.3",
+              "title": "Creem"
+            },
+            {
+              "number": "4.5.4",
+              "title": "Merchant of Record"
+            },
+            {
+              "number": "4.5.5",
+              "title": "海外订阅"
+            },
+            {
+              "number": "4.5.6",
+              "title": "App Store IAP"
+            },
+            {
+              "number": "4.5.7",
+              "title": "Google Play Billing"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "4.6",
+          "title": "会员体系",
+          "topics": [
+            {
+              "number": "4.6.1",
+              "title": "Free / Pro / Team"
+            },
+            {
+              "number": "4.6.2",
+              "title": "积分"
+            },
+            {
+              "number": "4.6.3",
+              "title": "Usage Limit"
+            },
+            {
+              "number": "4.6.4",
+              "title": "权益控制"
+            },
+            {
+              "number": "4.6.5",
+              "title": "续费"
+            },
+            {
+              "number": "4.6.6",
+              "title": "到期"
+            },
+            {
+              "number": "4.6.7",
+              "title": "Restore Purchase"
+            },
+            {
+              "number": "4.6.8",
+              "title": "退款与客服"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "4.7",
+          "title": "商业数据",
+          "topics": [
+            {
+              "number": "4.7.1",
+              "title": "Revenue"
+            },
+            {
+              "number": "4.7.2",
+              "title": "MRR"
+            },
+            {
+              "number": "4.7.3",
+              "title": "ARR"
+            },
+            {
+              "number": "4.7.4",
+              "title": "ARPU"
+            },
+            {
+              "number": "4.7.5",
+              "title": "CAC"
+            },
+            {
+              "number": "4.7.6",
+              "title": "LTV"
+            },
+            {
+              "number": "4.7.7",
+              "title": "Conversion"
+            },
+            {
+              "number": "4.7.8",
+              "title": "Churn"
+            },
+            {
+              "number": "4.7.9",
+              "title": "实战：完成第一笔真实交易"
+            }
+          ],
+          "context": ""
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "title": "运营与增长",
+      "goal": "获得第一批真实用户",
+      "question": "用户从哪里来？",
+      "outcome": "第一批用户 + SEO + 内容矩阵 + 增长漏斗 + 数据分析 + AI 自动化增长系统",
+      "sections": [
+        {
+          "number": "5.1",
+          "title": "第一批用户",
+          "topics": [
+            {
+              "number": "5.1.1",
+              "title": "为什么产品上线后没人"
+            },
+            {
+              "number": "5.1.2",
+              "title": "第一个用户从哪里来"
+            },
+            {
+              "number": "5.1.3",
+              "title": "前 10 个用户"
+            },
+            {
+              "number": "5.1.4",
+              "title": "10 → 100"
+            },
+            {
+              "number": "5.1.5",
+              "title": "如何收集用户反馈"
+            },
+            {
+              "number": "5.1.6",
+              "title": "如何找到真正的目标用户"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "5.2",
+          "title": "增长漏斗",
+          "topics": [
+            {
+              "number": "5.2.1",
+              "title": "什么是增长漏斗"
+            },
+            {
+              "number": "5.2.2",
+              "title": "Activation 怎么定义"
+            },
+            {
+              "number": "5.2.3",
+              "title": "Paid Conversion"
+            },
+            {
+              "number": "5.2.4",
+              "title": "Retention"
+            },
+            {
+              "number": "5.2.5",
+              "title": "Referral"
+            },
+            {
+              "number": "5.2.6",
+              "title": "OPC 第一版数据看板"
+            }
+          ],
+          "context": "Impression → Visit → Signup → Activation → Paid → Retention → Referral"
+        },
+        {
+          "number": "5.3",
+          "title": "SEO",
+          "topics": [
+            {
+              "number": "5.3.1",
+              "title": "SEO 到底解决什么问题"
+            },
+            {
+              "number": "5.3.2",
+              "title": "Keyword Research"
+            },
+            {
+              "number": "5.3.3",
+              "title": "Search Intent"
+            },
+            {
+              "number": "5.3.4",
+              "title": "Landing Page SEO"
+            },
+            {
+              "number": "5.3.5",
+              "title": "Content SEO"
+            },
+            {
+              "number": "5.3.6",
+              "title": "Internal Link"
+            },
+            {
+              "number": "5.3.7",
+              "title": "Sitemap"
+            },
+            {
+              "number": "5.3.8",
+              "title": "Search Console"
+            },
+            {
+              "number": "5.3.9",
+              "title": "Rank Tracking"
+            },
+            {
+              "number": "5.3.10",
+              "title": "SEO 数据复盘"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "5.4",
+          "title": "GEO / AI Search",
+          "topics": [
+            {
+              "number": "5.4.1",
+              "title": "GEO 是什么"
+            },
+            {
+              "number": "5.4.2",
+              "title": "GEO 与 SEO 的区别"
+            },
+            {
+              "number": "5.4.3",
+              "title": "AI 如何理解品牌"
+            },
+            {
+              "number": "5.4.4",
+              "title": "如何让内容更容易被理解"
+            },
+            {
+              "number": "5.4.5",
+              "title": "Citation"
+            },
+            {
+              "number": "5.4.6",
+              "title": "AI Visibility"
+            },
+            {
+              "number": "5.4.7",
+              "title": "GEO 数据监控"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "5.5",
+          "title": "内容与短视频",
+          "topics": [
+            {
+              "number": "5.5.1",
+              "title": "为什么 OPC 必须做内容"
+            },
+            {
+              "number": "5.5.2",
+              "title": "找选题"
+            },
+            {
+              "number": "5.5.3",
+              "title": "AI 生成脚本"
+            },
+            {
+              "number": "5.5.4",
+              "title": "产品演示视频"
+            },
+            {
+              "number": "5.5.5",
+              "title": "Hook"
+            },
+            {
+              "number": "5.5.6",
+              "title": "标题"
+            },
+            {
+              "number": "5.5.7",
+              "title": "封面"
+            },
+            {
+              "number": "5.5.8",
+              "title": "一份内容多平台分发"
+            },
+            {
+              "number": "5.5.9",
+              "title": "数据反馈与迭代"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "5.6",
+          "title": "国内与海外渠道",
+          "topics": [
+            {
+              "number": "",
+              "title": "小红书",
+              "group": "国内"
+            },
+            {
+              "number": "",
+              "title": "B站",
+              "group": "国内"
+            },
+            {
+              "number": "",
+              "title": "抖音",
+              "group": "国内"
+            },
+            {
+              "number": "",
+              "title": "知乎",
+              "group": "国内"
+            },
+            {
+              "number": "",
+              "title": "牛客",
+              "group": "国内"
+            },
+            {
+              "number": "",
+              "title": "垂直社区",
+              "group": "国内"
+            },
+            {
+              "number": "",
+              "title": "SEO",
+              "group": "国内"
+            },
+            {
+              "number": "",
+              "title": "TikTok",
+              "group": "海外"
+            },
+            {
+              "number": "",
+              "title": "YouTube",
+              "group": "海外"
+            },
+            {
+              "number": "",
+              "title": "Reddit",
+              "group": "海外"
+            },
+            {
+              "number": "",
+              "title": "Product Hunt",
+              "group": "海外"
+            },
+            {
+              "number": "",
+              "title": "Community",
+              "group": "海外"
+            },
+            {
+              "number": "",
+              "title": "Affiliate",
+              "group": "海外"
+            }
+          ],
+          "context": "根据目标用户选择渠道，不要求每个平台都做。"
+        },
+        {
+          "number": "5.7",
+          "title": "数据分析",
+          "topics": [
+            {
+              "number": "5.7.1",
+              "title": "Traffic Source"
+            },
+            {
+              "number": "5.7.2",
+              "title": "渠道归因"
+            },
+            {
+              "number": "5.7.3",
+              "title": "Signup"
+            },
+            {
+              "number": "5.7.4",
+              "title": "Activation"
+            },
+            {
+              "number": "5.7.5",
+              "title": "Paid"
+            },
+            {
+              "number": "5.7.6",
+              "title": "Retention"
+            },
+            {
+              "number": "5.7.7",
+              "title": "Cohort"
+            },
+            {
+              "number": "5.7.8",
+              "title": "Content Performance"
+            },
+            {
+              "number": "5.7.9",
+              "title": "每周增长复盘"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "5.8",
+          "title": "AI 自动化运营",
+          "topics": [
+            {
+              "number": "5.8.1",
+              "title": "哪些运营工作可以交给 AI"
+            },
+            {
+              "number": "5.8.2",
+              "title": "Research Agent"
+            },
+            {
+              "number": "5.8.3",
+              "title": "SEO Agent"
+            },
+            {
+              "number": "5.8.4",
+              "title": "Content Agent"
+            },
+            {
+              "number": "5.8.5",
+              "title": "Social Agent"
+            },
+            {
+              "number": "5.8.6",
+              "title": "Analytics Agent"
+            },
+            {
+              "number": "5.8.7",
+              "title": "Agent 协作"
+            },
+            {
+              "number": "5.8.8",
+              "title": "搭建自己的 AI 增长工作流"
+            }
+          ],
+          "context": ""
+        },
+        {
+          "number": "5.9",
+          "title": "Growth Loop",
+          "topics": [
+            {
+              "number": "5.9.1",
+              "title": "Campaign 与 Growth Loop"
+            },
+            {
+              "number": "5.9.2",
+              "title": "内容 → 流量"
+            },
+            {
+              "number": "5.9.3",
+              "title": "流量 → 用户"
+            },
+            {
+              "number": "5.9.4",
+              "title": "用户 → 产品成果"
+            },
+            {
+              "number": "5.9.5",
+              "title": "成果 → 分享"
+            },
+            {
+              "number": "5.9.6",
+              "title": "分享 → 新流量"
+            },
+            {
+              "number": "5.9.7",
+              "title": "毕业项目：获得第一批真实用户"
+            }
+          ],
+          "context": ""
+        }
+      ]
+    }
+  ],
+  "counts": {
+    "chapters": 5,
+    "sections": 40,
+    "numberedTopics": 296,
+    "channelEntries": 13
+  }
+}

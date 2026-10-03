@@ -6,9 +6,11 @@ import multer from 'multer';
 import jwt from 'jsonwebtoken';
 import {config} from './config.mjs';
 import {db, row, rows, run} from './db.mjs';
-import {requireAdmin} from './auth.mjs';
+import {requireAdmin,hasVerifiedLogin} from './auth.mjs';
 import {learningAssetAllowed} from './learning-model.mjs';
 import {communityAssetAllowed} from './community-assets.mjs';
+import {createAssetStorage,materialRange} from './asset-storage.mjs';
+import {pipeline} from 'node:stream/promises';
 
 const directory = `${config.uploadDir}-private`;
 const extensions = new Set(['.pdf','.txt','.md','.csv','.json','.zip','.pptx','.docx','.xlsx','.mp4','.webm','.mp3','.png','.jpg','.jpeg','.webp','.vtt']);
@@ -34,42 +36,67 @@ function allowed(asset,user) {
     JOIN learning_paths lp ON lp.id=pp.path_id AND lp.status='published'
     WHERE ci.resource_url=? AND ci.status='published'`,[asset.url]).some(item=>item.is_preview||user&&row(`SELECT id FROM entitlements WHERE user_id=? AND pack_id=? AND status='active' AND julianday(starts_at)<=julianday('now') AND (expires_at IS NULL OR julianday(expires_at)>julianday('now'))`,[user.id,item.id]));
 }
-export function materialsRouter() {
+export function materialsRouter(storage=createAssetStorage()) {
   const router=Router();
-  router.post('/admin/cms/assets',requireAdmin,(req,res,next)=>upload.single('file')(req,res,error=>{
+  // Keep the old client route compatible without creating another public file.
+  router.post(['/admin/cms/assets','/admin/assets'],requireAdmin,(req,res,next)=>upload.single('file')(req,res,async error=>{
     if(error)return res.status(error.code==='LIMIT_FILE_SIZE'?413:400).json({error:error.code==='LIMIT_FILE_SIZE'?'文件超过 50MB，请压缩后重试。':error.message});
     if(!req.file)return res.status(400).json({error:'请选择文件'});
+    let location;
     try {
       const f=req.file;
+      if(storage)location=await storage.put(f);
       db.exec('BEGIN IMMEDIATE');
       const name=originalName(f.originalname);
       const result=run('INSERT INTO assets(filename,original_name,mime_type,size_bytes,url,uploaded_by) VALUES(?,?,?,?,?,?)',[f.filename,name,f.mimetype,f.size,'',req.user.id]);
       const id=Number(result.lastInsertRowid),url=`/api/materials/${id}`;
       run('UPDATE assets SET url=? WHERE id=?',[url,id]);
+      if(location)run('INSERT INTO asset_storage(asset_id,provider,bucket,endpoint,object_key,etag,header_hex) VALUES(?,?,?,?,?,?,?)',[id,location.provider,location.bucket,location.endpoint,location.object_key,location.etag,location.header_hex]);
       db.exec('COMMIT');
+      if(location){try{unlinkSync(f.path);}catch{}}
       res.status(201).json({id,url,name,size:f.size});
-    }catch(e){try{db.exec('ROLLBACK');}catch{}try{unlinkSync(req.file.path);}catch{}next(e);}
+    }catch(e){try{db.exec('ROLLBACK');}catch{}try{unlinkSync(req.file.path);}catch{}if(location){try{await storage.remove(location);}catch{console.error('OSS upload rollback cleanup failed');}}next(e);}
   }));
-  router.get('/admin/cms/assets',requireAdmin,(_req,res)=>res.json({items:rows('SELECT id,original_name,mime_type,size_bytes,url,created_at FROM assets ORDER BY id DESC').map(a=>({...a,private:a.url.startsWith('/api/materials/')}))}));
+  router.get('/admin/cms/storage',requireAdmin,(_req,res)=>res.json(storage?.info||{provider:'local'}));
+  router.get('/admin/cms/assets',requireAdmin,(_req,res)=>res.json({items:rows("SELECT a.id,original_name,mime_type,size_bytes,url,created_at,COALESCE(s.provider,'local') AS storage_provider FROM assets a LEFT JOIN asset_storage s ON s.asset_id=a.id ORDER BY a.id DESC").map(a=>({...a,private:a.url.startsWith('/api/materials/')}))}));
   router.get('/admin/cms/assets/:id/link',requireAdmin,(req,res)=>{
     const asset=row('SELECT * FROM assets WHERE id=?',[Number(req.params.id)]);
     if(!asset)return res.status(404).json({error:'附件不存在'});
     res.set('Cache-Control','no-store').json({url:materialUrl(asset.url,req.user)});
   });
-  router.get('/materials/:id',(req,res)=>{
+  router.get('/materials/:id',async(req,res,next)=>{
     res.set({'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'});
+    let ticket;
     try {
-      const ticket=jwt.verify(String(req.query.ticket||''),config.jwtSecret,{algorithms:['HS256']});
+      ticket=jwt.verify(String(req.query.ticket||''),config.jwtSecret,{algorithms:['HS256']});
       if(ticket.purpose!=='material'||ticket.asset!==Number(req.params.id))throw Error();
+    }catch{return res.status(401).json({error:'下载链接已失效，请重新打开课程资料'});}
+    try {
       const user=ticket.sub?row('SELECT * FROM users WHERE id=?',[Number(ticket.sub)]):null;
-      if(ticket.sub&&(!user||user.status!=='active'||!user.email_verified||Number(user.token_version)!==ticket.ver))return res.status(403).json({error:'登录状态已失效，请重新打开课程资料'});
+      if(ticket.sub&&(!user||user.status!=='active'||!hasVerifiedLogin(user)||Number(user.token_version)!==ticket.ver))return res.status(403).json({error:'登录状态已失效，请重新打开课程资料'});
       const asset=row('SELECT * FROM assets WHERE id=? AND url=?',[ticket.asset,`/api/materials/${ticket.asset}`]);
       if(!asset||!allowed(asset,user))return res.status(403).json({error:'资料未发布或当前账号没有访问权限'});
       const filename=path.basename(asset.filename),file=path.join(directory,filename);
+      const location=row('SELECT * FROM asset_storage WHERE asset_id=?',[asset.id]);
+      if(location){
+        if(!storage)return res.status(503).json({error:'云端附件存储暂未配置，请联系管理员'});
+        const range=materialRange(req.headers.range,asset.size_bytes);
+        if(range===false)return res.status(416).set('Content-Range',`bytes */${asset.size_bytes}`).end();
+        const remote=await storage.open(location,{range:range?.header,head:req.method==='HEAD'});
+        if(remote&&remote.res.status!==(range?206:200)){remote.stream.destroy();throw new Error('Unexpected OSS range response');}
+        res.status(range?206:200).set({'Accept-Ranges':'bytes','Content-Length':String(range?range.length:asset.size_bytes)});
+        if(range)res.set('Content-Range',`bytes ${range.start}-${range.end}/${asset.size_bytes}`);
+        res.type(path.extname(filename));
+        if(!['.mp4','.webm','.mp3','.png','.jpg','.jpeg','.webp','.vtt'].includes(path.extname(filename)))res.attachment(asset.original_name);
+        if(req.method==='HEAD')return res.end();
+        const cancel=()=>remote.stream.destroy();res.once('close',cancel);
+        try{await pipeline(remote.stream,res);}finally{res.off('close',cancel);}
+        return;
+      }
       if(!existsSync(file))return res.status(404).json({error:'附件文件不存在，请联系管理员'});
       if(['.mp4','.webm','.mp3','.png','.jpg','.jpeg','.webp','.vtt'].includes(path.extname(filename)))return res.sendFile(file);
       return res.download(file,asset.original_name);
-    }catch {return res.status(401).json({error:'下载链接已失效，请重新打开课程资料'});}
+    }catch(error){if(res.headersSent)return res.destroy();if(error.code==='NoSuchKey')return res.status(404).json({error:'附件文件不存在，请联系管理员'});next(error);}
   });
   return router;
 }

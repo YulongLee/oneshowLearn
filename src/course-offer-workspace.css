@@ -1,0 +1,60 @@
+/* The same sales content inside the persistent learner shell.
+   Breakpoints use available space, including resized/collapsed navigation. */
+.co-site.co-workspace { min-height:0; background:transparent; container:offer-workspace / inline-size; }
+.co-workspace .co-breadcrumb { display:flex; align-items:center; gap:12px; margin-bottom:22px; color:#687187; font-size:14px; }
+.co-workspace .co-breadcrumb button { border:0; padding:5px 0; min-height:40px; background:none; color:#6e43cc; }
+.co-workspace .co-page { max-width:none; padding:0; }
+.co-workspace .co-layout { grid-template-columns:minmax(0,1fr) 320px; gap:24px; }
+.co-workspace .co-main { display:block; }
+.co-workspace .co-hero { padding:24px; min-height:360px; overflow:hidden; border-radius:16px; }
+.co-workspace .co-hero::before { inset:0; }
+.co-workspace .co-hero-copy { max-width:70%; }
+.co-workspace .co-hero h1 { font-size:clamp(38px,3.4cqi,56px); }
+.co-workspace .co-hero h1 span { white-space:normal; }
+.co-workspace .co-hero-copy>p { width:auto; max-width:100%; font-size:16px; }
+.co-workspace .co-hero-art { width:32%; right:0; top:35px; bottom:0; opacity:1; }
+.co-workspace .co-hero-art>img { right:-12px; width:100%; max-width:100%; height:100%; object-fit:contain; object-position:bottom; }
+.co-workspace :is(.co-handwriting,.co-art-steps) { display:none; }
+.co-workspace .co-checks { gap:10px 16px; max-width:100%; }
+.co-workspace .co-metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:24px; }
+.co-workspace .co-metrics>div { padding:0; border:0; }
+.co-workspace .co-rail { grid-template-columns:minmax(0,1fr); }
+.co-workspace .co-course-options { order:0; }
+.co-workspace .co-questions { display:block; }
+.co-workspace .co-closing-quote { display:none; }
+.co-workspace .co-footer { flex-wrap:wrap; }
+@container offer-workspace (max-width:1050px) {
+  .co-workspace .co-layout { grid-template-columns:minmax(0,1fr); }
+  .co-workspace .co-main { display:contents; }
+  .co-workspace .co-hero { order:0; }
+  .co-workspace .co-rail { order:1; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .co-workspace .co-purchase { grid-column:1; grid-row:1 / span 2; }
+  .co-workspace .co-course-options { grid-column:2; grid-row:1; }
+  .co-workspace .co-questions { grid-column:2; grid-row:2; }
+  .co-workspace .co-section { order:2; }
+  .co-workspace .co-benefits { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .co-workspace .co-curriculum { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .co-workspace .co-hero h1 { font-size:46px; }
+}
+@container offer-workspace (max-width:660px) {
+  .co-workspace .co-hero { padding:22px 20px; min-height:0; }
+  .co-workspace .co-hero-copy { max-width:100%; }
+  .co-workspace .co-hero h1 { font-size:38px; }
+  .co-workspace .co-hero-art { opacity:.10; width:42%; }
+  .co-workspace .co-rail { grid-template-columns:minmax(0,1fr); }
+  .co-workspace :is(.co-purchase,.co-course-options,.co-questions) { grid-column:auto; grid-row:auto; }
+  .co-workspace .co-questions { display:none; }
+  .co-workspace .co-benefits article { flex-direction:column; }
+  .co-workspace .co-curriculum { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .co-workspace .co-closing { display:block; padding:24px 20px; }
+  .co-workspace .co-closing-copy { width:100%; }
+  .co-workspace .co-closing-action { display:block; }
+  .co-workspace .co-closing-action i { display:none; }
+  .co-workspace .co-section header { flex-wrap:wrap; }
+}
+@container offer-workspace (max-width:360px) {
+  .co-workspace .co-hero h1 { font-size:32px; }
+  .co-workspace :is(.co-benefits,.co-curriculum) { grid-template-columns:minmax(0,1fr); }
+  .co-workspace .co-benefits article { flex-direction:row; }
+  .co-workspace .co-purchase { padding-inline:16px; }
+}

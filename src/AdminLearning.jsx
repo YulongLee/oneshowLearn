@@ -9,6 +9,7 @@ const states = [
   ["archived", "已归档"],
 ];
 const emptyConfig = () => ({
+  isDemoMedia: false,
   videoAssetId: null,
   pptAssetId: null,
   subtitleAssetId: null,
@@ -122,7 +123,12 @@ export function AdminLearning() {
     [initial, setInitial] = useState(null),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
-    [relatedIds, setRelatedIds] = useState("");
+    [relatedIds, setRelatedIds] = useState(""),
+    [entryChoice,setEntryChoice]=useState(null),
+    [query,setQuery]=useState(''),
+    [courseFilter,setCourseFilter]=useState(''),
+    [uploading,setUploading]=useState(false),
+    [notice,setNotice]=useState('');
   const load = () =>
     api("/admin/learning/snapshot")
       .then(setData)
@@ -156,9 +162,10 @@ export function AdminLearning() {
     setRelatedIds((next.config?.relatedPlacementIds || []).join(", "));
     setInitial(structuredClone(next));
     setError("");
+    setNotice("");
   };
   const close = () => {
-    if (!busy && (!dirty || window.confirm("放弃未保存修改？"))) setDraft(null);
+    if (!busy && !uploading && (!dirty || window.confirm("放弃未保存修改？"))) setDraft(null);
   };
   const set = (key, value) => setDraft((v) => ({ ...v, [key]: value }));
   const config = (key, value) =>
@@ -190,6 +197,11 @@ export function AdminLearning() {
       </select>
     </label>
   );
+  const uploadAsset=async(file,key,slideIndex)=>{
+    if(!file)return;setUploading(true);setError('');
+    try{const form=new FormData();form.append('file',file);const asset=await api('/admin/cms/assets',{method:'POST',body:form});if(key)config(key,asset.id);if(slideIndex!==undefined)setDraft(v=>({...v,config:{...v.config,slides:v.config.slides.map((s,i)=>i===slideIndex?{...s,assetId:asset.id}:s)}}));await load();setNotice(`已上传 ${asset.name}；请保存课时以应用替换。`);}catch(e){setError(e.message);}finally{setUploading(false);}
+  };
+  const saveEntry=async()=>{setBusy(true);setError('');try{await api('/admin/learning/default-course',{method:'PUT',headers:{'If-Match':String(data.entrySettings?.version||0)},body:JSON.stringify({courseId:entryChoice===''?null:Number(entryChoice??data.entrySettings?.courseId)||null})});await load();setEntryChoice(null);setNotice('默认学习课程已保存。');}catch(e){setError(e.message);}finally{setBusy(false);}};
   const assetSelect = (label, key, filter) => (
     <label>
       {label}
@@ -206,6 +218,7 @@ export function AdminLearning() {
           </option>
         ))}
       </select>
+      <input type="file" aria-label={`上传并替换${label}`} disabled={uploading} accept={key==='videoAssetId'?'video/mp4,video/webm':key==='pptAssetId'?'.pptx,.pdf':key==='subtitleAssetId'?'.vtt':'image/png,image/jpeg,image/webp'} onChange={e=>{uploadAsset(e.target.files[0],key);e.target.value='';}}/>
     </label>
   );
   const save = async (e) => {
@@ -240,6 +253,7 @@ export function AdminLearning() {
       );
       setDraft(null);
       await load();
+      setNotice('课时配置已保存，用户端会读取最新内容。');
     } catch (e) {
       setError(e.message);
     } finally {
@@ -253,6 +267,13 @@ export function AdminLearning() {
         {error && <button onClick={load}>重试</button>}
       </div>
     );
+  const filteredItems=data[tab].filter(item=>{
+    const title=item.title||item.name||data.lessons.find(l=>l.id===item.lesson_id)?.title||data.projects.find(p=>p.id===item.project_id)?.title||'';
+    if(!title.toLowerCase().includes(query.trim().toLowerCase()))return false;
+    if(!courseFilter||!['lessons','placements'].includes(tab))return true;
+    const chapterIds=new Set(data.chapters.filter(c=>String(c.pack_id)===courseFilter).map(c=>c.id));
+    return tab==='placements'?chapterIds.has(item.chapter_id):data.placements.some(p=>p.lesson_id===item.id&&chapterIds.has(p.chapter_id));
+  });
   return (
     <section className="ls-admin">
       <div className="admin-page-head">
@@ -266,6 +287,11 @@ export function AdminLearning() {
           新增{tabs.find((t) => t[0] === tab)[1]}
         </button>
       </div>
+      <section className="ls-entry-settings">
+        <label>“学习课程”默认打开<select disabled={busy} value={entryChoice??data.entrySettings?.courseId??''} onChange={e=>setEntryChoice(e.target.value)}><option value="">自动选择</option>{(data.courses||[]).filter(c=>c.status==='published').map(c=><option key={c.id} value={c.id}>{c.title}</option>)}</select></label>
+        <button disabled={busy||entryChoice===null} onClick={saveEntry}>保存默认课程</button>
+        <p>仅调整默认入口；原课程链接、学习记录和权限保持不变。</p>
+      </section>
       <div className="ls-tabs">
         {tabs.map(([key, label]) => (
           <button
@@ -282,8 +308,10 @@ export function AdminLearning() {
         ))}
       </div>
       {error && !draft && <p role="alert">{error}</p>}
+      {notice&&!draft&&<p role="status">{notice}</p>}
+      <div className="ls-admin-filters"><input aria-label="搜索课时或项目" placeholder="按编号或标题搜索…" value={query} onChange={e=>setQuery(e.target.value)}/>{['lessons','placements'].includes(tab)&&<select aria-label="筛选课程" value={courseFilter} onChange={e=>setCourseFilter(e.target.value)}><option value="">全部课程 / 项目</option>{(data.courses||[]).map(c=><option key={c.id} value={c.id}>{c.title}</option>)}</select>}<span>{filteredItems.length} 项</span></div>
       <div className="ls-admin-list">
-        {data[tab].map((item) => (
+        {filteredItems.map((item) => (
           <button key={item.id || item.project_id} onClick={() => edit(item)}>
             <strong>
               {item.title ||
@@ -325,8 +353,8 @@ export function AdminLearning() {
             <span>编辑 →</span>
           </button>
         ))}
-        {!data[tab].length && (
-          <p>尚未配置。新增记录后保存；不会自动填充示例课程。</p>
+        {!filteredItems.length && (
+          <p>暂无匹配内容，可调整筛选或新增记录。</p>
         )}
       </div>
       {draft && (
@@ -335,7 +363,7 @@ export function AdminLearning() {
           close={close}
         >
           <form className="ls-form" onSubmit={save}>
-            <fieldset disabled={busy}>
+            <fieldset disabled={busy||uploading}>
               {Object.hasOwn(draft, "title") && (
                 <label>
                   标题
@@ -384,9 +412,12 @@ export function AdminLearning() {
                   </label>
                   <p>
                     视频、PPT
-                    原件、字幕与页面图片请先上传到管理平台“附件库”。在线课件使用逐页图片，保留原
+                    原件、字幕与页面图片可以在下方直接上传替换，或选择附件库已有文件。在线课件使用逐页图片，保留原
                     PPT/PDF 下载。
                   </p>
+                  <label className="cms-checkbox"><input type="checkbox" checked={Boolean(draft.config.isDemoMedia)} onChange={e=>config('isDemoMedia',e.target.checked)}/>视频 / PPT 当前为演示占位素材</label>
+                  <p>替换真实视频、PPT 原件及预览页后，请取消演示标记。演示素材不作为课件 AI 依据，也不允许标记正式课时完成。每节课独立保存，不影响其他课时。</p>
+                  {notice&&<p role="status">{notice}</p>}
                   {assetSelect("主视频", "videoAssetId", (a) =>
                     a.mime_type.startsWith("video/"),
                   )}
@@ -429,7 +460,7 @@ export function AdminLearning() {
                       }}
                     />
                   </label>
-                  {assetSelect("PPT / PDF 原件", "pptAssetId", () => true)}
+                  {assetSelect("PPT / PDF 原件", "pptAssetId", a => /\.(pptx|pdf)$/i.test(a.original_name))}
                   <p className="ls-muted">AI 笔记与问 AI 仅依据当前课时文字资料。上传视频、PPT/PDF 原件或图片不会自动提取内容；请在下方逐页补充课件文字，或在课时位置关联已发布的文字稿/图文资料。</p>
                   {assetSelect("VTT 字幕", "subtitleAssetId", (a) =>
                     a.original_name.endsWith(".vtt"),
@@ -467,6 +498,7 @@ export function AdminLearning() {
                                 </option>
                               ))}
                           </select>
+                          <input type="file" aria-label={`上传并替换第 ${i + 1} 页图片`} accept="image/png,image/jpeg,image/webp" onChange={e=>{uploadAsset(e.target.files[0],null,i);e.target.value='';}}/>
                           <textarea
                             aria-label={`第 ${i + 1} 页文字`}
                             placeholder="页面文字，用于笔记和 AI 上下文"

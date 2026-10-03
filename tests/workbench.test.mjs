@@ -1,6 +1,24 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { calendarMonth, learningEntries, recentStudyItems, currentProject, phaseState, watchPercent } from "../src/workbench-model.js";
+import { calendarMonth, learningEntries, recentStudyItems, currentProject, currentProductAchievement, phaseState, watchPercent } from "../src/workbench-model.js";
+
+test('personal product selects the latest non-archived product without mutating account data',()=>{
+  const items=[
+    {id:'old',type:'product',stage:'idea',updatedAt:'2026-09-01'},
+    {id:'new',type:'product',stage:'building',updatedAt:'2026-10-01'},
+    {id:'note',type:'document',updatedAt:'2026-10-02'},
+    {id:'archived',type:'product',updatedAt:'2026-10-03',deletedAt:'2026-10-04'}
+  ];
+  const before=JSON.stringify(items);
+  assert.equal(currentProductAchievement(items),items[1]);
+  assert.equal(JSON.stringify(items),before);
+  assert.equal(currentProductAchievement(items).progress,undefined);
+});
+test('empty personal products never turn course progress or sample projects into shipped products',()=>{
+  assert.equal(currentProductAchievement(),null);
+  assert.equal(currentProductAchievement([{type:'code'},{title:'catalogue',progress:{percent:100}}]),null);
+  assert.equal(currentProductAchievement([{type:'product',deletedAt:'2026-10-01'}]),null);
+});
 
 test("calendar is Monday-first and does not add synthetic dates", () => {
   const september = calendarMonth(2026, 8);

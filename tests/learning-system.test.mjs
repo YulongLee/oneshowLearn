@@ -79,8 +79,8 @@ test('shared lessons, project stages, private notes and common commerce',async t
   });
   await t.test('progress saves independently, validates tasks and rejects stale tabs',async()=>{
     const body={video_time:12,slide_id:'slide1',follow_video:false,tasks:[],complete:true};
-    assert.equal((await req(`/learning/placements/${coursePlacement}/progress`,learner,'PUT',body,0)).status,409);
-    const saved=await req(`/learning/placements/${coursePlacement}/progress`,learner,'PUT',{...body,tasks:['task1']},0);assert.equal(saved.status,200);assert.equal(saved.body.progress.video_time,12);
+    const saved=await req(`/learning/placements/${coursePlacement}/progress`,learner,'PUT',body,0);assert.equal(saved.status,200);assert.equal(saved.body.progress.video_time,12);
+    assert.deepEqual(saved.body.progress.tasks,[]);
     assert.equal((await req(`/learning/placements/${coursePlacement}/progress`,learner,'PUT',body,0)).status,409);
     const lesson=await req(`/learning/placements/${coursePlacement}`,learner);assert.equal(lesson.body.progress.follow_video,0);assert.ok(lesson.body.progress.completed_at);
     run('INSERT INTO opc_stage_steps(step_id,phase) VALUES(?,1)',[chapter]);
@@ -146,6 +146,7 @@ test('shared lessons, project stages, private notes and common commerce',async t
     assert.equal((await req(`/learning/placements/${projectPlacement}`,other)).body.progress.completed_at,null);
     assert.equal((await req(`/learning/projects/test-project/stages/${stage1}/accept`,other,'POST',{checked:['accept']},1)).status,409);
     const body={video_time:14,slide_id:'slide1',follow_video:true,tasks:['task1'],complete:true};
+    assert.equal((await req(`/learning/placements/${projectPlacement}/progress`,other,'PUT',{...body,tasks:[]},0)).status,409);
     assert.equal((await req(`/learning/placements/${projectPlacement}/progress`,other,'PUT',body,0)).status,200);
     assert.equal((await req(`/learning/projects/test-project/stages/${stage1}/accept`,other,'POST',{checked:['accept']},1)).status,200);
     assert.equal((await req(`/learning/placements/${secondPlacement}`,other)).status,200);

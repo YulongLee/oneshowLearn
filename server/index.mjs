@@ -3,12 +3,12 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import cors from "cors";
 import express from "express";
-import multer from "multer";
 import { z } from "zod";
 import { config } from "./config.mjs";
 import { db, row, rows, run } from "./db.mjs";
 import { optionalAuth, requireAdmin, requireAuth } from "./auth.mjs";
 import { accountRouter, accountAdminRouter } from "./account-routes.mjs";
+import { externalLoginRouter, loginAdminRouter } from './login-routes.mjs';
 import { AccountError } from "./account-security.mjs";
 import { workspaceRouter } from "./workspace-routes.mjs";
 import { projectRouter } from "./project-routes.mjs";
@@ -21,16 +21,16 @@ import {communityRouter} from './community-routes.mjs';
 import {learningRouter} from './learning-routes.mjs';
 import {aiAdminRouter} from './ai-admin-routes.mjs';
 import {publishedProduct,markOrderPaid} from './learning-commerce.mjs';
+import {paymentRouter,paymentNotificationRouter} from './payment-routes.mjs';
+import {startPaymentReconciliation} from './payment-lifecycle.mjs';
+import {serviceRouter} from './service-routes.mjs';
 
 mkdirSync(config.uploadDir, { recursive: true });
 
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: config.uploadDir,
-    filename: (_req, file, done) => done(null, `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, "-")}`),
-  }),
-  limits: { fileSize: 50 * 1024 * 1024 },
-});
+// Historical public files remain recoverable. Never serve active web content
+// from this same-origin directory; all new uploads use the private adapter.
+const legacyMedia = new Set(['.mp4','.webm','.mp3','.png','.jpg','.jpeg','.webp','.vtt']);
+const legacyDownloads = new Set(['.pdf','.txt','.md','.csv','.json','.zip','.pptx','.docx','.xlsx']);
 
 const packSchema = z.object({
   pathId: z.coerce.number().int().positive(), slug: z.string().min(2), title: z.string().min(2),
@@ -64,19 +64,31 @@ function packDetails(pack, user) {
   return { ...pack, entitled: Boolean(entitled), steps };
 }
 
-export function createApp() {
+export function createApp({loginProviders,assetStorage} = {}) {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", "loopback");
   app.use(cors({ origin: config.appOrigin }));
+  app.use(paymentNotificationRouter());
   app.use(express.json({ limit: "2mb" }));
-  app.use("/uploads", express.static(config.uploadDir));
+  app.use('/uploads', (req,res,next)=>{
+    let filename;try{filename=decodeURIComponent(req.path);}catch{return res.status(400).end();}
+    const extension=path.extname(filename).toLowerCase();
+    res.set({'X-Content-Type-Options':'nosniff','Content-Security-Policy':"sandbox; default-src 'none'",'Referrer-Policy':'no-referrer'});
+    if(!legacyMedia.has(extension)&&!legacyDownloads.has(extension))return res.status(404).end();
+    if(legacyDownloads.has(extension))res.attachment(path.basename(filename));
+    next();
+  },express.static(config.uploadDir,{index:false,dotfiles:'deny'}));
 
   app.get("/api/health", (_req, res) => res.json({ ok: true, service: "oneshowlearn-api" }));
   app.use("/api/auth", accountRouter());
-  app.use('/api',materialsRouter());
+  app.use('/api/auth', externalLoginRouter(loginProviders));
+  app.use('/api/admin/login-settings', loginAdminRouter());
+  app.use('/api',materialsRouter(assetStorage));
   app.use('/api',learningRouter());
   app.use('/api',aiAdminRouter());
+  app.use('/api',paymentRouter());
+  app.use('/api',serviceRouter());
   app.use('/api',platformContentRouter());
   app.use('/api',communityRouter());
   app.use('/api/admin/cms',cmsRouter());
@@ -156,8 +168,7 @@ export function createApp() {
   app.post("/api/admin/content", validated(contentSchema,(req,res)=>{const d=req.validated;const result=run(`INSERT INTO content_items (step_id,type,title,body,resource_url,duration_seconds,is_preview,status,sort_order) VALUES (?,?,?,?,?,?,?,?,?)`,[d.stepId,d.type,d.title,d.body,d.resourceUrl,d.durationSeconds,d.isPreview?1:0,d.status,d.sortOrder]);res.status(201).json({id:Number(result.lastInsertRowid)});}));
   app.put("/api/admin/content/:id", validated(contentSchema,(req,res)=>{if(row('SELECT library_id FROM content_items WHERE id=?',[Number(req.params.id)])?.library_id)return res.status(409).json({error:'这份资料由统一资料库维护，请通过新版课程资料编辑引用设置，或前往统一资料库编辑正文。'});const d=req.validated;run(`UPDATE content_items SET step_id=?,type=?,title=?,body=?,resource_url=?,duration_seconds=?,is_preview=?,status=?,sort_order=?,updated_at=CURRENT_TIMESTAMP WHERE id=?`,[d.stepId,d.type,d.title,d.body,d.resourceUrl,d.durationSeconds,d.isPreview?1:0,d.status,d.sortOrder,Number(req.params.id)]);res.json({ok:true});}));
   app.delete("/api/admin/content/:id", (req,res)=>{run("DELETE FROM content_items WHERE id=?",[Number(req.params.id)]);res.status(204).end();});
-  app.post("/api/admin/assets", upload.single("file"), (req,res)=>{if(!req.file)return res.status(400).json({error:"请选择文件"});const url=`/uploads/${req.file.filename}`;const result=run("INSERT INTO assets (filename,original_name,mime_type,size_bytes,url,uploaded_by) VALUES (?,?,?,?,?,?)",[req.file.filename,req.file.originalname,req.file.mimetype,req.file.size,url,req.user.id]);res.status(201).json({id:Number(result.lastInsertRowid),url});});
-  app.get("/api/admin/orders", (_req,res)=>res.json({items:rows(`SELECT o.*,u.email,u.name,GROUP_CONCAT(oi.title,'、') item_titles FROM orders o JOIN users u ON u.id=o.user_id LEFT JOIN order_items oi ON oi.order_id=o.id GROUP BY o.id ORDER BY o.created_at DESC`)}));
+  app.get("/api/admin/orders", (_req,res)=>res.json({items:rows(`SELECT o.*,u.email,u.name,pc.provider online_provider,GROUP_CONCAT(oi.title,'、') item_titles FROM orders o JOIN users u ON u.id=o.user_id LEFT JOIN order_items oi ON oi.order_id=o.id LEFT JOIN payment_checkouts pc ON pc.order_id=o.id GROUP BY o.id ORDER BY o.created_at DESC`)}));
   app.post("/api/admin/orders/:id/mark-paid", markOrderPaid);
 
   app.use((error, _req, res, _next) => {
@@ -166,6 +177,7 @@ export function createApp() {
       return res.status(error.status).json({ error: error.message, cooldownSeconds: error.retryAfter || undefined });
     }
     if (error.type === "entity.parse.failed") return res.status(400).json({ error: "请求格式不正确" });
+    if (error.isPaymentError) return res.status(error.status).json({error:error.message});
     if (error.type === "entity.too.large") return res.status(413).json({ error: "提交内容过大，请精简后重试" });
     console.error("API request failed", error.name, error.code || "UNKNOWN");
     res.status(500).json({ error: "服务暂时不可用" });
@@ -175,4 +187,5 @@ export function createApp() {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   createApp().listen(config.port, "127.0.0.1", () => console.log(`OneShowLearn API running on http://127.0.0.1:${config.port}`));
+  startPaymentReconciliation();
 }

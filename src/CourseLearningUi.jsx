@@ -78,10 +78,13 @@ export function CourseDirectory({
   context,
   files = [],
   related = [],
+  variant = "default",
 }) {
   const isProject = lessons[0]?.kind === "project";
+  const Footer = variant === 'rail' ? 'details' : 'div';
   const [tab, setTab] = useState("chapters"),
     [closed, setClosed] = useState({});
+  const [expandedGroups, setExpandedGroups] = useState({});
   const progressLessons = context?.progressLessons || lessons;
   const completed = progressLessons.filter(
     (l) => l.progress?.completed_at,
@@ -98,14 +101,19 @@ export function CourseDirectory({
       }, []);
   useEffect(() => {
     const current = lessons.find((l) => l.id === currentId);
-    if (current)
+    if (current) {
       setClosed((v) => ({
         ...v,
         [current.chapter_id || current.stage_id]: false,
       }));
+      const groupId = current.chapter_id || current.stage_id;
+      if (lessons.filter(l => (l.chapter_id || l.stage_id) === groupId).findIndex(l => l.id === currentId) >= 5)
+        setExpandedGroups(v => ({ ...v, [groupId]: true }));
+    }
   }, [currentId]);
   return (
-    <aside className="cl-directory" aria-label="课程学习目录">
+    <aside className={`cl-directory ${variant === "rail" ? "cs-directory" : ""}`} aria-label="课程学习目录">
+      {variant === "rail" && <div className="cs-directory-progress"><div><h2>课程进度</h2><span>{completed} / {progressLessons.length} 节 <b>{percent}%</b></span></div><progress value={percent} max="100" aria-label="课程完成进度" /></div>}
       {isProject && (
         <button
           className="cl-return"
@@ -122,7 +130,7 @@ export function CourseDirectory({
           返回项目详情
         </button>
       )}
-      <div className="cl-course-info">
+      {variant !== "rail" && <div className="cl-course-info">
         {(safeResourceUrl(course?.cover_url) || isProject) && (
           <span className="cl-course-cover">
             {safeResourceUrl(course?.cover_url) ? (
@@ -147,7 +155,7 @@ export function CourseDirectory({
               : "真实课时发布后显示目录"}
           </small>
         </div>
-      </div>
+      </div>}
       {context?.courses?.length > 1 && (
         <label className="cl-course-picker">
           切换课程
@@ -167,7 +175,7 @@ export function CourseDirectory({
           </select>
         </label>
       )}
-      <div className="cl-directory-tabs" role="group" aria-label="课程侧栏内容">
+      {variant !== 'rail' && <div className="cl-directory-tabs" role="group" aria-label="课程侧栏内容">
         <button
           aria-pressed={tab === "chapters"}
           onClick={() => setTab("chapters")}
@@ -177,7 +185,7 @@ export function CourseDirectory({
         <button aria-pressed={tab === "files"} onClick={() => setTab("files")}>
           课程资料
         </button>
-      </div>
+      </div>}
       {tab === "chapters" ? (
         <div className="cl-chapters">
           {groups.map((g) => {
@@ -194,7 +202,7 @@ export function CourseDirectory({
                 <button
                   className="cl-chapter-toggle"
                   aria-expanded={open}
-                  onClick={() => setClosed((v) => ({ ...v, [g.id]: !open }))}
+                  onClick={() => setClosed((v) => ({ ...v, [g.id]: open }))}
                 >
                   <strong>{g.title}</strong>
                   <small>
@@ -205,7 +213,7 @@ export function CourseDirectory({
                 </button>
                 {open && (
                   <div>
-                    {items.map((l) => (
+                    {(variant === 'rail' && !expandedGroups[g.id] ? items.slice(0,5) : items).map((l) => (
                       <button
                         className="cl-lesson"
                         key={l.id}
@@ -229,15 +237,16 @@ export function CourseDirectory({
                             />
                           )}
                         </span>
-                        <span>
+                        <span title={l.title}>
                           {l.title}
                           {l.is_preview && <small>免费试看</small>}
                         </span>
-                        {l.duration_seconds > 0 && (
+                        {l.is_demo_media ? <small>演示</small> : l.duration_seconds > 0 && (
                           <time>{duration(l.duration_seconds)}</time>
                         )}
                       </button>
                     ))}
+                    {variant === 'rail' && items.length > 5 && <button className="cs-show-more" onClick={()=>setExpandedGroups(v=>({...v,[g.id]:!v[g.id]}))}>{expandedGroups[g.id] ? '收起部分课时' : `展开更多（${items.length-5} 节）`} <CaretDown size={13}/></button>}
                     {!items.length && (
                       <p className="cl-directory-hint">本章课时待发布</p>
                     )}
@@ -298,8 +307,9 @@ export function CourseDirectory({
           )}
         </div>
       )}
-      {(isProject || tab === "files") && (
-        <div className="cl-directory-footer">
+      {(isProject || tab === "files" || variant === 'rail') && (
+        <Footer className="cl-directory-footer">
+          {variant === 'rail' && <summary>更多课程选项</summary>}
           {context?.onRoadmap && (
             <button onClick={context.onRoadmap}>
               <Stack size={18} />
@@ -325,7 +335,7 @@ export function CourseDirectory({
               管理课程内容 <ArrowRight size={16} />
             </button>
           )}
-        </div>
+        </Footer>
       )}
     </aside>
   );

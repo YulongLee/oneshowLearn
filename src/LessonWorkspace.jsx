@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowsOut, Robot } from "@phosphor-icons/react";
+import { ArrowsOut, Robot, FileText, DownloadSimple, PlayCircle, Notebook, Sparkle, Flask } from "@phosphor-icons/react";
 import { api } from "./api.js";
 import { Markdown } from "./PersonalShared.jsx";
 import { safeResourceUrl } from "./opc-model.js";
@@ -15,7 +15,7 @@ import { LearningVideoPlayer } from "./LearningVideoPlayer.jsx";
 import './study-refinements.css';
 import './ai-live.css';
 import { useAiCapabilities } from './useAiCapabilities.js';
-import { StudyColumns } from './StudyColumns.jsx';
+import { CourseStudyFrame } from './CourseStudyFrame.jsx';
 
 export const lessonLink = (p) =>
   p.kind === "project"
@@ -144,7 +144,7 @@ function useLessonProgress(lesson, enabled, onChange, video) {
   return { value, change, save, state, blocked: blocked.current };
 }
 
-function LessonNotes({ lesson, video, slide, time, onJump, user }) {
+function LessonNotes({ lesson, video, slide, time, onJump, user, notesOnly = false, revision = 0 }) {
   const [items, setItems] = useState([]),
     [draft, setDraft] = useState(null),
     [nextNotes, setNextNotes] = useState(null),
@@ -181,7 +181,7 @@ function LessonNotes({ lesson, video, slide, time, onJump, user }) {
     return () => {
       alive.current = false;
     };
-  }, [lesson.id, user?.id]);
+  }, [lesson.id, user?.id, revision]);
   live.current = { draft, text, title };
   const body = () => ({
     placement_id: lesson.id,
@@ -334,7 +334,7 @@ function LessonNotes({ lesson, video, slide, time, onJump, user }) {
           ["notes", "我的笔记"],
           ["summary", "AI 笔记"],
           ["ask", "问 AI"],
-        ].map(([key, label]) => (
+        ].filter(([key]) => !notesOnly || key === "notes").map(([key, label]) => (
           <button
             key={key}
             onClick={() => setTab(key)}
@@ -463,7 +463,7 @@ function LessonNotes({ lesson, video, slide, time, onJump, user }) {
           ))}
         </>
       )}
-      {tab === "notes" && (
+      {!notesOnly && tab === "notes" && (
         <div className="ls-ai-note-entry">
           <Robot size={22} />
           <div><strong>AI 整理笔记</strong><small>基于当前课时 · 服务可用性以配置为准</small></div>
@@ -474,7 +474,7 @@ function LessonNotes({ lesson, video, slide, time, onJump, user }) {
   );
 }
 
-export function CourseAiPanel({ lesson, mode, user, onNote, slideId=null }) {
+export function CourseAiPanel({ lesson, mode, user, onNote, slideId=null, compact=false }) {
   const cap = useAiCapabilities(user?.id);
   const [question, setQuestion] = useState(""),
     [response, setResponse] = useState(""),
@@ -517,11 +517,13 @@ export function CourseAiPanel({ lesson, mode, user, onNote, slideId=null }) {
     } catch (e) { setError(e.message); } finally { saving.current = false; setSaveBusy(false); }
   };
   return (
-    <section className="ls-ai">
-      <h3>{mode === "summary" ? "学习整理助手" : "针对当前课时提问"}</h3>
+    <section className={`ls-ai ${compact ? 'cs-assistant' : ''}`}>
+      {compact ? <header><span className="cs-assistant-icon"><Robot size={26}/></span><h2>学习助手</h2><small>{cap?.available ? 'AI 已连接' : 'AI 服务'} </small></header> : <h3>{mode === "summary" ? "学习整理助手" : "针对当前课时提问"}</h3>}
+      {compact && <div className="cs-quick-actions"><p>围绕这节课，帮你把知识学透。</p>{[['summary','总结本节内容'],['notes','整理学习笔记'],['keypoints','提取核心知识点'],['flashcards','生成复习卡片']].map(([action,label])=><button key={action} disabled={!user || !cap?.available || cap.features?.[action]===false || busy || saveBusy} onClick={()=>ask(action)}><Sparkle size={17}/>{label}</button>)}</div>}
+      {compact && <details className="cs-ai-disclosure"><summary>更多整理与使用说明</summary><button disabled={!user || !cap?.available || cap.features?.mindmap===false || busy || saveBusy} onClick={()=>ask('mindmap')}>生成思维导图</button><p>基于本节可读取的课件文字、资料和你的私人笔记回答；不会直接观看视频或读取图片。点击后相关文字将发送至阿里云百炼，请勿包含敏感信息。</p></details>}
       <p className="ls-muted">
         {!user ? '登录后可使用 AI 答疑与整理。' : cap?.available
-          ? "仅依据当前课时的课件文字、已发布资料及自己的笔记回答，并标明课程来源。资料不足会明确告知；不会观看视频或自动识别图片、PPT/PDF 原件。点击后相关文字将发送至阿里云百炼，请勿包含敏感信息。"
+          ? compact ? "" : "仅依据当前课时的课件文字、已发布资料及自己的笔记回答，并标明课程来源。资料不足会明确告知；不会观看视频或自动识别图片、PPT/PDF 原件。点击后相关文字将发送至阿里云百炼，请勿包含敏感信息。"
           : cap?.reason || "正在检查 AI 服务…"}
       </p>
       {mode === "ask" ? (
@@ -531,7 +533,7 @@ export function CourseAiPanel({ lesson, mode, user, onNote, slideId=null }) {
             maxLength={4000}
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            placeholder="这一页讲了什么？"
+            placeholder={compact ? "问一个关于本节课的问题…" : "这一页讲了什么？"}
           />
           <button
             className="ls-btn"
@@ -619,6 +621,7 @@ function LessonSurface({
   courseContext,
 }) {
   const isCourse = lesson.kind === "course";
+  const Layout = CourseStudyFrame;
   useLearningFocus(false);
   const video = useRef(null),
     slideRef = useRef(null),
@@ -628,6 +631,8 @@ function LessonSurface({
     ),
     [message, setMessage] = useState("");
   const [materialFilter,setMaterialFilter]=useState(lesson.progress.current_prompt_id?'prompt':'all');
+  const [contentTab, setContentTab] = useState('courseware');
+  const [notesRevision, setNotesRevision] = useState(0);
   const progress = useLessonProgress(lesson, Boolean(model.user), onProgress, video),
     p = progress.value;
   const [media, setMedia] = useState(lesson.config);
@@ -684,7 +689,7 @@ function LessonSurface({
     const previous = p.completed_at;
     progress.change({ completed_at: new Date().toISOString() });
     if (await progress.save()) {
-      setMessage("本节学习已完成，实践完成不等于产品已上线。");
+      setMessage(isCourse ? "本节学习已完成。" : "本节学习已完成，实践完成不等于产品已上线。");
       const next = lessons[index + 1];
       if (
         next &&
@@ -693,16 +698,24 @@ function LessonSurface({
         navigate(lessonLink(next));
     } else progress.change({ completed_at: previous });
   };
-  const materialTabs = { file: "资料", tasks: "实践" };
+  const materialTabs = { file: "资料" };
+  const chapterLessons = lessons.filter(l => isCourse ? l.chapter_id === lesson.chapter_id : l.stage_id === lesson.stage_id);
+  const chapterDone = chapterLessons.filter(l => l.progress?.completed_at).length;
+  const groupIds = isCourse && courseContext?.chapters?.length
+    ? courseContext.chapters.map(c => c.id)
+    : [...new Set(lessons.map(l => isCourse ? l.chapter_id : l.stage_id))];
+  const chapterNumber = Math.max(1, groupIds.indexOf(isCourse ? lesson.chapter_id : lesson.stage_id) + 1);
+  const lessonPercent = p.completed_at ? 100 : p.video_duration > 0 ? Math.min(100, Math.round(p.video_time / p.video_duration * 100)) : 0;
   return (
     <section
-      className={`ls-page cl-study-page cl-course-page ${isCourse ? "" : "cl-project-page"}`}
+      className={`ls-page cl-study-page cl-course-page cs-course-page ${isCourse ? "" : "cl-project-page cs-project-page"}`}
     >
-      <StudyColumns
+      <Layout
         className="ls-layout cl-course-layout"
       >
         <DirectorySlot inline>
           <CourseDirectory
+            variant="rail"
             course={
               courseContext?.course || {
                 title: lesson.owner_title,
@@ -739,13 +752,16 @@ function LessonSurface({
           />
         </DirectorySlot>
         <main className="ls-reading">
+          <nav className="cs-breadcrumb" aria-label="学习位置"><span>{isCourse ? '学习课程' : '实战项目'}</span><span>›</span><span>{lesson.owner_title}</span><span>›</span><span>{lesson.chapter}</span></nav>
           <header className="ls-heading cl-lesson-heading">
+            <span className="cs-chapter-number" aria-hidden="true">{String(chapterNumber).padStart(2,'0')}</span>
             <div>
-              <p>
-                {lesson.owner_title}　›　{lesson.chapter}
+              <p className="cs-chapter-label">
+                {lesson.chapter}
               </p>
               <h1>{lesson.title}</h1>
-              <p>{lesson.subtitle}</p>
+              {(!isCourse || !config.isDemoMedia) && <p>{lesson.subtitle}</p>}
+              {config.isDemoMedia && <p className="ls-demo-notice" role="note">演示素材 · 视频与 PPT 为占位内容，本节知识点请查看“资料”。</p>}
             </div>
             <div className="ls-actions">
               <button
@@ -762,6 +778,7 @@ function LessonSurface({
               </button>
             </div>
           </header>
+          <div className="cs-lesson-meta"><span><PlayCircle size={20}/> {config.isDemoMedia ? '演示视频' : config.video ? '视频课程' : '图文课程'}</span>{!config.isDemoMedia && lesson.duration_seconds > 0 && <span>{Math.ceil(lesson.duration_seconds/60)} 分钟</span>}<span className="cs-chapter-count">{isCourse ? '本章' : '本阶段'}已完成 {chapterDone} / {chapterLessons.length} 节</span><label>本节播放进度 <b>{lessonPercent}%</b><progress value={lessonPercent} max="100"/></label></div>
           {config.video ? (
             <LearningVideoPlayer videoRef={video} source={config.video.url} subtitle={config.subtitle?.url} title={lesson.title} resumeTime={p.video_time}
               onTimeUpdate={updateTime} onDuration={duration => progress.change({video_duration: duration})}
@@ -772,13 +789,14 @@ function LessonSurface({
               <p>可阅读下方课件与资料。</p>
             </div>
           )}
-          <section className="ls-panel ls-courseware-panel">
-            <div className="ls-tabs">
+          <div className="cs-content-tabs" role="group" aria-label={isCourse ? '课件与笔记' : '课件、笔记与实验'}><button aria-pressed={contentTab==='courseware'} onClick={()=>{setContentTab('courseware'); if (['tasks','operations'].includes(tab)) setTab('slides');}}><FileText size={19}/>课件</button><button aria-pressed={contentTab==='notes'} onClick={()=>setContentTab('notes')}><Notebook size={19}/>笔记</button>{!isCourse && <button aria-pressed={contentTab==='experiment'} onClick={()=>{setContentTab('experiment');setTab('tasks');}}><Flask size={19}/>实验</button>}<small>{model.user ? '你的学习记录自动保存' : '登录后保存学习记录'}</small></div>
+          <section className="ls-panel ls-courseware-panel" hidden={contentTab === 'notes'}>
+            <div className="ls-tabs" hidden={contentTab === 'experiment'}>
               <button
                 aria-pressed={tab === "slides"}
                 onClick={() => setTab("slides")}
               >
-                课件
+                本节课件
               </button>
               {Object.entries(materialTabs).map(([key, label]) => (
                 <button
@@ -790,12 +808,19 @@ function LessonSurface({
                 </button>
               ))}
             </div>
-            {["tasks", "operations"].includes(tab) && <div className="ls-study-subtabs" role="group" aria-label="实践内容">
-              <button aria-pressed={tab === "tasks"} onClick={() => setTab("tasks")}>实践清单</button>
+            {!isCourse && ["tasks", "operations"].includes(tab) && <div className="ls-study-subtabs" role="group" aria-label="实验内容">
+              <button aria-pressed={tab === "tasks"} onClick={() => setTab("tasks")}>实验清单</button>
               <button aria-pressed={tab === "operations"} onClick={() => setTab("operations")}>操作步骤与成果</button>
             </div>}
             {tab === "slides" ? (
               <>
+                <div className="cs-resource-list">
+                  {config.ppt && <a href={config.ppt.url} target="_blank" rel="noreferrer"><span className="cs-resource-icon"><FileText size={24}/></span><span><strong>{config.ppt.original_name}</strong><small>{config.isDemoMedia ? '演示课件 · ' : ''}{Math.ceil(config.ppt.size_bytes / 1024)} KB</small></span><b><DownloadSimple size={16}/>下载</b></a>}
+                  {lesson.materials.map(m => <button key={m.library_id} onClick={()=>{setTab('file');setMaterialFilter('all');}}><span className="cs-resource-icon is-material"><FileText size={24}/></span><span><strong>{m.title}</strong><small>{m.role==='prompt' ? 'Codex 提示词' : m.asset ? `${Math.ceil(m.asset.size_bytes/1024)} KB` : '课程配套资料'}</small></span><b>查看 →</b></button>)}
+                  {!config.ppt && !lesson.materials.length && <p className="ls-muted">本节下载资料待补充。</p>}
+                </div>
+                <details className="cs-slide-preview">
+                <summary>{`在线预览课件 · ${config.slides.length} 页`}</summary>
                 <div className="ls-actions">
                   <button
                     onClick={() =>
@@ -886,21 +911,11 @@ function LessonSurface({
                 ) : (
                   <p className="ls-muted">本节暂无逐页课件。</p>
                 )}
-                {config.ppt && (
-                  <a
-                    className="ls-btn"
-                    href={config.ppt.url}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    下载 {config.ppt.original_name}（
-                    {Math.ceil(config.ppt.size_bytes / 1024)} KB）
-                  </a>
-                )}
+                </details>
               </>
-            ) : tab === "tasks" ? (
+            ) : !isCourse && tab === "tasks" ? (
               <>
-                <h3>完成本节实践</h3>
+                <h3>本节实验</h3>
                 {config.tasks.map((task) => (
                   <label className="ls-task" key={task.id}>
                     <input
@@ -924,20 +939,20 @@ function LessonSurface({
                     </span>
                   </label>
                 ))}
-                {!config.tasks.length && <p>本节没有配置实践清单。</p>}
+                {!config.tasks.length && <p>本节没有配置实验清单。</p>}
                 <div className="ls-actions">
                   <button
                     onClick={() => progress.save()}
                     disabled={!model.user}
                   >
-                    保存实践进度
+                    保存实验进度
                   </button>
                   <button onClick={() => navigate("/projects")}>
                     前往实战项目 →
                   </button>
                 </div>
               </>
-            ) : tab === "operations" ? (
+            ) : !isCourse && tab === "operations" ? (
               <>
                 {config.expectedResult && (
                   <section className="ls-material">
@@ -1029,7 +1044,8 @@ function LessonSurface({
               </>
             )}
           </section>
-          {!isCourse && lesson.relatedLessons?.length > 0 && (
+          <div className="cs-private-notes" hidden={contentTab!=='notes'}><LessonNotes lesson={lesson} video={video} slide={slide} time={time} onJump={jump} user={model.user} notesOnly revision={notesRevision}/></div>
+          {(contentTab === 'courseware' && tab === 'file') && lesson.relatedLessons?.length > 0 && (
             <section className="ls-panel">
               <h3>关联课程与实战</h3>
               {lesson.relatedLessons.map((l) => (
@@ -1049,29 +1065,21 @@ function LessonSurface({
               className="ls-primary"
               disabled={
                 !model.user ||
+                config.isDemoMedia ||
                 Boolean(p.completed_at) ||
-                config.tasks.some((t) => t.required && !p.tasks.includes(t.id))
+                (!isCourse && config.tasks.some((t) => t.required && !p.tasks.includes(t.id)))
               }
               onClick={complete}
             >
-              {p.completed_at ? "本节已完成" : "完成本节 →"}
+              {config.isDemoMedia ? "正式内容待补充" : p.completed_at ? "本节已完成" : "完成本节 →"}
             </button>
             <small role="status">{progress.blocked ? progress.state : message || progress.state}</small>
             {progress.blocked && <button onClick={() => window.location.reload()}>刷新以读取最新进度</button>}
           </div>
-          {footer}
+          {footer && <div hidden={!isCourse && contentTab !== 'experiment'}>{footer}</div>}
         </main>
-        <ResponsiveNotes>
-          <LessonNotes
-            lesson={lesson}
-            video={video}
-            slide={slide}
-            time={time}
-            onJump={jump}
-            user={model.user}
-          />
-        </ResponsiveNotes>
-      </StudyColumns>
+        <div className="ls-panel cs-assistant-panel"><CourseAiPanel lesson={lesson} mode="ask" user={model.user} slideId={slide?.id || null} compact onNote={()=>setNotesRevision(v=>v+1)}/></div>
+      </Layout>
     </section>
   );
 }

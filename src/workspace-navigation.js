@@ -7,7 +7,7 @@ export function activeWorkspaceNav(value) {
   if (route === '/projects' || route.startsWith('/projects/')) return '/projects';
   if (route === '/tools') return '/tutor';
   if (route === '/certificates') return '/achievements';
-  return ['/app','/tutor','/resources','/community','/notes','/favorites','/achievements'].includes(route) ? route : null;
+  return ['/app','/tutor','/resources','/community','/notes','/favorites','/achievements','/account'].includes(route) ? route : null;
 }
 export const workspaceSearchPrompts = {
   '/resources': '搜索资源（例如：PRD 模板、Codex 指令、支付接入…）',

@@ -22,7 +22,7 @@ export function tutorDocuments(user, courseId = null) {
     if (courseId && (p.kind !== 'course' || p.owner_id !== courseId)) continue;
     const base = {placementId: p.id, lessonTitle: p.title, ownerTitle: p.owner_title,
       href: p.kind === 'course' ? `/learn/${encodeURIComponent(p.owner_slug)}/lessons/${p.id}` : `/projects/${encodeURIComponent(p.owner_slug)}/workspace/${p.id}`};
-    p.config.slides.forEach((s, i) => add({...base, key: `p${p.id}:s${s.id}`, label: `${p.owner_title} · ${p.title} · 课件第 ${i+1} 页`, page: i+1, slideId: s.id, text: s.text}));
+    if(!p.config.isDemoMedia)p.config.slides.forEach((s, i) => add({...base, key: `p${p.id}:s${s.id}`, label: `${p.owner_title} · ${p.title} · 课件第 ${i+1} 页`, page: i+1, slideId: s.id, text: s.text}));
     const materials = rows(`SELECT m.library_id id,m.role,l.title,l.body,r.title revision_title,r.body revision_body,r.version
       FROM lesson_materials m JOIN content_library l ON l.id=m.library_id AND l.status='published'
       LEFT JOIN lesson_prompt_versions v ON v.placement_id=m.placement_id AND v.library_id=m.library_id

@@ -10,9 +10,13 @@
     "start:api": "node server/index.mjs",
     "seed": "node server/seed.mjs",
     "build": "vite build && node scripts/prepare-sites-build.mjs",
-    "test:api": "node --test tests/api.test.mjs tests/accounts.test.mjs tests/production-seed.test.mjs tests/workspace.test.mjs tests/opc.test.mjs tests/projects.test.mjs tests/resources.test.mjs tests/personal.test.mjs tests/cms.test.mjs tests/platform-content.test.mjs tests/learning-system.test.mjs tests/demo-import.test.mjs tests/ai-admin.test.mjs tests/tutor-conversations.test.mjs tests/community.test.mjs",
-    "test": "npm run test:platforms && npm run test:api && npm run test:sites",
-    "test:platforms": "node --test tests/platforms.test.mjs tests/dashboard.test.mjs tests/workbench.test.mjs tests/learning-routes.test.mjs tests/tutor.test.mjs tests/workspace-navigation.test.mjs tests/commercial-layout.test.mjs tests/ai-provider.test.mjs tests/study-columns.test.mjs tests/navigation-save.test.mjs",
+    "test:api": "node --test tests/api.test.mjs tests/accounts.test.mjs tests/production-seed.test.mjs tests/workspace.test.mjs tests/opc.test.mjs tests/projects.test.mjs tests/resources.test.mjs tests/personal.test.mjs tests/cms.test.mjs tests/platform-content.test.mjs tests/learning-system.test.mjs tests/demo-import.test.mjs tests/ai-admin.test.mjs tests/tutor-conversations.test.mjs tests/community.test.mjs tests/payments.test.mjs tests/account-profile.test.mjs tests/external-login.test.mjs",
+    "test": "npm run test:platforms && npm run test:api && npm run test:storage && npm run test:payment-diagnostics && npm run test:payment-page && npm run test:commercial && npm run test:sites",
+    "test:commercial": "node --test tests/service-center.test.mjs tests/legacy-upload-security.test.mjs tests/opc-curriculum-import.test.mjs",
+    "test:payment-page": "node --test tests/alipay-page-pay.test.mjs",
+    "test:payment-diagnostics": "node --test tests/payment-diagnostics.test.mjs",
+    "test:storage": "node --test tests/asset-storage.test.mjs",
+    "test:platforms": "node --test tests/platforms.test.mjs tests/dashboard.test.mjs tests/workbench.test.mjs tests/learning-routes.test.mjs tests/tutor.test.mjs tests/workspace-navigation.test.mjs tests/commercial-layout.test.mjs tests/ai-provider.test.mjs tests/study-columns.test.mjs tests/navigation-save.test.mjs tests/notes-studio.test.mjs tests/course-offer.test.mjs tests/readability.test.mjs tests/favorites-studio.test.mjs tests/brand-identity.test.mjs tests/account-settings-ui.test.mjs tests/homepage-reference.test.mjs tests/auth-reference.test.mjs",
     "preview": "vite preview",
     "test:sites": "node --test tests/sites-worker.test.mjs"
   },
@@ -23,12 +27,15 @@
     "@tiptap/react": "^3.31.3",
     "@tiptap/starter-kit": "^3.31.3",
     "@vitejs/plugin-react": "5.0.4",
+    "ali-oss": "6.23.0",
+    "alipay-sdk": "^4.14.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
     "nodemailer": "^9.0.5",
+    "qrcode": "^1.5.4",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "vite": "6.4.2",
@@ -38,5 +45,10 @@
     "concurrently": "^10.0.4",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1"
+  },
+  "overrides": {
+    "alipay-sdk": {
+      "urllib": "4.9.1"
+    }
   }
 }

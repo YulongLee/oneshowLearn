@@ -1,6 +1,16 @@
 export const TUTOR_NOTE_PREFIX = '[AI 导师提问] ';
 export const MAX_QUESTION_LENGTH = 4000;
 
+// Leave IME confirmation and newline shortcuts to the textarea. keyCode 229
+// also covers browsers that clear isComposing before the confirmation keydown.
+export function handleTutorComposerKeyDown(event, send, composing = false) {
+  const native = event.nativeEvent || event;
+  if (event.key !== 'Enter' || event.shiftKey || event.altKey || composing
+    || event.isComposing || native.isComposing || native.keyCode === 229) return;
+  event.preventDefault();
+  if (!event.repeat && !native.repeat) send();
+}
+
 // Suggested questions, not CMS content or pre-written course answers.
 export const TUTOR_FAQ = [
   {id:'course',title:'课程与资料',mode:'knowledge',questions:[

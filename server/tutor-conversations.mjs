@@ -1,7 +1,7 @@
 import {Router} from 'express';
 import {z} from 'zod';
 import {db,row,rows,run} from './db.mjs';
-import {requireAuth} from './auth.mjs';
+import {requireAuth,hasVerifiedLogin} from './auth.mjs';
 import {rateLimit} from './account-security.mjs';
 import {courseAccess} from './learning-model.mjs';
 import {courseAIService} from './course-ai-service.mjs';
@@ -53,8 +53,8 @@ async function generate(user,conversationId,turn,course,history){
   let result,error;
   try{
     result=await courseAIService.tutor({user,question:turn.question,mode:turn.mode,course,includeProduct:turn.includeProduct,history});
-    const latest=row('SELECT status,email_verified,token_version FROM users WHERE id=?',[user.id]);
-    if(!latest||latest.status!=='active'||!latest.email_verified||Number(latest.token_version)!==Number(user.token_version))fail(401,'登录状态已变化，请重新登录后重试');
+    const latest=row('SELECT id,status,email_verified,token_version FROM users WHERE id=?',[user.id]);
+    if(!latest||latest.status!=='active'||!hasVerifiedLogin(latest)||Number(latest.token_version)!==Number(user.token_version))fail(401,'登录状态已变化，请重新登录后重试');
   }catch(e){error=e.status&&e.status<500?e.message:'AI 回答暂未完成，请稍后重试。问题已保存。';}
   tx(()=>{
     const changed=run("UPDATE tutor_turns SET status=?,result_json=?,error=?,updated_at=? WHERE id=? AND conversation_id=? AND status='pending' AND attempt=?",[error?'failed':'complete',error?null:JSON.stringify(result),error||null,now(),turn.id,conversationId,turn.attempt]);

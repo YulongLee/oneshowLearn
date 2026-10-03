@@ -4,6 +4,9 @@ import { DatabaseSync } from "node:sqlite";
 import { config } from "./config.mjs";
 import {migrateLearning} from './learning-schema.mjs';
 import {migrateAI} from './ai-schema.mjs';
+import {migratePayments} from './payment-schema.mjs';
+import {migrateLogin} from './login-schema.mjs';
+import {migrateService} from './service-schema.mjs';
 
 mkdirSync(path.dirname(config.databasePath), { recursive: true });
 
@@ -24,7 +27,7 @@ export function migrate() {
     );
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT NOT NULL UNIQUE,
+      email TEXT UNIQUE,
       password_hash TEXT NOT NULL,
       name TEXT NOT NULL,
       role TEXT NOT NULL DEFAULT 'learner' CHECK(role IN ('learner','editor','admin')),
@@ -101,6 +104,17 @@ export function migrate() {
       url TEXT NOT NULL,
       uploaded_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS asset_storage (
+      asset_id INTEGER PRIMARY KEY REFERENCES assets(id) ON DELETE CASCADE,
+      provider TEXT NOT NULL CHECK(provider='oss'),
+      bucket TEXT NOT NULL,
+      endpoint TEXT NOT NULL,
+      object_key TEXT NOT NULL,
+      etag TEXT NOT NULL DEFAULT '',
+      header_hex TEXT NOT NULL DEFAULT '',
+      UNIQUE(bucket,object_key)
     );
 
     CREATE TABLE IF NOT EXISTS products (
@@ -339,3 +353,6 @@ export function run(statement, params = {}) {
 migrate();
 migrateLearning(db);
 migrateAI(db);
+migratePayments(db);
+migrateLogin(db, config.databasePath);
+migrateService(db);

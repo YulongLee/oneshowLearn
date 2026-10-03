@@ -26,5 +26,5 @@ export function useSidebarLayout(){
     onDoubleClick:()=>resize(SIDEBAR_DEFAULT),
     onKeyDown:event=>{const values={ArrowLeft:preferences.width-16,ArrowRight:preferences.width+16,Home:SIDEBAR_DEFAULT,End:SIDEBAR_MAX,Enter:SIDEBAR_DEFAULT};if(Object.hasOwn(values,event.key)){event.preventDefault();resize(values[event.key]);}},
   };
-  return {...preferences,mobile,resizing,setMode,separator};
+  return {...preferences,mobile,resizing,setMode,resize,separator};
 }

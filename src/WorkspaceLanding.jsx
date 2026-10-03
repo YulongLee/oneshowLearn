@@ -1,3 +1,4 @@
+import {BrandIdentity} from './BrandIdentity.jsx';
 import { useEffect, useRef, useState } from "react";
 import { ArrowClockwise, ArrowRight, BookOpenText, BracketsCurly, CalendarBlank, CaretDown, ChartBar, ChartLineUp, CheckCircle, Code, Crown, Cube, FileText, Gauge, Lightbulb, List, MagnifyingGlass, Money, NotePencil, RocketLaunch, ShieldCheck, Sparkle, Star, Target, X } from "@phosphor-icons/react";
 import { localDay, useWorkspaceModel } from "./Workspace.jsx";
@@ -82,7 +83,7 @@ export function WorkspaceLanding({ navigate, notify }) {
   ].filter(item => needle && `${item.title} ${item.subtitle}`.toLowerCase().includes(needle)).slice(0,5);
   return <main className="opc-home opc-workspace-home" id="opc-top">
     <header className="opc-header"><div className="opc-container opc-nav">
-      <button className="opc-brand" onClick={() => scroll("opc-top")} aria-label="OneShowLearn 首页"><img src="/assets/oneshowlearn-brandmark.png" alt="" /><span><strong>OneShowLearn</strong><small>Learn · Build · Grow</small></span></button>
+      <button className="opc-brand" onClick={() => scroll("opc-top")} aria-label="OneShowLearn 首页"><BrandIdentity/></button>
       <nav id="opc-main-navigation" className={menuOpen ? "opc-links is-open" : "opc-links"} aria-label="首页导航">
         <button className="active" aria-current="page" onClick={() => scroll("opc-top")}>首页</button>
         <button onClick={() => go("/paths")}>学习路线</button><button onClick={() => scroll("opc-projects")}>实战项目</button><button onClick={() => go("/resources")}>资源中心</button><button onClick={() => go("/tools")}>AI 导师</button><button onClick={() => go("/community")}>社区</button><button onClick={() => go("/membership")}>定价</button>

@@ -3,7 +3,26 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { resourceCategory,resourceTags,resourceArt,filterResources,resourceDate } from '../src/resource-model.js';
+import { resourceCategory,resourceTags,resourceArt,filterResources,resourceDate,resourceStages,featuredResources,RESOURCE_CATEGORIES } from '../src/resource-model.js';
+test('resource discovery adds Skill/video categories and keyword-based stage filtering',()=>{
+ assert.equal(RESOURCE_CATEGORIES.length,10);
+ assert.equal(resourceCategory({title:'Claude Code Skill 最佳实践',type:'document'}),'skill');
+ assert.equal(resourceCategory({title:'部署视频',type:'video'}),'video');
+ assert.equal(resourceCategory({title:'技术 Skills 模板',type:'template'}),'skill');
+ const resources=[{id:1,title:'PRD 需求验证',type:'template',created_at:'2026-01-01'},{id:2,title:'Stripe 支付上线清单',type:'checklist',created_at:'2026-02-01'},{id:3,title:'未归类资料',type:'download',created_at:'2026-03-01'}];
+ assert.deepEqual(resourceStages(resources[0]),['validation']);
+ assert.deepEqual(resourceStages(resources[1]),['launch','business']);
+ assert.deepEqual(resourceStages(resources[2]),[]);
+ assert.deepEqual(filterResources(resources,{stage:'business'}).map(i=>i.id),[2]);
+ assert.deepEqual(filterResources(resources,{stage:'business',query:'PRD'}),[]);
+ assert.deepEqual(filterResources(resources,{query:'undefined'}),[]);
+});
+test('featured discovery prioritizes CMS recommendations without fabricating records',()=>{
+ const items=[{id:1,title:'旧精选',created_at:'2026-01-01',is_featured:1},{id:2,title:'新资料',created_at:'2026-02-01',is_featured:0},{id:3,title:'新精选',created_at:'2026-03-01',is_featured:1}];
+ assert.deepEqual(featuredResources(items,2).map(i=>i.id),[3,1]);
+ assert.deepEqual(items.map(i=>i.id),[1,2,3]);
+ assert.deepEqual(featuredResources([]),[]);
+});
 test('resource taxonomy and search use actual metadata without mutating catalog',()=>{
  const items=[{id:1,title:'PRD 模板',type:'template',pack_title:'AI OPC',created_at:'2026-01-01',locked:false},{id:2,title:'Codex 开发指令',type:'prompt',pack_title:'AI OPC',created_at:'2026-02-01',locked:true},{id:3,title:'Docker 部署检查清单',type:'checklist',created_at:'2026-03-01',locked:false}];
  assert.deepEqual(items.map(resourceCategory),['template','prompt','checklist']);

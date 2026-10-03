@@ -5,7 +5,7 @@ import {db,row,rows,run} from './db.mjs';
 import {requireAdmin,optionalAuth} from './auth.mjs';
 import {canReadPack} from './opc-routes.mjs';
 import {safeResourceUrl} from './opc-definition.mjs';
-import {SITE_DEFAULTS} from './site-defaults.mjs';
+import {SITE_DEFAULTS,currentPublicCopy} from './site-defaults.mjs';
 import {HOME_CARDS} from './homepage-cards.mjs';
 
 const state=z.enum(['draft','published','archived']);
@@ -13,7 +13,7 @@ const text=n=>z.string().trim().max(n);
 const ids=z.array(z.number().int().positive()).max(40).refine(a=>new Set(a).size===a.length,'不能重复选择');
 const media=text(2000).refine(s=>!s||Boolean(safeResourceUrl(s)),'附件地址不安全');
 const image=text(2000).refine(s=>!s||/^\/assets\/[\w./-]+$/.test(s)&&!s.includes('..')||/^https:\/\//.test(s)&&Boolean(safeResourceUrl(s)),'封面仅支持 HTTPS 或 /assets/ 图片路径');
-const route=text(200).refine(s=>/^\/(?:login|register|app|opc(?:\/phase\/[1-5])?|paths(?:\/[a-z0-9-]+)?|packs\/[a-z0-9-]+|projects(?:\/[a-z0-9-]+)?|resources|courses|notes|favorites|plan|tutor|community)$/.test(s),'请选择有效的站内学习页面');
+const route=text(200).refine(s=>/^\/(?:login|register|app|membership|opc(?:\/phase\/[1-5])?|paths(?:\/[a-z0-9-]+)?|packs\/[a-z0-9-]+|projects(?:\/[a-z0-9-]+)?|resources|courses|notes|favorites|plan|tutor|community)$/.test(s),'请选择有效的站内学习页面');
 const librarySchema=z.object({title:text(200).min(2),type:z.enum(['document','prompt','code','template','task','checklist','video','download']),body:text(200000),resource_url:media,duration_seconds:z.number().int().min(0).max(86400),status:state});
 const projectSchema=z.object({title:text(120).min(2),slug:text(100).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),description:text(20000),cover_url:image,category:z.enum(['saas','mini','mobile','tools','desktop','agent','automation','other']),tags:z.array(text(30).min(1)).max(8),deliverable:text(1000),status:state,sort_order:z.number().int().min(0).max(100000),courseIds:ids});
 const homeCardSchema=z.object({tag:text(20).min(1),title:text(80).min(2),description:text(120),image:image.refine(Boolean,'请设置首页插图'),courseId:z.number().int().positive().nullable()});
@@ -28,8 +28,9 @@ function project(id){const p=row('SELECT * FROM practice_projects WHERE id=?',[i
 const publishedCourse=id=>row("SELECT pp.id,pp.slug,pp.title,pp.subtitle,pp.cover_url,pp.deliverable,pp.estimated_minutes FROM project_packs pp JOIN learning_paths lp ON lp.id=pp.path_id AND lp.status='published' WHERE pp.id=? AND pp.status='published'",[id]);
 function projects(user){return rows("SELECT id FROM practice_projects WHERE status='published' ORDER BY sort_order,id").map(({id})=>{const p=project(id);const courses=p.courseIds.map(publishedCourse).filter(Boolean).map(c=>({...c,entitled:canReadPack(user,c.id)}));return {...p,courseIds:courses.map(c=>c.id),courses};}).filter(p=>p.courses.length);}
 function pageRow(key){return row('SELECT * FROM site_pages WHERE key=?',[key]);}
-const pageDraft=(key,payload)=>key==='public'?{...payload,hotCourseCards:payload.hotCourseCards??HOME_CARDS}:payload;
+const pageDraft=(key,payload)=>key==='public'?{...currentPublicCopy(payload),hotCourseCards:payload.hotCourseCards??HOME_CARDS}:payload;
 function pageView(key,payload,user){
+  if(key==='public')payload=currentPublicCopy(payload);
   const available=rows("SELECT pp.id FROM project_packs pp JOIN learning_paths lp ON lp.id=pp.path_id AND lp.status='published' WHERE pp.status='published' ORDER BY pp.is_featured DESC,pp.sort_order,pp.id");
   const courses=(payload.courseIds.length?payload.courseIds:available.slice(0,4).map(x=>x.id)).map(publishedCourse).filter(Boolean).map(c=>({...c,contentCount:row("SELECT COUNT(*) n FROM published_content_items ci JOIN project_steps ps ON ps.id=ci.step_id AND ps.status='published' WHERE ps.pack_id=? AND ci.status='published'",[c.id]).n}));
   const list=projects(user);const selected=payload.projectIds.length?payload.projectIds.map(id=>list.find(p=>p.id===id)).filter(Boolean):list.slice(0,4);

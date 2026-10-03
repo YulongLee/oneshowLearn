@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {courseLearningPath,learningSlug,readingProgress,nextReadingItem} from '../src/course-reader-model.js';
 import {activeWorkspaceNav} from '../src/workspace-navigation.js';
 import {HOME_CARDS,homepageCards} from '../server/homepage-cards.mjs';
-import {discoveryProgress,projectDuration} from '../src/project-discovery-model.js';
+import {discoveryProgress,projectDuration,currentProject,projectLearningSummary} from '../src/project-discovery-model.js';
 import {projectStudyEntry,studyMaterials} from '../src/project-study-model.js';
 import {mediaTime,seekTime,playbackRate} from '../src/player-model.js';
 const source=file=>readFileSync(new URL('../src/'+file,import.meta.url),'utf8');
@@ -19,7 +19,19 @@ test('shared video controls clamp seeks and validate remembered playback prefere
   assert.match(player,/playsInline/); assert.match(player,/automaticRetry.current/);
   assert.match(player,/onPause=[\s\S]*onSave\(\)/); assert.match(player,/onKeyDown=\{keyDown\}/);
   assert.match(page,/<LearningVideoPlayer/); assert.doesNotMatch(page,/className="ls-media-tools"/);
-  assert.match(page,/file: "资料", tasks: "实践"/);
+  assert.match(page,/const materialTabs = \{ file: "资料" \}/);
+});
+
+test('courses omit practice tabs and panels while projects retain them, including pending courses',()=>{
+  const page=source('LessonWorkspace.jsx'),pending=source('CourseLearningSpace.jsx');
+  assert.match(page,/const materialTabs = \{ file: "资料" \}/);
+  assert.match(page,/!isCourse && <button aria-pressed=\{contentTab==='experiment'\}/);
+  assert.match(page,/<Flask size=\{19\}\/>实验/);
+  assert.match(page,/!isCourse && \["tasks", "operations"\]\.includes\(tab\)/);
+  assert.match(page,/!isCourse && tab === "tasks" \?/);
+  assert.match(page,/!isCourse && tab === "operations" \?/);
+  assert.match(pending,/\["课件", "资料"\]\.map/);
+  assert.doesNotMatch(pending,/"实践"/);
 });
 
 test('unified study materials filter article code prompt and attachment without copying content',()=>{
@@ -35,16 +47,34 @@ test('project discovery uses account progress and truthful configured duration',
   assert.equal(projectDuration(45),'45 分钟');assert.equal(projectDuration(90),'1.5 小时');
 });
 
-test('project discovery retains CMS filters, published detail routes and unavailable AI honesty',()=>{
+test('editorial project discovery retains CMS filters and study routes without a duplicate AI rail',()=>{
   const page=source('ProjectDiscovery.jsx'),hub=source('ProjectsHub.jsx'),css=source('workspace-responsive.css');
   assert.match(page,/project\.lessonCount/);assert.match(page,/project\.pptCount/);assert.match(page,/project\.promptCount/);
   assert.match(page,/categories\.slice\(0,6\)/);assert.match(page,/setQuery\(e\.target\.value\)/);
   assert.match(page,/await onOpen\(project\)/);
   assert.match(hub,/projectStudyEntry\(project,Boolean\(model.user\)\)/);
-  assert.match(page,/实时 AI 尚未接入/);assert.match(page,/questionNote\(/);
+  assert.doesNotMatch(page,/useAiCapabilities|prepareTutorQuestion|pd-rail/);
+  assert.match(page,/继续你的项目/);assert.match(page,/pd-equal-grid/);
   assert.match(hub,/setCategories\(d\.categories\)/);assert.match(hub,/setMineStatus\("error"\)/);
   assert.match(css,/@container project-catalog \(max-width:780px\)/);assert.match(css,/@container project-catalog \(max-width:520px\)/);
   assert.doesNotMatch(page,/2\.3k|12\.4k|32%|3\/5/);
+});
+
+test('project cards use an equal grid without suppressing or featuring CMS records',()=>{
+  const page=source('ProjectDiscovery.jsx');
+  assert.match(page,/data.items.map\(project=><ProjectCard/);
+  assert.doesNotMatch(page,/pd-featured|pd-editorial-grid|featured=/);
+  assert.match(page,/探索项目/);assert.match(page,/className="pd-card-action"/);
+  const css=source('project-editorial.css');
+  assert.match(css,/repeat\(3,minmax\(0,1fr\)\)/);
+});
+
+test('continuation uses private project runs and actual lesson completion, not acceptance percentage',()=>{
+  assert.equal(currentProject([{id:1,progress:{percent:30}}]),null);
+  const done={id:1,run:{id:1},progress:{percent:100}},active={id:2,run:{id:2},progress:{percent:50},stages:[{lessons:[{id:10,progress:{completed_at:'date'}},{id:11,locked:true},{id:12}]}]};
+  assert.equal(currentProject([done,active]),active);assert.equal(currentProject([done]),done);
+  assert.deepEqual(projectLearningSummary(active),{total:3,completed:1,percent:33,next:active.stages[0].lessons[2]});
+  assert.deepEqual(projectLearningSummary(null),{total:0,completed:0,percent:0,next:null});
 });
 
 test('project card opens shared study while preserving locked, preview and empty entry rules',()=>{
@@ -122,8 +152,12 @@ test('the legacy demo is retired and every course detail reaches the shared read
 });
 test('workbench prioritizes course/project continuation, private tools and responsive phases',()=>{
   const workbench=source('Workbench.jsx');
-  assert.ok(workbench.indexOf('className="wd-continue-grid"')<workbench.indexOf('className="wd-panel wd-path"'));
-  assert.ok(workbench.indexOf('className="wd-panel wd-path"')<workbench.indexOf('className="wd-panel wd-recommendations"'));
+  assert.ok(workbench.indexOf('<ProductHero model=')<workbench.indexOf('<PersonalProducts items='));
+  assert.ok(workbench.indexOf('<PersonalProducts items=')<workbench.indexOf('className="wd-panel wd-recommendations"'));
+  assert.match(workbench,/phaseState\(extra.phases.find/);
+  assert.match(workbench,/currentProductAchievement\(items\)/);
+  assert.ok(workbench.indexOf('<TutorPanel model=')<workbench.indexOf('<LearningCalendar model='));
+  assert.match(source('workbench-product.css'),/@container learner \(max-width:1050px\)/);
   assert.match(workbench,/className="wd-panel wd-tasks"/);
   assert.match(workbench,/实时回答未接入/);
   assert.doesNotMatch(workbench,/wb-hero|method:\s*['"]POST['"]/);
@@ -140,5 +174,5 @@ test('public search uses published catalog and community navigation is accurate'
   const page=source('PublicHomepage.jsx');
   assert.match(page,/api\('\/catalog\/workspace'\)/);
   assert.match(page,/aria-label="课程搜索结果"/);
-  assert.match(page,/navigate\("\/community"\)\}>学习社区/);
+  assert.match(page,/navigate\(['"]\/community['"]\)\}>学习社区/);
 });

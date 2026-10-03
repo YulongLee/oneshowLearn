@@ -7,7 +7,7 @@ export function courseEvidence(lesson, materials, slideId = null) {
   const add = (label, body, extra = {}) => {
     if (typeof body === 'string' && body.trim()) candidates.push({label: label.slice(0, 200), text: body.trim(), ...extra});
   };
-  lesson.config.slides.forEach((s, i) => add(`课件第 ${i + 1} 页`, s.text, {slideId: s.id, page: i + 1}));
+  if(!lesson.config.isDemoMedia)lesson.config.slides.forEach((s, i) => add(`课件第 ${i + 1} 页`, s.text, {slideId: s.id, page: i + 1}));
   for (const m of materials) add(`${m.role === 'transcript' ? '视频文稿' : '课程资料'} · ${m.title}${m.promptVersion ? `（Prompt v${m.promptVersion}）` : ''}`, m.body, {materialId: m.id});
   // Give the current page room before filling a bounded context with other sources.
   candidates.sort((a, b) => Number(b.slideId === slideId) - Number(a.slideId === slideId));
@@ -20,7 +20,7 @@ export function courseEvidence(lesson, materials, slideId = null) {
     remaining -= text.length;
   }
   const selected = lesson.config.slides.find(s => s.id === slideId);
-  return {sources, currentSlide: selected ? {id: selected.id, page: lesson.config.slides.indexOf(selected) + 1, hasText: Boolean(selected.text?.trim())} : null,
+  return {sources, demoMedia:Boolean(lesson.config.isDemoMedia), currentSlide: selected ? {id: selected.id, page: lesson.config.slides.indexOf(selected) + 1, hasText: !lesson.config.isDemoMedia&&Boolean(selected.text?.trim())} : null,
     coverage: {available: candidates.length, included: sources.length, partial: sources.length < candidates.length || sources.some(s => s.truncated), imageOnlyPages: lesson.config.slides.filter(s => !s.text?.trim()).length}};
 }
 

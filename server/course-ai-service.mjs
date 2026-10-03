@@ -1,4 +1,5 @@
 import {row,rows,run} from './db.mjs';
+import {hasVerifiedLogin} from './auth.mjs';
 import {randomUUID} from 'node:crypto';
 import {createAliyunProvider} from './ai-provider.mjs';
 import {aiRuntime} from './ai-configuration.mjs';
@@ -66,7 +67,7 @@ export const courseAIService={
     const answer=await generateForUser(user,{action:'tutor',question,history,context:{...context,grounding:'tutor-retrieval',sources:evidence.sources}});
     // A response may arrive after an entitlement or CMS publication was changed.
     const latestUser=row('SELECT id,role,status,email_verified,token_version FROM users WHERE id=?',[user.id]);
-    if(!latestUser||latestUser.status!=='active'||!latestUser.email_verified||Number(latestUser.token_version)!==Number(user.token_version))
+    if(!latestUser||latestUser.status!=='active'||!hasVerifiedLogin(latestUser)||Number(latestUser.token_version)!==Number(user.token_version))
       throw Object.assign(new Error('登录状态已变化，请重新登录后提问。'),{status:401});
     const current=new Map(tutorDocuments(latestUser,course?.id).docs.map(d=>[d.key,d]));
     if(evidence.sources.some(s=>current.get(s.key)?.text.slice(s.offset,s.offset+1000)!==s.text))

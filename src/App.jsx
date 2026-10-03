@@ -1,10 +1,10 @@
 import { CourseReader } from "./CourseReader.jsx";
+import { AccountSettings } from './AccountSettings.jsx';
+import {LegalPage,SupportCenter,AdminService,AdminSupport} from './ServiceCenter.jsx';
 import {createRouteNavigation} from './navigation-save.js';
-import { AdminLearning } from "./AdminLearning.jsx";
-import { AdminAi } from "./AdminAi.jsx";
 import { ProjectsHub } from "./ProjectsHub.jsx";
 import { courseLearningPath, learningSlug } from "./course-reader-model.js";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -63,13 +63,11 @@ import {
   AdminEmail,
   AdminAccountAudit,
 } from "./Admin.jsx";
-import { AdminCms } from "./AdminCms.jsx";
-import { AdminPlatform, AdminPages } from "./AdminPlatform.jsx";
-import { AdminCommunity } from "./AdminCommunity.jsx";
 import { api, getToken, money, subscribeToSession } from "./api.js";
 import { AuthPage, UserAuthCard, AccountPage } from "./Auth.jsx";
 import { canManage } from "./platforms.js";
 import { PublicHomepage } from "./PublicHomepage.jsx";
+import { CourseOfferPage } from './CourseOffer.jsx';
 import { Workbench } from "./Workbench.jsx";
 import { WorkspaceShell, WorkspaceHome } from "./Workspace.jsx";
 import { CourseLearningSpace } from "./CourseLearningSpace.jsx";
@@ -81,8 +79,19 @@ import {
   workspaceSearchPrompts,
 } from "./workspace-navigation.js";
 import { PersonalWorkspace } from "./PersonalWorkspace.jsx";
-import { AdminOpc } from "./AdminOpc.jsx";
 import { WorkspacePages } from "./WorkspacePages.jsx";
+
+// Management editors are not needed by visitors or learners. Keep the shell
+// mounted while loading the selected editor, instead of loading every CMS first.
+const AdminLearning=lazy(()=>import('./AdminLearning.jsx').then(m=>({default:m.AdminLearning})));
+const AdminAi=lazy(()=>import('./AdminAi.jsx').then(m=>({default:m.AdminAi})));
+const AdminPayments=lazy(()=>import('./AdminPayments.jsx').then(m=>({default:m.AdminPayments})));
+const AdminLoginSettings=lazy(()=>import('./AdminLoginSettings.jsx').then(m=>({default:m.AdminLoginSettings})));
+const AdminCms=lazy(()=>import('./AdminCms.jsx').then(m=>({default:m.AdminCms})));
+const AdminPlatform=lazy(()=>import('./AdminPlatform.jsx').then(m=>({default:m.AdminPlatform})));
+const AdminPages=lazy(()=>import('./AdminPlatform.jsx').then(m=>({default:m.AdminPages})));
+const AdminCommunity=lazy(()=>import('./AdminCommunity.jsx').then(m=>({default:m.AdminCommunity})));
+const AdminOpc=lazy(()=>import('./AdminOpc.jsx').then(m=>({default:m.AdminOpc})));
 
 const learningPaths = [
   {
@@ -212,17 +221,6 @@ const resources = [
     color: "purple",
   },
 ];
-
-function BrandMark() {
-  return (
-    <img
-      className="brand-mark"
-      src="/assets/oneshowlearn-brandmark.png"
-      alt=""
-      aria-hidden="true"
-    />
-  );
-}
 
 function ProgressBar({ value, dark = false }) {
   return (
@@ -958,6 +956,8 @@ function LearnerWorkspace({ route: rawRoute, navigate, notify }) {
     >
       {(model) => {
         const props = { model, navigate: go, notify };
+        if (route === '/account') return <AccountSettings {...props}/>;
+        if (route === '/support') return <SupportCenter {...props}/>;
         if (route === "/app") return <Workbench {...props} />;
         if (route === "/opc" || route === "/paths" || route.startsWith("/opc/"))
           return (
@@ -1048,6 +1048,8 @@ export function App() {
 
   let content;
   if (route === "/") content = <PublicHomepage navigate={navigate} />;
+  else if (/^\/legal\/(terms|privacy|purchase)\/?$/.test(route)) content = <LegalPage kind={route.split('/')[2]} navigate={navigate}/>;
+  else if (route === '/course-offer' || route === '/course-offer/') content = <CourseOfferPage navigate={navigate} notify={notify}/>;
   else if (
     route === "/login" ||
     route === "/register" ||
@@ -1071,7 +1073,7 @@ export function App() {
     content = (
       <AuthPage navigate={navigate} platform="admin" initialMode="forgot" />
     );
-  else if (route === "/account" || route === "/admin/account")
+  else if (route === "/admin/account")
     content = (
       <AccountPage
         key={route}
@@ -1083,7 +1085,7 @@ export function App() {
     if (!getToken()) content = <AdminLogin navigate={navigate} />;
     else {
       const adminPage =
-        route === "/admin/community" ? (
+        route === '/admin/service' ? <AdminService/> : route === '/admin/support' ? <AdminSupport/> : route === "/admin/community" ? (
           <AdminCommunity />
         ) : route === "/admin/pages" ? (
           <AdminPages />
@@ -1119,6 +1121,10 @@ export function App() {
           <AdminUsers />
         ) : route === "/admin/ai" ? (
           <AdminAi />
+        ) : route === "/admin/login-settings" ? (
+          <AdminLoginSettings navigate={navigate} />
+        ) : route === "/admin/payments" ? (
+          <AdminPayments />
         ) : route === "/admin/email" ? (
           <AdminEmail />
         ) : route === "/admin/account-audit" ? (
@@ -1128,7 +1134,7 @@ export function App() {
         );
       content = (
         <AdminShell route={route} navigate={navigate}>
-          {route === "/admin/learning" ? <AdminLearning /> : adminPage}
+          <Suspense fallback={<p role="status">正在加载管理页面…</p>}>{route === "/admin/learning" ? <AdminLearning /> : adminPage}</Suspense>
         </AdminShell>
       );
     }

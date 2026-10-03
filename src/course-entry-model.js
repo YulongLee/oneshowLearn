@@ -31,9 +31,11 @@ export function chooseEntry(data, route = "/opc") {
       phase: null,
     };
   }
+  const defaultCourse = slug === null ? courses.find(c=>c.id===data.defaultCourseId) : null;
+  const chosenSlug = slug ?? defaultCourse?.slug ?? null;
   let available = lessons.filter(
     (l) =>
-      (!phase || l.phase === phase) && (slug === null || l.owner_slug === slug),
+      (!phase || l.phase === phase) && (chosenSlug === null || l.owner_slug === chosenSlug),
   );
   const recent = available
     .filter((l) => !l.locked && l.progress?.version > 0)
@@ -54,8 +56,8 @@ export function chooseEntry(data, route = "/opc") {
     available[0] ||
     null;
   const course =
-    (slug !== null
-      ? courses.find((c) => c.slug === slug)
+    (chosenSlug !== null
+      ? courses.find((c) => c.slug === chosenSlug)
       : courses.find((c) => c.id === lesson?.owner_id) ||
         (phase
           ? courses.find((c) =>

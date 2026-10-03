@@ -146,7 +146,7 @@ function migrateLearningCommerce(db) {
   }
 }
 
-export function migrateLearning(db) {
+function migrateLearningProgress(db) {
   migrateLearningCommerce(db);
   if (
     db
@@ -166,4 +166,13 @@ export function migrateLearning(db) {
     db.exec("ROLLBACK");
     throw e;
   }
+}
+
+export function migrateLearning(db) {
+  migrateLearningProgress(db);
+  db.exec(`CREATE TABLE IF NOT EXISTS learning_entry_settings (
+    id INTEGER PRIMARY KEY CHECK(id=1),
+    course_id INTEGER REFERENCES project_packs(id) ON DELETE RESTRICT,
+    version INTEGER NOT NULL DEFAULT 1
+  )`);
 }

@@ -1,9 +1,59 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MAX_QUESTION_LENGTH, questionNote, selectedLearningContext, tutorQuestions, tutorHistory, TUTOR_FAQ } from '../src/tutor-model.js';
+import { MAX_QUESTION_LENGTH, questionNote, selectedLearningContext, tutorQuestions, tutorHistory, TUTOR_FAQ, handleTutorComposerKeyDown } from '../src/tutor-model.js';
 import {createElement as h} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {TutorAnswer,TutorSources,answerHref,answerLabel} from '../src/TutorAnswer.js';
+import {readFileSync} from 'node:fs';
+
+function composerKey(overrides={}, composing=false) {
+  let prevented=0, sent=0;
+  handleTutorComposerKeyDown({key:'Enter',preventDefault:()=>prevented++,...overrides},()=>sent++,composing);
+  return {prevented,sent};
+}
+test('tutor Enter sends once and retains Ctrl/Command Enter compatibility',()=>{
+  for(const modifiers of [{},{ctrlKey:true},{metaKey:true}])assert.deepEqual(composerKey(modifiers),{prevented:1,sent:1});
+  const page=readFileSync(new URL('../src/AiTutorChat.jsx',import.meta.url),'utf8');
+  assert.match(page,/onKeyDown=\{e=>handleTutorComposerKeyDown\(e,send,composing.current\)\}/);
+  assert.match(page,/onCompositionStart=/);assert.match(page,/onCompositionEnd=/);
+  assert.match(page,/if\(!available\|\|busy\|\|!\(quick\?\.question\|\|draft\).trim\(\)\)return/);
+});
+test('tutor Shift Enter keeps newlines and other keys are untouched',()=>{
+  for(const modifiers of [{shiftKey:true},{shiftKey:true,ctrlKey:true},{shiftKey:true,metaKey:true},{altKey:true},{key:'a'}])
+    assert.deepEqual(composerKey(modifiers),{prevented:0,sent:0});
+});
+test('tutor IME confirmation never sends or prevents candidate selection',()=>{
+  for(const modifiers of [{isComposing:true},{nativeEvent:{isComposing:true}},{nativeEvent:{isComposing:false,keyCode:229}},{keyCode:229}])
+    assert.deepEqual(composerKey(modifiers),{prevented:0,sent:0});
+  assert.deepEqual(composerKey({},true),{prevented:0,sent:0});
+});
+test('holding Enter consumes repeated keydowns without resending',()=>{
+  assert.deepEqual(composerKey({repeat:true}),{prevented:1,sent:0});
+  assert.deepEqual(composerKey({nativeEvent:{repeat:true}}),{prevented:1,sent:0});
+});
+
+test('tutor studio preserves sessions and exposes a grounded course picker without uploads',()=>{
+  const page=readFileSync(new URL('../src/AiTutorChat.jsx',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../src/tutor-studio.css',import.meta.url),'utf8');
+  assert.match(page,/<h1>OneShow AI<\/h1>/);
+  assert.match(page,/model\.user\?\.name/);
+  for(const action of ['session.startNew()','session.open(item.id)','session.stop()','session.reload','session.retryUnconfirmed']) assert.ok(page.includes(action));
+  assert.match(page,/aria-label="添加上下文与问答设置"/);
+  assert.match(page,/hidden=\{!settingsOpen\}/);
+  assert.match(page,/aria-label="联网回答" aria-pressed=\{mode==='web'\}/);
+  assert.doesNotMatch(page,/上传文件|Paperclip|tc-upload-unavailable/);
+  assert.match(page,/aria-label="选择课程"/);
+  assert.match(page,/setCourseId\(e.target.value\);setMode\('knowledge'\)/);
+  assert.match(page,/model.library.map\(p=><option/);
+  assert.equal((page.match(/<select /g)||[]).length,1);
+  assert.ok(page.indexOf('aria-label="选择课程"')>page.indexOf('className="tc-tools"'));
+  assert.match(page,/courseId:selectedMode==='web'\?null:courseId,includeProduct:selectedMode==='web'\?false:includeProduct/);
+  assert.ok(page.indexOf('aria-label="快捷开始"')>page.indexOf('className="tc-composer"'));
+  assert.match(css,/\.tc-studio \[hidden\]\{display:none!important\}/);
+  assert.match(css,/\.tc-studio \.tc-faq\.is-open\{display:block\}/);
+  assert.match(css,/repeat\(4,minmax\(0,1fr\)\)/);
+  assert.match(css,/@container learner \(max-width:600px\)/);
+});
 
 test('AI Markdown renders tables, nested lists, headings and copyable code safely',()=>{
   const body='# Title\n\n1. First\n   - Nested\n2. Second\n\n| Name | Value |\n| --- | --- |\n| A | **bold** |\n\n```js\nconst value = "<script>";\n```\n\n<script>alert(1)</script>\n\n[bad](javascript:alert%281%29)\n\n![tracking](https://example.com/tracker.png)';

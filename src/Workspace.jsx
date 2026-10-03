@@ -1,3 +1,4 @@
+import {BrandIdentity} from './BrandIdentity.jsx';
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Bell, BookOpenText, Books, CalendarBlank, CaretDown, CaretLeft, CaretRight, ChartBar, Check, CheckCircle, Clock, Crown, Cube, FileText, FolderSimple, Gauge, GearSix, House, List, MagnifyingGlass, MapTrifold, NotePencil, Play, Plus, Robot, SealCheck, Sparkle, SquaresFour, Star, Trophy, UsersThree, X } from "@phosphor-icons/react";
 import { api, getToken, subscribeToSession } from "./api.js";
@@ -5,6 +6,7 @@ import { canManage } from "./platforms.js";
 import { activeWorkspaceNav } from "./workspace-navigation.js";
 import {useSidebarLayout} from './useSidebarLayout.js';
 import {LearningLayoutContext} from './learning-layout-context.js';
+import {SidebarCourseOffer} from './SidebarCourseOffer.jsx';
 import "./workspace.css";
 
 const emptyState = () => ({ tasks: [], notes: [], favorites: [], checkIns: [] });
@@ -91,7 +93,7 @@ export function WorkspaceShell({ route, navigate, notify, children, resourceSear
     ["学习", [["/opc", "学习课程", BookOpenText], ["/projects", "实战项目", Cube]]],
     ["AI", [["/tutor", "AI 导师", Robot], ["/resources", "资源中心", FolderSimple]]],
     ["社区", [["/community", "学习社区", UsersThree]]],
-    ["我的", [["/notes", "学习笔记", NotePencil], ["/favorites", "我的收藏", Star], ["/achievements", "我的成果", Trophy]]],
+    ["我的", [["/notes", "学习笔记", NotePencil], ["/favorites", "我的收藏", Star], ["/achievements", "我的成果", Trophy], ["/account", "设置中心", GearSix]]],
   ];
   const navItem = ([path, title, Icon]) => <button key={`${path}-${title}`} title={title} aria-label={title} className={selected(path) ? "is-active" : ""} aria-current={selected(path) ? "page" : undefined} onClick={() => go(path)}><Icon size={21} weight={selected(path) ? "fill" : "regular"} /><span>{title}</span></button>;
   return <LearningLayoutContext.Provider value={{host:learningHost,setFocused:setLearningFocused}}><div className="ws-layout ws-reference-layout ws-unified-layout" data-learning-focused={learningFocused||undefined} data-sidebar={sidebar.mode} data-resizing={sidebar.resizing||undefined} style={{'--sidebar-width':`${sidebar.width}px`}}>
@@ -99,11 +101,11 @@ export function WorkspaceShell({ route, navigate, notify, children, resourceSear
     <div className="ws-sidebar-frame">
     <aside id="workspace-sidebar" className={`ws-sidebar ${menu ? "is-open" : ""}`}>
       {menu && <button className="ws-drawer-close" aria-label="关闭侧边导航" onClick={() => setMenu(false)}><X size={17} /></button>}
-      <button className="ws-brand" onClick={() => go("/app")} aria-label="OneShowLearn 工作台"><img src="/assets/oneshowlearn-brandmark.png" alt="" /><span>OneShowLearn<small>Learn · Build · Grow</small></span></button>
+      <button className="ws-brand" onClick={() => go("/app")} aria-label="OneShowLearn 工作台"><BrandIdentity/></button>
       {learningFocused&&<div className="ws-learning-directory-slot" ref={setLearningHost}/>}
       <nav hidden={learningFocused} aria-label="学习工作空间导航">{navItem(["/app", "工作台", House])}{groups.map(([name, items]) => <div className="wb-nav-group" key={name}><span>{name}</span>{items.map(navItem)}</div>)}</nav>
       <div hidden={learningFocused} className="ws-sidebar-bottom">
-        <section className="wb-access"><h3><Crown size={30} weight="duotone" />课程与权益</h3><p><SealCheck size={14} />实战文档与学习路线</p><p><SealCheck size={14} />配套源码与项目模板</p><p><SealCheck size={14} />持续积累你的作品</p><button onClick={() => go("/membership")}>了解学习权益<ArrowRight size={15} /></button></section><button className="ws-compact-access" aria-label="课程与权益" title="课程与权益" onClick={()=>go('/membership')}><Crown size={23}/></button><button className="ws-management wb-settings" aria-label="设置" title="设置" onClick={() => go(model.user ? "/account" : "/login")}><GearSix size={21} /><span>设置</span></button>
+        <SidebarCourseOffer route={route} navigate={go}/><button className="ws-compact-access" aria-label="购买课程" title="购买课程" onClick={()=>go('/membership')}><Crown size={23}/></button>
       </div>
     </aside>
     {!sidebar.mobile&&sidebar.mode==='expanded'&&<div className="ws-sidebar-resize" {...sidebar.separator} aria-controls="workspace-sidebar"/>}
@@ -113,7 +115,7 @@ export function WorkspaceShell({ route, navigate, notify, children, resourceSear
         <div className="ws-desktop-nav-controls"><button ref={sidebarToggle} className="ws-icon-button" aria-controls="workspace-sidebar" aria-expanded={sidebar.mode==='expanded'} aria-label={sidebar.mode==='expanded'?'折叠侧栏为图标':sidebar.mode==='icons'?'展开侧栏':'显示侧栏'} title={sidebar.mode==='expanded'?'折叠侧栏为图标':'展开侧栏'} onClick={()=>sidebar.setMode(sidebar.mode==='expanded'?'icons':'expanded')}>{sidebar.mode==='expanded'?<CaretLeft size={20}/>:<List size={21}/>}</button>{sidebar.mode!=='hidden'&&<button className="ws-icon-button" aria-label="隐藏侧栏" title="隐藏侧栏" onClick={()=>{sidebar.setMode('hidden');sidebarToggle.current?.focus();}}><X size={18}/></button>}</div>
         <button className="ws-mobile-menu ws-icon-button" aria-label={menu ? "关闭工作空间导航" : "打开工作空间导航"} aria-expanded={menu} onClick={() => setMenu(!menu)}>{menu ? <X size={22} /> : <List size={22} />}</button>
         <form className="ws-search" onSubmit={e => { e.preventDefault(); resourceSearch ? resourceSearch.onSubmit() : setPopover("search"); }}><MagnifyingGlass size={20} /><input ref={searchRef} value={resourceSearch ? resourceSearch.value : query} onChange={e => { if(resourceSearch) resourceSearch.onChange(e.target.value); else {setQuery(e.target.value); setPopover("search");} }} onFocus={() => !resourceSearch && query.trim() && setPopover("search")} onKeyDown={e => e.key === "Escape" && setPopover("")} placeholder={resourceSearch ? (resourceSearch.placeholder || "搜索资源（例如：PRD 模板、Codex 指令、支付接入…）") : "搜索课程、项目、学习笔记…"} aria-label={resourceSearch ? (resourceSearch.label || "搜索资源") : "搜索课程、项目、学习笔记"} />{(resourceSearch ? resourceSearch.value : query) ? <button type="button" aria-label="清空搜索" onClick={() => { resourceSearch ? resourceSearch.onChange("") : setQuery(""); setPopover(""); searchRef.current?.focus(); }}><X size={16} /></button> : <kbd>⌘ K</kbd>}</form>
-        <div className="ws-user-actions"><button className="ws-icon-button" aria-label="查看通知" aria-expanded={popover === "notifications"} onClick={() => setPopover(popover === "notifications" ? "" : "notifications")}><Bell size={22} /></button><button className="ws-profile" aria-expanded={popover === "account"} onClick={() => setPopover(popover === "account" ? "" : "account")}><span className="ws-avatar">{model.user ? shortName(model.user.name).slice(0, 1) : "访"}</span><span><strong>{model.user ? `你好，${shortName(model.user.name)}` : "欢迎，学习者"}</strong><small>{model.user ? "个人学习空间" : "登录后保存学习记录"}</small></span><CaretDown size={14} /></button></div>
+        <div className="ws-user-actions"><button className="ws-icon-button" aria-label="查看通知" aria-expanded={popover === "notifications"} onClick={() => setPopover(popover === "notifications" ? "" : "notifications")}><Bell size={22} /></button><button className="ws-profile" aria-label={model.user ? `账号菜单：${shortName(model.user.name)}` : "登录与账号菜单"} aria-expanded={popover === "account"} onClick={() => setPopover(popover === "account" ? "" : "account")}><span className="ws-avatar">{model.user?.avatar?<img src={model.user.avatar} alt=""/>:model.user ? shortName(model.user.name).slice(0, 1) : "访"}</span><span><strong>{model.user ? `你好，${shortName(model.user.name)}` : "欢迎，学习者"}</strong><small>{model.user ? "个人学习空间" : "登录后保存学习记录"}</small></span><CaretDown size={14} /></button></div>
         {popover === "search" && <section className="ws-popover ws-search-results" aria-label="搜索结果"><div><strong>搜索结果</strong><button className="ws-icon-button" aria-label="关闭搜索结果" onClick={() => setPopover("")}><X size={18} /></button></div>{!query.trim() ? <p>输入关键词，搜索课程与自己的笔记。</p> : searchResults.length ? searchResults.map((r, i) => <button key={`${r.path}-${i}`} onClick={() => go(r.path)}><span>{r.title}<small>{r.kind}</small></span><ArrowRight size={16} /></button>) : <p>没有找到相关内容，试试其他关键词。</p>}</section>}
         {popover === "notifications" && <section className="ws-popover ws-account-menu" aria-label="通知"><strong>学习通知</strong><p>暂无新通知。学习任务可在学习计划中管理。</p><button onClick={() => go("/plan")}>查看学习计划<ArrowRight size={15} /></button></section>}
         {popover === "account" && <section className="ws-popover ws-account-menu" aria-label="账号菜单"><button onClick={() => go(model.user ? "/account" : "/login")}>{model.user ? "账号设置与退出" : "登录 / 注册"}<ArrowRight size={15} /></button><button onClick={() => go("/courses")}>我的课程<BookOpenText size={15} /></button><button onClick={() => go("/plan")}>我的学习计划<CalendarBlank size={15} /></button>{canManage(model.user) && <button onClick={() => go("/admin")}>进入管理平台<Gauge size={15} /></button>}<button onClick={() => go("/")}>返回官网<House size={15} /></button></section>}
@@ -121,7 +123,7 @@ export function WorkspaceShell({ route, navigate, notify, children, resourceSear
       <main className="ws-content">
         {model.error && <div className="ws-status ws-status-error" role="alert">{model.error}<button onClick={model.refresh}>重试</button><button onClick={() => go("/login")}>登录</button></div>}
         {!model.loading && !model.user && !model.error && <div className="ws-status">当前为访客浏览；登录后可保存学习计划、笔记和收藏。<button onClick={() => go("/login")}>立即登录<ArrowRight size={14} /></button></div>}
-        {children(model)}
+        {children({...model,sidebar})}
       </main>
     </div>
   </div></LearningLayoutContext.Provider>;

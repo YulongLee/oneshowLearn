@@ -19,7 +19,7 @@ import {
 import { LessonWorkspace } from "./LessonWorkspace.jsx";
 import { LearningRoutes } from "./LearningRoutes.jsx";
 import "./learning-system.css";
-import { StudyColumns } from './StudyColumns.jsx';
+import { CourseStudyFrame } from './CourseStudyFrame.jsx';
 
 function PendingLesson({
   selection,
@@ -32,8 +32,7 @@ function PendingLesson({
   chapters,
 }) {
   useLearningFocus(false);
-  const [tab, setTab] = useState("课件"),
-    [notesTab, setNotesTab] = useState("我的笔记");
+  const [tab, setTab] = useState("课件");
   const { course, lesson, missing, phase } = selection;
   const status = loading
     ? "正在加载视频…"
@@ -45,10 +44,11 @@ function PendingLesson({
           ? "本节需要课程权限"
           : "视频待发布";
   return (
-    <section className="ls-page cl-study-page cl-course-page">
-      <StudyColumns className="ls-layout cl-course-layout">
+    <section className="ls-page cl-study-page cl-course-page cs-course-page">
+      <CourseStudyFrame>
         <DirectorySlot inline>
           <CourseDirectory
+            variant="rail"
             course={course}
             lessons={lessons}
             chapters={chapters}
@@ -59,7 +59,7 @@ function PendingLesson({
           />
         </DirectorySlot>
         <main className="ls-reading">
-          <header className="cl-lesson-heading">
+          <header className="cl-lesson-heading cs-pending-heading">
             <nav aria-label="学习位置">
               <span>学习课程</span>
               <span>›</span>
@@ -72,7 +72,7 @@ function PendingLesson({
             <p>
               {lesson?.subtitle ||
                 course?.subtitle ||
-                "从左侧目录选择课时开始学习。"}
+                "从课程目录选择课时开始学习。"}
             </p>
           </header>
           <section
@@ -99,7 +99,7 @@ function PendingLesson({
           </section>
           <section className="ls-panel cl-pending-materials ls-courseware-panel">
             <div className="ls-tabs">
-              {["课件", "资料", "实践"].map(
+              {["课件", "资料"].map(
                 (t) => (
                   <button
                     key={t}
@@ -125,52 +125,8 @@ function PendingLesson({
             </div>
           </section>
         </main>
-        <aside className="ls-panel cl-pending-notes">
-          <div className="ls-tabs">
-            {["我的笔记", "AI 笔记", "问 AI"].map((t) => (
-              <button
-                key={t}
-                aria-pressed={notesTab === t}
-                onClick={() => setNotesTab(t)}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-          {notesTab === "我的笔记" ? (
-            <>
-              <div className="cl-disabled-editor">
-                <div aria-label="笔记编辑工具">
-                  <span>B</span>
-                  <i>I</i>
-                  <u>U</u>
-                  <span>☷</span>
-                </div>
-                <textarea
-                  aria-label="待选择课时的笔记"
-                  disabled
-                  placeholder="选择可访问的课时后，在这里记录重点、思考和想法…"
-                />
-              </div>
-              <div className="cl-note-disabled-actions">
-                <button disabled>＋ 记录当前时间点</button>
-                <button disabled>截图并标注</button>
-              </div>
-              <h3 className="cl-timeline-title">时间线笔记</h3>
-              <p className="cl-quiet-empty">选择课时后显示对应笔记。</p>
-            </>
-          ) : (
-            <div className="cl-ai-empty">
-              <Robot size={28} />
-              <h3>{notesTab === "AI 笔记" ? "AI 整理" : "围绕课时提问"}</h3>
-              <p>选择可访问的课时并配置 AI 服务后使用。</p>
-              <button disabled>
-                {notesTab === "AI 笔记" ? "生成本节总结" : "发送问题"}
-              </button>
-            </div>
-          )}
-        </aside>
-      </StudyColumns>
+        <aside className="ls-panel cs-assistant-panel"><div className="cs-assistant"><header><span className="cs-assistant-icon"><Robot size={26}/></span><h2>学习助手</h2></header><p className="ls-muted">{lesson?.locked ? '解锁本节后，可结合课程资料提问和整理笔记。' : '选择可访问的课时后，可结合课程资料提问和整理笔记。'}</p><button className="ls-btn" disabled>总结本节内容</button></div></aside>
+      </CourseStudyFrame>
     </section>
   );
 }

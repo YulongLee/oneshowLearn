@@ -12,9 +12,11 @@ run("INSERT INTO users(email,password_hash,name,role,email_verified) VALUES(?,?,
 const pathId=Number(run("INSERT INTO learning_paths(slug,title,status) VALUES('ai-product','AI 产品开发','published')").lastInsertRowid);
 const packId=Number(run("INSERT INTO project_packs(path_id,slug,title,status,is_featured) VALUES(?,'qa-resources','[仅测试] AI OPC','published',1)",[pathId]).lastInsertRowid);
 const definitions=[
+ ['[界面测试] Claude Code Skill 最佳实践','document','仅用于界面测试：了解可复用技能与开发工作流。'],
  ['产品需求文档（PRD）模板','template','适用于 AI 产品的完整 PRD 模板，包含市场分析、功能列表、技术方案等。'],
- ['Codex 开发指令大全','prompt','从需求分析到代码生成，整理常用 Codex 指令和最佳实践。'],
  ['支付接入指南','document','学习微信支付、支付宝、Stripe 等支付渠道的接入流程和示例。'],
+ ['[界面测试] 从 0 到 1 验证产品想法','video','仅用于界面测试：从需求假设开始，记录产品验证过程。'],
+ ['Codex 开发指令大全','prompt','从需求分析到代码生成，整理常用 Codex 指令和最佳实践。'],
  ['部署上线完整指南','document','从服务器购买到域名解析、HTTPS 配置、Docker 部署的完整教程。'],
  ['React + FastAPI 项目模板','code','从一个可运行的项目开始。'],
  ['小程序 App 上架检查清单','checklist','提交应用前的逐项检查。'],

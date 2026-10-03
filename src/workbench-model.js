@@ -25,6 +25,11 @@ export function recentStudyItems(library = [], entry = {}, projects = []) {
 export function currentProject(projects = []) {
   return projects.find(project => project.run && project.progress?.percent < 100) || projects.find(project => project.run) || null;
 }
+// Personal product records are independent of course/project learning progress.
+export function currentProductAchievement(items = []) {
+  return items.filter(item => item.type === 'product' && !item.deletedAt)
+    .sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')))[0] || null;
+}
 export function phaseState(phase, ownedIds = []) {
   const items = (phase?.items || []).filter(item => ownedIds.includes(item.pack_id) && !item.locked);
   if (!items.length) return 'pending';

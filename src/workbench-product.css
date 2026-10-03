@@ -1,0 +1,142 @@
+/* Product-focused workbench; shared workspace navigation remains untouched. */
+.ws-unified-layout .wd-layout.wd-product-layout { grid-template-columns:minmax(0,1fr) 304px; gap:18px; }
+.wd-product-layout .wd-main { gap:16px; }
+.wd-product-layout .wd-welcome { margin:0; padding:0 8px 2px; min-height:76px; justify-content:space-between; gap:24px; overflow:visible; }
+.wd-product-layout .wd-welcome>div { max-width:none; }
+.wd-product-layout .wd-welcome h1 { font-size:27px; margin-bottom:5px; }
+.wd-product-layout .wd-welcome blockquote { max-width:390px; margin:0; color:#626486; font-size:13px; line-height:1.9; text-align:right; }
+.wd-product-layout .wd-welcome cite { display:block; font-style:normal; color:#8781b1; }
+.wd-product-hero { position:relative; display:grid; grid-template-columns:minmax(0,1.25fr) minmax(260px,.85fr); gap:20px; padding:28px; border:4px solid white; border-radius:15px; background:radial-gradient(ellipse at 5% 100%,#eae4ff 0,transparent 48%),linear-gradient(115deg,#faf7ff,#f4f5ff 68%,#eeeaff); overflow:hidden; box-shadow:0 5px 24px #746ba808; }
+.wd-hero-copy { position:relative; z-index:2; min-width:0; }
+.wd-hero-eyebrow { display:inline-flex; padding:5px 13px; border-radius:24px; background:#ede6ff; color:#7543ef; font-size:14px; font-weight:600; }
+.wd-hero-copy h2 { margin:16px 0 24px; font-size:clamp(25px,2.1vw,38px); line-height:1.45; letter-spacing:-1.2px; color:#11122a; }
+.wd-hero-phases { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); padding:0; margin:0 0 22px; list-style:none; }
+.wd-hero-phases li { position:relative; min-width:0; }
+.wd-hero-phases li:not(:last-child)::after { content:""; position:absolute; top:16px; left:calc(50% + 16px); width:calc(100% - 32px); height:2px; background:#ded9ee; }
+.wd-hero-phases button { width:100%; display:flex; flex-direction:column; align-items:center; gap:7px; padding:0 3px; border:0; background:transparent; text-align:center; }
+.wd-hero-phases button>span { display:grid; place-items:center; width:30px; height:30px; color:white; border:3px solid #faf8ff; border-radius:50%; background:#b8b9ca; font-size:12px; }
+.wd-hero-phases strong { font-size:13px; line-height:1.5; color:#555a77; font-weight:550; }
+.wd-hero-phases small { font-size:12px; line-height:1.5; color:#8d90a7; }
+.wd-hero-phases .completed button>span { background:#09ba8a; }
+.wd-hero-phases .completed small { color:#06a978; }
+.wd-hero-phases :is(.started,.ready) button>span { background:#7949ff; }
+.wd-hero-phases :is(.started,.ready) small { color:#7845ee; }
+.wd-hero-actions { display:flex; flex-wrap:wrap; gap:12px; }
+.wd-hero-actions button { flex:1; white-space:nowrap; }
+.wd-secondary { display:inline-flex; align-items:center; justify-content:center; gap:10px; min-height:44px; padding:9px 16px; border:1px solid #e4def6; border-radius:8px; color:#24213e; background:#fff; font-size:14px; font-weight:550; }
+.wd-secondary:hover { border-color:#bda3ff; background:#fcfaff; }
+.wd-hero-current { display:flex; align-items:center; gap:7px; font-size:12px; color:#777590; margin-top:15px; }
+.wd-hero-current>span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+.wd-hero-current b { font-weight:550; color:#7750d4; }
+.wd-hero-current small { white-space:nowrap; }
+.wd-hero-preview { position:relative; display:flex; align-items:center; min-width:0; padding:0 25px 30px 0; }
+.wd-hero-project { position:relative; z-index:1; width:100%; min-width:0; padding:18px; border:1px solid #e9e1ff; border-radius:13px; background:#ffffffed; box-shadow:0 10px 24px #7961b30b; }
+.wd-hero-project .wd-section-heading h2 { font-size:15px; }
+.wd-hero-project .wd-section-heading { gap:8px; }
+.wd-hero-project .wd-empty { min-height:150px; }
+.wd-hero-project-title,.wd-product-title { display:flex; align-items:center; gap:13px; }
+.wd-product-icon { flex-shrink:0; display:grid; place-items:center; width:50px; height:50px; color:white; background:linear-gradient(140deg,#c38bff,#8257ff 53%,#689eff); border:1px solid #b591ff; border-radius:15px; box-shadow:inset 0 2px 5px #ffffff55,0 4px 10px #9274da19; }
+.wd-hero-project-title>div,.wd-product-title>div { min-width:0; }
+.wd-hero-project h3,.wd-personal-product h3 { font-size:17px; line-height:1.5; margin:0 0 6px; overflow-wrap:anywhere; }
+.wd-product-status { display:inline-block; border-radius:20px; padding:3px 9px; background:#f0ebff; color:#7150ee; font-size:12px; }
+.wd-hero-project-meta { color:#85859e; font-size:12px; line-height:1.7; margin:7px 0; }
+.wd-hero-milestones { display:flex; flex-wrap:wrap; gap:8px 12px; margin-top:13px; }
+.wd-hero-milestones span { display:flex; align-items:center; gap:5px; color:#9898ae; font-size:12px; }
+.wd-hero-milestones .done { color:#09ad83; }
+.wd-build-note { position:absolute; z-index:2; right:-18px; top:-8px; transform:rotate(-12deg); padding:11px; border-radius:12px 12px 12px 0; background:linear-gradient(135deg,#d5c2ff,#9275f5); color:white; font-size:14px; line-height:1.35; box-shadow:0 4px 12px #8c6fd11c; pointer-events:none; }
+.wd-hero-art { position:absolute; bottom:-34px; right:-65px; width:180px; height:135px; object-fit:cover; border:6px solid #ffffffb3; border-radius:17px; transform:rotate(9deg); opacity:.42; pointer-events:none; }
+.wd-hero-art-label { position:absolute; right:0; bottom:-10px; color:#a8a0c2; font-size:11px; }
+.wd-product-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+.wd-product-grid>:only-child { grid-column:1/-1; }
+.wd-product-layout .wd-section-heading { margin-bottom:6px; }
+.wd-product-layout .wd-panel-subtitle { margin:0 0 14px; font-size:14px; color:#8a8ca7; line-height:1.6; }
+.wd-personal-product { padding:16px; border:1px solid #ecebf6; border-radius:10px; background:linear-gradient(125deg,white,#fdfcff); }
+.wd-personal-product>p { font-size:14px; line-height:1.7; color:#777e99; margin:13px 0; overflow-wrap:anywhere; }
+.wd-product-stage { display:flex; gap:6px; padding:12px 0; margin:8px 0; border-top:1px solid #f0eef7; border-bottom:1px solid #f0eef7; }
+.wd-product-stage span { display:flex; align-items:center; gap:5px; flex:1; font-size:13px; color:#8e91a8; }
+.wd-product-stage i { width:8px; height:8px; border:1px solid #c8c7d9; border-radius:50%; }
+.wd-product-stage .active { color:#7950eb; }
+.wd-product-stage .active i { background:#8653ff; border-color:#8653ff; box-shadow:0 0 0 3px #f1eaff; }
+.wd-personal-product footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-top:15px; }
+.wd-personal-product footer small { font-size:12px; color:#9394aa; }
+.ws-unified-layout .wd-product-layout .wd-project-grid { grid-template-columns:1fr; gap:8px; }
+.wd-product-layout .wd-project-card { padding:9px; gap:12px; }
+.wd-product-layout .wd-project-card>.wd-cover { flex-basis:68px; height:80px; }
+.wd-product-layout .wd-project-card>div:nth-child(2) { flex:1; min-width:0; }
+.wd-product-layout .wd-project-card h3 { margin:0 0 4px; font-size:15px; }
+.wd-product-layout .wd-project-card p { margin:0 0 6px; color:#8389a1; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.wd-product-layout .wd-project-card .wd-tags { margin:0; }
+.wd-product-layout .wd-tags span { font-size:12px; padding:3px 7px; border-radius:12px; }
+.wd-project-arrow { display:grid; place-items:center; width:26px; height:26px; flex-shrink:0; color:#8c79b3; border:1px solid #eeebf6; border-radius:50%; }
+.wd-product-layout .wd-metrics { grid-template-columns:repeat(4,minmax(0,1fr)); margin-top:12px; }
+.wd-product-layout .wd-metrics button:nth-child(2) { background:#f7f1ff; }
+.wd-product-layout .wd-metrics button:nth-child(4) { background:#fff7ef; }
+.wd-product-layout .wd-metrics strong { color:#7549ec; }
+.wd-product-layout .wd-metrics button:nth-child(4) strong { color:#e89745; }
+.wd-product-layout .wd-outcome-empty { background:#fbfaff; margin-top:16px; }
+.ws-unified-layout .wd-product-layout .wd-rail { grid-template-columns:minmax(0,1fr); padding-top:46px; gap:14px; }
+.wd-task-meter { height:7px; border-radius:9px; background:#f1ecfd; overflow:hidden; margin:12px 0; }
+.wd-task-meter i { display:block; height:100%; background:linear-gradient(90deg,#7544ff,#a67aff); border-radius:inherit; }
+.wd-product-layout .wd-task-list label { min-height:44px; }
+.wd-product-layout .wd-task-list span { overflow-wrap:anywhere; }
+.wd-product-layout .wd-tutor-intro>img { width:48px; height:52px; border-radius:50%; mask-image:none; }
+.wd-product-layout .wd-preview-label.available { color:#0ca981; background:#ecfbf6; border-radius:20px; padding:3px 7px; }
+.wd-product-layout .wd-tutor-intro p { font-size:13px; }
+.wd-tutor-guidance { padding:13px; margin:12px 0; border-radius:10px; background:linear-gradient(120deg,#f8f5ff,#fafbff); color:#666b89; }
+.wd-tutor-guidance p { font-size:14px; line-height:1.8; margin:0 0 7px; }
+.wd-tutor-guidance small { font-size:12px; line-height:1.7; color:#8d8aa5; }
+.wd-product-layout .wd-tutor>.wd-primary { width:100%; }
+.wd-product-layout .wd-question { margin-bottom:0; }
+.wd-inspiration { position:relative; display:flex; flex-direction:column; gap:8px; padding:20px; isolation:isolate; border:1px solid #eae7f6; border-radius:12px; overflow:hidden; background:#f3efff; }
+.wd-inspiration img { position:absolute; inset:0; z-index:-1; width:100%; height:100%; object-fit:cover; opacity:.25; }
+.wd-inspiration strong { font-size:15px; font-style:italic; color:#7850f4; }
+.wd-inspiration span { font-size:13px; color:#8681a5; }
+.wd-product-layout .wd-product-hero { padding:22px; }
+.wd-product-layout .wd-hero-copy h2 { font-size:32px; line-height:1.35; margin:12px 0 16px; }
+.wd-product-layout .wd-hero-phases { margin-bottom:16px; }
+.wd-product-layout .wd-hero-phases button { gap:5px; }
+.wd-product-layout .wd-hero-phases strong { line-height:20px; }
+.wd-product-layout .wd-hero-phases small { line-height:18px; }
+.wd-product-layout .wd-hero-current { margin-top:10px; }
+.wd-hero-copy h2>span { white-space:nowrap; }
+.ws-unified-layout .wd-product-layout .wd-project-card h3 { font-size:15px; line-height:23px; margin-bottom:3px; }
+.ws-unified-layout .wd-product-layout .wd-project-card p { font-size:13px; line-height:20px; margin-bottom:4px; }
+.wd-product-layout .wd-project-card>.wd-cover { height:68px; }
+.wd-product-layout .wd-personal-products>.wd-empty { padding:22px 18px; border:1px solid #eeebf6; border-radius:10px; background:linear-gradient(145deg,#fcfaff,white); }
+@container workbench-main (max-width:850px) {
+  .wd-product-hero { padding:22px; gap:16px; grid-template-columns:minmax(0,1fr) 270px; }
+  .wd-product-layout .wd-hero-copy h2 { font-size:27px; letter-spacing:-.8px; }
+  .wd-build-note { display:none; }
+  .wd-hero-preview { padding-right:0; }
+  .wd-product-layout .wd-welcome blockquote { display:none; }
+}
+@container learner (max-width:1050px) {
+  .ws-unified-layout .wd-layout.wd-product-layout { grid-template-columns:1fr; }
+  .ws-unified-layout .wd-product-layout .wd-rail { grid-template-columns:repeat(2,minmax(0,1fr)); padding-top:0; align-items:start; }
+}
+@container workbench-main (max-width:800px) {
+  .wd-product-hero { grid-template-columns:1fr; }
+  .wd-hero-preview { padding:0; }
+  .wd-hero-art,.wd-hero-art-label { display:none; }
+  .wd-hero-project { padding:16px; }
+  .wd-hero-project .wd-empty { min-height:100px; }
+  .wd-product-grid,.wd-product-layout .wd-bottom-grid { grid-template-columns:1fr; }
+}
+@container learner (max-width:620px) {
+  .ws-unified-layout .wd-product-layout .wd-rail { grid-template-columns:1fr; }
+  .wd-product-layout .wd-welcome h1 { font-size:24px; }
+  .wd-product-layout .wd-welcome { padding:0; min-height:88px; }
+  .wd-product-layout .wd-product-hero { padding:17px; }
+  .wd-product-layout .wd-hero-copy h2 { font-size:27px; }
+  .wd-hero-phases strong { font-size:12px; }
+  .wd-hero-phases small { font-size:11px; }
+  .wd-product-layout .wd-hero-phases { display:flex; overflow-x:auto; padding:3px 0 10px; scrollbar-width:thin; scrollbar-color:#d8caf8 transparent; }
+  .wd-product-layout .wd-hero-phases li { flex:0 0 94px; }
+  .wd-product-layout .wd-hero-phases strong { font-size:13px; white-space:nowrap; }
+  .wd-hero-actions { gap:8px; }
+  .wd-hero-actions button { padding-inline:10px; font-size:14px; }
+  .wd-product-layout .wd-task-add button,.wd-product-layout .wd-question button { min-width:44px; min-height:40px; }
+  .wd-product-layout .wd-metrics { gap:4px; }
+  .wd-product-layout .wd-metrics small { font-size:12px; }
+  .wd-product-layout .wd-outcome-empty { flex-wrap:wrap; }
+}

@@ -1,0 +1,142 @@
+/* Shared course/project study surface; global chrome remains unchanged. */
+.cs-course-page { container-type:inline-size; container-name:courseStudy; }
+.cs-layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(300px,var(--course-rail-width,360px)); gap:24px; position:relative; align-items:start; }
+.cs-layout[data-rail-hidden] { grid-template-columns:minmax(0,1fr); }
+.cs-view-controls { display:flex; align-items:center; justify-content:flex-end; gap:8px; margin:0 0 16px; }
+.cs-view-controls > span { font-size:12px; color:#8990a8; margin-right:4px; }
+.cs-view-controls button { display:flex; align-items:center; justify-content:center; gap:7px; min-height:40px; border:1px solid #e5e6f0; background:#fff; color:#858ba0; padding:8px 12px; border-radius:9px; font:inherit; font-size:13px; cursor:pointer; }
+.cs-view-controls button[aria-pressed=true] { color:#7251d3; background:#f5f1ff; border-color:#e1d7fb; }
+.cs-view-controls button:hover { border-color:#bda8f1; }
+.cs-view-controls button:focus-visible { outline:2px solid #8864df; outline-offset:3px; }
+.cs-layout > .ls-reading,.cs-rail { min-width:0; }
+.cs-course-page .ls-reading { display:block; }
+.cs-course-page .ls-reading > .ls-actions { margin-top:16px; }
+.cs-rail { display:flex; flex-direction:column; gap:16px; }
+.cs-course-page [hidden] { display:none!important; }
+.cs-course-page .cs-breadcrumb { display:flex; gap:10px; color:#858ba5; font-size:12px; line-height:1.7; margin:2px 0 16px; flex-wrap:wrap; }
+.cs-course-page .cl-lesson-heading { display:grid; grid-template-columns:64px minmax(0,1fr) auto; gap:18px; align-items:start; margin:0 0 12px; }
+.cs-course-page .cl-lesson-heading h1 { font-size:clamp(24px,2.1vw,34px); line-height:1.35; letter-spacing:-.7px; margin:4px 0 10px; color:#10142b; }
+.cs-course-page .cl-lesson-heading p { font-size:14px; line-height:1.8; margin:0; color:#7d86a7; }
+.cs-course-page .cl-lesson-heading .cs-chapter-label { color:#7650f9; font-size:13px; font-weight:600; margin:0; }
+.cs-chapter-number { width:64px; height:68px; border-radius:13px; background:linear-gradient(150deg,#643eff,#9478ff); display:grid; place-items:center; color:white; font-size:34px; font-weight:750; box-shadow:inset 0 -8px 16px #ffffff18; }
+.cs-course-page .cl-lesson-heading > .ls-actions { flex-wrap:nowrap; gap:8px; padding-top:8px; margin:0; }
+.cs-course-page .cl-lesson-heading > .ls-actions button { min-height:42px; padding:8px 14px; white-space:nowrap; font-size:13px; border-radius:9px; }
+.cs-course-page .cl-lesson-heading > .ls-actions button:last-child { background:#7045ff; color:white; border-color:#7045ff; }
+.cs-course-page .cl-lesson-heading.cs-pending-heading { display:block; }
+.cs-pending-heading > nav { margin-bottom:18px; }
+.cs-pending-heading + .cl-video-empty { margin-bottom:18px; }
+.cs-course-page button:disabled { opacity:.48; cursor:not-allowed; }
+.cs-course-page .cl-lesson-heading .ls-demo-notice { font-size:12px; color:#8b829e; margin-top:6px; padding:0; border:0; background:none; }
+.cs-lesson-meta { display:flex; gap:20px; align-items:center; color:#7c82a0; margin:0 0 12px; font-size:13px; flex-wrap:wrap; }
+.cs-course-page .learning-player:not(:fullscreen),.cs-course-page .cl-video-empty { width:min(100%,1120px,calc(65dvh * 16 / 9)); aspect-ratio:16/9; height:auto; min-height:0; max-height:none; margin-inline:auto; }
+.cs-lesson-meta > span { display:flex; align-items:center; gap:8px; }
+.cs-lesson-meta .cs-chapter-count { background:#efebff; border-radius:20px; padding:5px 12px; color:#7850f6; }
+.cs-lesson-meta label { margin-left:auto; display:grid; grid-template-columns:1fr auto; gap:7px 18px; font-size:12px; min-width:135px; }
+.cs-lesson-meta label b { font-weight:400; }
+.cs-course-page progress { appearance:none; border:0; width:100%; height:7px; border-radius:20px; overflow:hidden; background:#eaeaf5; }
+.cs-course-page progress::-webkit-progress-bar { background:#eaeaf5; border-radius:20px; }
+.cs-course-page progress::-webkit-progress-value { background:linear-gradient(90deg,#7443ff,#a17dff); border-radius:20px; }
+.cs-course-page progress::-moz-progress-bar { background:#8156ff; }
+.cs-lesson-meta progress { grid-column:1/-1; }
+.cs-content-tabs { margin-top:18px; background:white; border:1px solid #e9edf8; border-bottom:0; border-radius:12px 12px 0 0; display:flex; align-items:center; gap:22px; padding:0 20px; }
+.cs-content-tabs button { display:flex; align-items:center; gap:7px; min-height:54px; border:0; border-bottom:2px solid transparent; background:none; color:#6e789a; font-size:16px; padding:12px 8px; cursor:pointer; }
+.cs-content-tabs button[aria-pressed=true] { border-bottom-color:#7346ff; color:#7346ff; font-weight:600; }
+.cs-content-tabs small { margin-left:auto; color:#949ab0; font-size:11px; }
+.cs-course-page .ls-courseware-panel { border-radius:0 0 12px 12px; border-color:#e9edf8; padding:0 18px 18px; }
+.cs-course-page .ls-courseware-panel > .ls-tabs { margin:0 -2px 8px; gap:16px; min-height:42px; border:0; }
+.cs-course-page .ls-courseware-panel > .ls-tabs button { font-size:12px; min-height:42px; padding:8px 2px; }
+.cs-resource-list { display:grid; gap:12px; margin:6px 0 14px; }
+.cs-resource-list > a,.cs-resource-list > button { display:flex; align-items:center; gap:15px; padding:16px; background:linear-gradient(110deg,#fff,#fdfdff); border:1px solid #e9edf8; border-radius:10px; text-align:left; color:#36436d; text-decoration:none; width:100%; cursor:pointer; font:inherit; }
+.cs-resource-list > :hover { border-color:#cfc0ff; background:#faf8ff; }
+.cs-resource-icon { flex:0 0 38px; width:38px; height:40px; display:grid; place-items:center; background:linear-gradient(135deg,#ff6a81,#ff4949); color:white; border-radius:9px; }
+.cs-resource-icon.is-material { background:linear-gradient(135deg,#a884ff,#6b45ff); }
+.cs-resource-list > a > span:nth-child(2),.cs-resource-list > button > span:nth-child(2) { flex:1; min-width:0; }
+.cs-resource-list strong { display:block; font-size:14px; font-weight:500; overflow-wrap:anywhere; line-height:1.6; }
+.cs-resource-list small { display:block; font-size:12px; color:#98a0bc; margin-top:4px; }
+.cs-resource-list b { font-weight:500; color:#7850fd; border:1px solid #e9e7fa; background:#faf9ff; padding:7px 10px; font-size:12px; border-radius:7px; display:flex; gap:5px; align-items:center; flex-shrink:0; }
+.cs-slide-preview { border-top:1px solid #edf0f7; padding-top:4px; }
+.cs-slide-preview > summary { color:#78658f; cursor:pointer; font-size:13px; padding:12px 0; }
+.cs-project-preview > summary { display:none; }
+.cs-private-notes .ls-notes { border-radius:0 0 12px 12px; border-color:#e9edf8; }
+.cs-private-notes .ls-notes > .ls-tabs { margin-bottom:14px; }
+.cs-private-notes .ls-notes input { font-size:15px; }
+.cs-directory-slot > .cl-inline-directory { position:static!important; max-height:none!important; border:1px solid #e9edf8; border-radius:12px; background:white; overflow:hidden; }
+.cs-rail .cs-directory { padding:20px 18px 10px; background:white; width:auto; min-height:0; }
+.cs-directory-progress { padding:0 2px 16px; }
+.cs-directory-progress > div { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px; }
+.cs-directory-progress h2 { font-size:16px; margin:0; color:#151a32; }
+.cs-directory-progress span { font-size:12px; color:#9099b8; }
+.cs-directory-progress b { margin-left:8px; font-weight:400; }
+.cs-directory .cl-course-picker { margin:0 0 12px; font-size:11px; color:#9098b0; }
+.cs-directory .cl-course-picker select { max-width:100%; font-size:12px; background:#fafaff; border-color:#ecedf7; }
+.cs-directory .cl-directory-tabs { margin:0 0 12px; border-bottom:1px solid #edf0f8; }
+.cs-directory .cl-directory-tabs button { min-height:36px; padding:8px; font-size:12px; }
+.cs-directory .cl-chapters { padding:0; }
+.cs-directory .cl-chapter { border:1px solid #edf0f8; border-radius:9px; margin-bottom:9px; padding:0; overflow:hidden; }
+.cs-directory .cl-chapter-toggle { padding:12px 10px; gap:5px; min-height:46px; color:#475478; }
+.cs-directory .cl-chapter-toggle[aria-expanded=true] { color:#7750fc; background:linear-gradient(90deg,#f9f6ff,#fff); }
+.cs-directory .cl-chapter-toggle strong { font-size:13px; font-weight:550; line-height:1.6; }
+.cs-course-page .cs-directory .cl-chapter-toggle { min-height:44px; padding:10px; }
+.cs-directory .cl-chapter-toggle small { color:#969fba; font-size:11px; }
+.cs-course-page .cs-directory .cl-lesson { padding:7px 8px; margin:0 5px 3px; width:calc(100% - 10px); border-radius:6px; gap:8px; min-height:44px; font-size:14px; }
+.cs-course-page .cs-directory .cl-lesson > span:nth-child(2) { line-height:1.7; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cs-course-page .cs-directory .cl-lesson > span:nth-child(2) small { display:inline; margin-left:6px; color:#25a67d; font-size:10px; }
+.cs-directory .cl-lesson time,.cs-directory .cl-lesson > small { font-size:11px; color:#929bbc; }
+.cs-directory .cl-lesson-icon { width:17px; height:17px; min-width:17px; }
+.cs-directory .cs-show-more { display:flex; align-items:center; gap:6px; color:#919abc; font-size:12px; background:none; border:0; padding:8px 30px; min-height:38px; cursor:pointer; }
+.cs-directory .cl-directory-footer { margin-top:10px; padding:0; border:0; }
+.cs-directory .cl-directory-footer summary { color:#969bb0; font-size:11px; cursor:pointer; padding:8px; }
+.cs-assistant-panel { padding:20px; border-color:#e9edf8; border-radius:12px; }
+.cs-assistant header { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+.cs-assistant header h2 { font-size:17px; margin:0; color:#161b37; }
+.cs-assistant-icon { background:#f2eaff; color:#7045ff; border-radius:12px; padding:8px; display:grid; place-items:center; }
+.cs-assistant header small { margin-left:auto; font-size:10px; color:#8588a0; background:#f4f5fa; padding:4px 8px; border-radius:12px; }
+.cs-quick-actions { display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:12px; border-radius:10px; background:#f7f8fd; }
+.cs-quick-actions p { grid-column:1/-1; font-size:13px; color:#7c86a6; margin:0 0 8px; }
+.cs-quick-actions button { display:flex; align-items:center; gap:7px; min-height:42px; padding:8px; background:white; border:1px solid #ebeafa; border-radius:7px; color:#7c71a7; font-size:12px; cursor:pointer; text-align:left; }
+.cs-quick-actions svg { color:#8858ff; flex-shrink:0; }
+.cs-ai-disclosure { margin:12px 0; color:#9198ae; font-size:11px; }
+.cs-ai-disclosure summary { cursor:pointer; }
+.cs-ai-disclosure button { margin-top:10px; padding:8px 12px; background:#f6f2ff; border:1px solid #e4dcf8; color:#7850cd; border-radius:7px; }
+.cs-ai-disclosure p { font-size:12px; line-height:1.8; }
+.cs-assistant textarea { display:block; width:100%; min-height:80px; background:white; border:1px solid #e8eaf5; border-radius:10px; padding:12px; font:inherit; font-size:13px; color:#343d5c; resize:vertical; }
+.cs-assistant > .ls-btn { display:block; margin:10px 0 0 auto; min-height:40px; border-radius:8px; color:white; background:#7445ff; border:0; padding:8px 16px; }
+.cs-assistant .ls-muted:empty { display:none; }
+.cs-assistant .ls-muted { font-size:12px; }
+.cs-splitter { position:absolute; width:16px; top:0; bottom:0; right:calc(var(--course-rail-width) + 4px); cursor:col-resize; touch-action:none; display:flex; justify-content:center; outline:none; }
+.cs-splitter span { display:block; position:sticky; top:200px; margin-top:160px; width:3px; height:44px; background:#e0dfea; border-radius:6px; }
+.cs-splitter:hover span,.cs-splitter:focus-visible span { background:#a78ae8; }
+.cs-splitter:focus-visible span { outline:2px solid #8c71d1; outline-offset:3px; }
+.cs-layout[data-resizing] { user-select:none; }
+.cs-layout[data-resizing] > .ls-reading,.cs-layout[data-resizing] > .cs-rail { pointer-events:none; }
+@container courseStudy (max-width:1150px) {
+  .cs-course-page .cl-lesson-heading { grid-template-columns:52px minmax(0,1fr); gap:12px; }
+  .cs-chapter-number { width:52px; height:58px; font-size:28px; }
+  .cs-course-page .cl-lesson-heading > .ls-actions { grid-column:2; padding:0; }
+}
+@container courseStudy (max-width:960px) {
+  .cs-layout { grid-template-columns:minmax(0,1fr); }
+  .cs-rail { display:contents; }
+  .cs-directory-slot { grid-row:1; min-width:0; }
+  .cs-layout > .ls-reading { grid-row:2; }
+  .cs-splitter { display:none; }
+  .cs-directory-slot > .cl-inline-directory > summary { display:flex; align-items:center; gap:10px; padding:14px 18px; color:#7050c4; font-size:14px; cursor:pointer; }
+  .cs-directory-slot > .cl-inline-directory > summary span { flex:1; }
+  .cs-assistant-slot { grid-row:3; min-width:0; }
+}
+@container courseStudy (max-width:520px) {
+  .cs-view-controls { justify-content:space-between; gap:6px; }
+  .cs-view-controls > span { display:none; }
+  .cs-view-controls button { flex:1; min-height:44px; }
+  .cs-course-page .cl-lesson-heading { grid-template-columns:1fr; }
+  .cs-chapter-number { display:none; }
+  .cs-course-page .cl-lesson-heading > .ls-actions { grid-column:1; }
+  .cs-course-page .cl-lesson-heading h1 { font-size:24px; }
+  .cs-content-tabs { padding:0 12px; gap:14px; }
+  .cs-content-tabs small { display:none; }
+  .cs-resource-list > a,.cs-resource-list > button { padding:12px 10px; gap:10px; }
+  .cs-resource-list b { padding:6px; }
+  .cs-lesson-meta { gap:10px; }
+  .cs-lesson-meta label { margin-left:0; width:100%; }
+  .cs-course-page .cs-breadcrumb { margin-bottom:14px; }
+}

@@ -1,0 +1,28 @@
+/* Approved ring/spark identity. Keep navigation geometry and actions unchanged. */
+img.osl-brand-symbol { display:block; width:36px; height:36px; flex:0 0 auto; object-fit:contain; border-radius:0; background:transparent; }
+.osl-brand-copy { display:grid; gap:3px; text-align:left; min-width:0; }
+.osl-brand-copy .osl-brand-wordmark { display:block; margin:0; color:#0e1025; font-family:Inter,Manrope,Arial,sans-serif; font-size:19px; font-weight:800; line-height:1.14; letter-spacing:-.8px; white-space:nowrap; }
+.osl-brand-wordmark em { font-style:normal; color:#662eff; background:linear-gradient(100deg,#4b2bfc,#822cf9); background-clip:text; -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.osl-brand-copy .osl-brand-tagline { display:block; margin:0; color:#7c879b; font-family:Inter,Arial,sans-serif; font-size:10px; font-weight:450; font-style:italic; line-height:1.35; letter-spacing:.65px; white-space:nowrap; }
+.ws-unified-layout .ws-brand { gap:9px; padding-inline:4px; }
+.ws-unified-layout .ws-brand img.osl-brand-symbol { width:35px; height:35px; border-radius:0; }
+.ws-unified-layout .ws-brand .osl-brand-wordmark { font-size:18px; letter-spacing:-.8px; }
+.ws-unified-layout .ws-brand .osl-brand-tagline { font-size:10px; font-style:italic; color:#7c879b; letter-spacing:.45px; }
+.sales-brand img.osl-brand-symbol,.opc-brand img.osl-brand-symbol { width:38px; height:38px; border-radius:0; }
+.co-brand img.osl-brand-symbol { width:36px; height:36px; border-radius:0; }
+.co-brand .osl-brand-wordmark { font-size:19px; }.co-brand .osl-brand-tagline { font-size:10px; }
+.admin-brand { gap:9px; padding-inline:0; }
+.admin-brand img.osl-brand-symbol { width:36px; height:36px; }
+.admin-brand .osl-brand-wordmark { color:#f7f5ff; font-size:18px; }
+.admin-brand .osl-brand-wordmark em { color:#c2a6ff; background:none; -webkit-text-fill-color:currentColor; }
+.admin-brand .osl-brand-tagline { color:#b5adc5; font-style:normal; letter-spacing:.1em; }
+.auth-brand { display:flex; align-items:center; gap:12px; margin-bottom:22px; }
+.auth-brand .osl-brand-symbol { width:46px; height:46px; }
+.auth-brand .osl-brand-wordmark { font-size:24px; letter-spacing:-1px; }
+.auth-brand .osl-brand-tagline { font-size:12px; }
+.oc-byline img.osl-brand-symbol { background:transparent; border-radius:0; }
+@media(max-width:600px) {
+  .sales-brand .osl-brand-wordmark,.opc-brand .osl-brand-wordmark,.co-brand .osl-brand-wordmark { font-size:17px; }
+  .sales-brand img.osl-brand-symbol,.opc-brand img.osl-brand-symbol,.co-brand img.osl-brand-symbol { width:32px; height:32px; }
+  .sales-brand .osl-brand-tagline,.opc-brand .osl-brand-tagline,.co-brand .osl-brand-tagline { font-size:9px; letter-spacing:.3px; }
+}

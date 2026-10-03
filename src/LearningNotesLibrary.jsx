@@ -1,7 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import {ArrowLeft,ArrowsInSimple,ArrowsOutSimple,BookOpen,Clock,FileText,MagnifyingGlass,ArrowClockwise} from "@phosphor-icons/react";
 import { api } from "./api.js";
 import { RichNoteRead, RichLessonNote } from "./RichLessonNote.jsx";
-export function LearningNotesLibrary({ model, navigate, query }) {
+import {Modal} from './PersonalShared.jsx';
+export function LearningNotesLibrary({ model, navigate, query, setQuery, guard }) {
+  const [pending,setPending]=useState(null);
+  const saving=useRef(false);
+  const [mobileReader,setMobileReader]=useState(false),[focus,setFocus]=useState(false),[loading,setLoading]=useState(false);
   const [items, setItems] = useState([]),
     [current, setCurrent] = useState(null),
     [nextOffset, setNextOffset] = useState(null),
@@ -9,8 +14,9 @@ export function LearningNotesLibrary({ model, navigate, query }) {
     [error, setError] = useState(""),
     [trash, setTrash] = useState(false),
     [busy, setBusy] = useState(false);
-  const load = (offset = 0) =>
-    api(`/learning/notes?offset=${typeof offset === "number" ? offset : 0}`)
+  const load = (offset = 0) => {
+    setLoading(true);
+    return api(`/learning/notes?offset=${typeof offset === "number" ? offset : 0}`)
       .then((d) => {
         setItems((items) =>
           typeof offset === "number" && offset > 0
@@ -21,29 +27,27 @@ export function LearningNotesLibrary({ model, navigate, query }) {
             : d.items,
         );
         setNextOffset(d.nextOffset);
+        setError('');
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => setError(e.message)).finally(()=>setLoading(false));
+  };
   useEffect(() => {
     if (model.user) load();
   }, [model.user?.id]);
   const dirty = Boolean(draft && draft.body !== current?.body);
+  const confirmLeave=proceed=>{if(saving.current)return false;if(!dirty)return true;setPending(()=>proceed);return false;};
   useEffect(() => {
-    const guard = (e) => {
-      if (!dirty) return;
-      if (e.type === "beforeunload") {
-        e.preventDefault();
-        e.returnValue = "";
-      } else if (!window.confirm("笔记尚未保存，确定离开？"))
-        e.preventDefault();
-    };
-    window.addEventListener("beforeunload", guard);
-    window.addEventListener("oneshowlearn:before-navigate", guard);
+    guard.current=confirmLeave;
+    const prevent=e=>{if(dirty){e.preventDefault();e.returnValue='';}};
+    window.addEventListener("beforeunload", prevent);
     return () => {
-      window.removeEventListener("beforeunload", guard);
-      window.removeEventListener("oneshowlearn:before-navigate", guard);
+      guard.current=null;
+      window.removeEventListener("beforeunload", prevent);
     };
   }, [dirty]);
   const save = async (note, deleted = Boolean(note.deleted_at)) => {
+    if(saving.current)return;
+    saving.current=true;
     setBusy(true);
     try {
       const result = await api(`/learning/notes/${note.id}`, {
@@ -69,13 +73,13 @@ export function LearningNotesLibrary({ model, navigate, query }) {
     } catch (e) {
       setError(e.message);
     } finally {
+      saving.current=false;
       setBusy(false);
     }
   };
   const open = (note) => {
-    if (dirty && !window.confirm("放弃当前未保存的笔记修改？")) return;
-    setCurrent(note);
-    setDraft(null);
+    const apply=()=>{setCurrent(note);setDraft(null);setMobileReader(true);};
+    if(confirmLeave(apply))apply();
   };
   if (!model.user)
     return <div className="ls-empty">登录后查看自己的课时笔记。</div>;
@@ -87,106 +91,31 @@ export function LearningNotesLibrary({ model, navigate, query }) {
         .includes((query || "").toLowerCase()),
   );
   return (
-    <section className="ls-page">
-      <header className="ls-heading">
-        <div>
-          <h1>课程与项目笔记</h1>
-          <p>统一查看课时中保存的笔记、截图与时间标记。</p>
-        </div>
-        <div className="ls-actions">
-          <button onClick={() => setTrash((v) => !v)}>
-            {trash ? "返回课时笔记" : "课时笔记回收站"}
-          </button>
-          <button onClick={load}>刷新</button>
-        </div>
-      </header>
-      {error && (
-        <p className="ls-error" role="alert">
-          {error}
-        </p>
-      )}
-      <div className="ls-note-library">
-        <nav className="ls-panel">
-          {nextOffset !== null && (
-            <button className="ls-btn" onClick={() => load(nextOffset)}>
-              加载更多课时笔记
-            </button>
-          )}
-          {shown.map((note) => (
-            <button
-              className="ls-lesson-row"
-              aria-pressed={current?.id === note.id}
-              key={note.id}
-              onClick={() => open(note)}
-            >
-              <strong>{note.title}</strong>
-              <small>{note.lesson_title}</small>
-            </button>
-          ))}
-          {!shown.length && (
-            <p className="ls-muted">
-              {trash ? "回收站是空的" : "还没有匹配的课时笔记"}
-            </p>
-          )}
-        </nav>
-        <article className="ls-panel">
-          {current ? (
-            <>
-              <h2>{current.title}</h2>
-              <p className="ls-muted">
-                {current.lesson_title} ·{" "}
-                {current.video_time === null
-                  ? "课时笔记"
-                  : `${Math.floor(current.video_time / 60)} 分 ${Math.floor(current.video_time % 60)} 秒`}
-              </p>
-              {draft ? (
-                <RichLessonNote
-                  value={draft.body}
-                  onChange={(body) => setDraft({ ...draft, body })}
-                />
-              ) : (
-                <RichNoteRead body={current.body} />
-              )}
-              <div className="ls-actions">
-                {current.deleted_at ? (
-                  <button disabled={busy} onClick={() => save(current, false)}>
-                    恢复笔记
-                  </button>
-                ) : (
-                  <>
-                    {draft ? (
-                      <button
-                        className="ls-primary"
-                        disabled={busy}
-                        onClick={() => save(draft)}
-                      >
-                        保存修改
-                      </button>
-                    ) : (
-                      <button onClick={() => setDraft({ ...current })}>
-                        编辑笔记
-                      </button>
-                    )}
-                    <button
-                      disabled={busy || dirty}
-                      onClick={() => save(current, true)}
-                    >
-                      移入回收站
-                    </button>
-                  </>
-                )}
-                {current.source_url && (
-                  <button onClick={() => navigate(current.source_url)}>
-                    返回对应课时 →
-                  </button>
-                )}
-              </div>
-            </>
-          ) : (
-            <p className="ls-muted">选择一条笔记，回顾当时的思考。</p>
-          )}
-        </article>
+    <>
+      <div className="ns-collection-bar"><div><strong>课时记录</strong><span>已加载 {shown.length} 篇{nextOffset!==null?' · 可加载更多':''}</span></div><div className="ns-actions"><button className="ns-button" onClick={()=>setTrash(v=>!v)}>{trash?'返回课时笔记':'回收站'}</button><button className="ns-button" disabled={loading||busy} onClick={()=>load()}><ArrowClockwise size={17}/>{loading?'读取中':'刷新'}</button></div></div>
+      {error&&<p className="ns-error" role="alert">{error}</p>}
+      <div className={`ns-workspace ${mobileReader?'is-reading':''} ${focus?'is-focused':''}`}>
+        <section className="ns-index" aria-label="课程与项目笔记列表">
+          <label className="ns-search"><MagnifyingGlass size={18}/><input aria-label="搜索课时笔记" placeholder="搜索笔记标题、课程" value={query} onChange={e=>setQuery(e.target.value)}/></label>
+          <div className="ns-list-label"><span>{trash?'课时笔记回收站':'课程与项目笔记'}</span><BookOpen size={16}/></div>
+          <div className="ns-note-list">
+            {shown.map(note=><button className="ns-note" aria-pressed={current?.id===note.id} key={note.id} onClick={()=>open(note)}><span className="ns-note-title"><FileText size={17}/><strong>{note.title}</strong></span><p>{note.lesson_title}</p><span className="ns-note-meta"><span>{note.video_time==null?'课时笔记':`视频 ${Math.floor(note.video_time/60)}:${String(Math.floor(note.video_time%60)).padStart(2,'0')}`}</span></span></button>)}
+            {!shown.length&&<div className="ns-list-empty"><BookOpen size={28}/><strong>{loading?'正在读取笔记…':trash?'回收站是空的':'没有匹配的课时笔记'}</strong><p>课程和项目中保存的笔记，会汇集到这里。</p></div>}
+            {nextOffset!==null&&<button className="ns-button" disabled={loading} onClick={()=>load(nextOffset)}>加载更多课时笔记</button>}
+          </div>
+          <footer className="ns-index-footer">保留课时来源与视频时间标记</footer>
+        </section>
+        <section className="ns-editor" aria-label="课时笔记内容">
+          <header className="ns-editor-toolbar"><div className="ns-actions"><button className="ns-mobile-back ns-icon" aria-label="返回课时笔记列表" onClick={()=>setMobileReader(false)}><ArrowLeft size={19}/></button><span className="ns-save-status">{dirty?'尚未保存':'课程 / 项目笔记'}</span></div><div className="ns-actions">{current&&!current.deleted_at&&(draft?<button className="ns-button ns-primary" disabled={busy} onClick={()=>save(draft)}>{busy?'保存中':'保存修改'}</button>:<button className="ns-button" onClick={()=>setDraft({...current})}>编辑笔记</button>)}<button className="ns-icon ns-focus" aria-label={focus?'退出专注阅读':'专注阅读'} aria-pressed={focus} onClick={()=>setFocus(v=>!v)}>{focus?<ArrowsInSimple size={19}/>:<ArrowsOutSimple size={19}/>}</button></div></header>
+          {current?<article className="ns-document">
+            <div className="ns-document-label"><BookOpen size={16}/>课时笔记</div><h2>{current.title}</h2>
+            <div className="ns-document-meta"><span>{current.lesson_title}</span><span><Clock size={14}/>{current.video_time==null?'无时间标记':`${Math.floor(current.video_time/60)} 分 ${Math.floor(current.video_time%60)} 秒`}</span></div>
+            <div className="ns-learning-content" inert={busy}>{draft?<><RichLessonNote value={draft.body} onChange={body=>setDraft({...draft,body})}/><button className="ns-button" onClick={()=>open(current)}>取消编辑</button></>:<RichNoteRead body={current.body}/>}</div>
+            <footer className="ns-document-footer"><div className="ns-actions">{current.deleted_at?<button className="ns-button" disabled={busy} onClick={()=>save(current,false)}>恢复笔记</button>:<button className="ns-button ns-quiet" disabled={busy||dirty} onClick={()=>save(current,true)}>移入回收站</button>}</div>{current.source_url&&<button className="ns-button" onClick={()=>navigate(current.source_url)}>返回对应课时 →</button>}</footer>
+          </article>:<div className="ns-blank"><div className="ns-blank-icon"><BookOpen size={36} weight="duotone"/></div><h2>把学习的收获留在这里</h2><p>选择一条课时笔记，<br/>连同视频时间与课件，一起回顾当时的思考。</p><button className="ns-button" onClick={()=>navigate('/opc')}>前往学习课程 →</button></div>}
+        </section>
       </div>
-    </section>
+      {pending&&<Modal title="保留未保存的修改？" close={()=>setPending(null)}><div className="ps-modal-body"><p>课时笔记尚未保存，继续编辑可保留当前修改。</p><div className="ps-form-actions"><button className="ps-outline" onClick={()=>setPending(null)}>继续编辑</button><button className="ps-primary" onClick={()=>{const proceed=pending;setPending(null);proceed();}}>放弃修改</button></div></div></Modal>}
+    </>
   );
 }

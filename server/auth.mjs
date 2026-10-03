@@ -6,6 +6,10 @@ export function signUser(user) {
   return jwt.sign({ sub: user.id, role: user.role, email: user.email, ver: Number(user.token_version || 0) }, config.jwtSecret, { expiresIn: "7d" });
 }
 
+export function hasVerifiedLogin(user) {
+  return Boolean(user && (user.email_verified || row('SELECT 1 FROM login_identities WHERE user_id=? LIMIT 1',[user.id])));
+}
+
 export function optionalAuth(req, _res, next) {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
@@ -13,7 +17,7 @@ export function optionalAuth(req, _res, next) {
   try {
     const payload = jwt.verify(token, config.jwtSecret);
     req.user = row("SELECT id,email,name,role,status,email_verified,token_version FROM users WHERE id = ?", [Number(payload.sub)]);
-    if (req.user && (req.user.status !== "active" || !req.user.email_verified || Number(payload.ver || 0) !== Number(req.user.token_version || 0))) req.user = null;
+    if (req.user && (req.user.status !== "active" || !hasVerifiedLogin(req.user) || Number(payload.ver || 0) !== Number(req.user.token_version || 0))) req.user = null;
   } catch {
     req.user = null;
   }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, BookOpenText, CalendarCheck, Check, Crown, FileText, FolderOpen, MagnifyingGlass, NotePencil, Plus, Robot, Sparkle, Star, Trash, Trophy, UsersThree, X } from "@phosphor-icons/react";
 import "./workspace-pages.css";
+import CourseOffer from './CourseOffer.jsx';
 
 function localDate(value = new Date()) {
   return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
@@ -139,11 +140,8 @@ function CommunityPage({ navigate }) {
   return <section className="wsp-coming-soon"><span className="wsp-status-label">正在筹备</span><span className="wsp-coming-icon"><UsersThree size={56} weight="duotone" /></span><h2>一个专注于做出产品的学习社区</h2><p>未来你可以在这里分享作品、交流实践问题，找到一起学习的伙伴。<br />社区尚未开放，目前没有群聊或加入入口。</p><div className="wsp-next-grid"><button onClick={() => navigate("/notes")}><NotePencil size={22} /><span><strong>先记录你的实践</strong><small>把问题与经验写进学习笔记</small></span><ArrowRight size={18} /></button><button onClick={() => navigate("/resources")}><FolderOpen size={22} /><span><strong>继续探索学习资源</strong><small>寻找项目需要的方法与工具</small></span><ArrowRight size={18} /></button></div></section>;
 }
 
-function MembershipPage({ navigate }) {
-  return <section className="wsp-membership"><div className="wsp-membership-intro"><span className="wsp-kicker">ONE SHOW LEARN</span><h2>为真实成果学习，<br />选择适合你的实战内容。</h2><p>当前以课程 / 项目包授权提供内容访问。具体范围以课程详情和你的账号权益为准。</p><button className="wsp-button wsp-button-primary" onClick={() => navigate("/paths")}>查看课程与学习路径<ArrowRight size={18} /></button></div><div className="wsp-membership-details"><h3>你可以围绕一个真实项目学习</h3>{["以实战文档为主，按步骤推进", "结合 Prompt、代码与模板动手实践", "通过任务与检查清单检验成果", "在关键环节配合短视频演示"].map(text => <p key={text}><Check size={18} />{text}</p>)}<div className="wsp-membership-notice"><strong>在线支付暂未开放</strong><span>目前不提供在线购买或自动开通会员。这里不会扣款，也不会因点击按钮授予付费课程权限。</span></div></div></section>;
-}
-
 export function WorkspacePages({ route, model, navigate, notify }) {
+  if (route === '/membership') return <CourseOffer model={model} navigate={navigate} embedded/>;
   const [Icon, title, subtitle] = routeInfo[route] || routeInfo["/courses"];
   let content;
   if (model.loading && ["/courses", "/projects", "/resources", "/favorites", "/notes", "/plan"].includes(route)) content = <div className="wsp-loading" role="status">正在载入你的学习空间…</div>;
@@ -155,6 +153,5 @@ export function WorkspacePages({ route, model, navigate, notify }) {
   else if (route === "/tools") content = <ToolsPage navigate={navigate} />;
   else if (route === "/community") content = <CommunityPage navigate={navigate} />;
   else if (route === "/certificates") content = <EmptyState icon={Trophy} title="暂时还没有学习证书" action="继续实战学习" onAction={() => navigate("/courses")}>证书发放功能尚未开放。未来将在明确课程要求和成果评审规则后提供，不会把示例证书当成你的学习成绩。</EmptyState>;
-  else if (route === "/membership") content = <MembershipPage navigate={navigate} />;
   return <div className="wsp-page"><header className="wsp-page-header"><span className="wsp-header-icon"><Icon size={26} weight="duotone" /></span><div><h1>{title}</h1><p>{subtitle}</p></div></header>{content}</div>;
 }

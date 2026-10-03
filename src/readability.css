@@ -1,0 +1,158 @@
+/* Shared reading hierarchy. Loaded after page styles; never scale the viewport.
+   Keep page identities, media, navigation geometry and account behavior intact. */
+:root {
+  --type-meta: 13px;
+  --type-secondary: 14px;
+  --type-body: 15px;
+  --type-reading: 16px;
+  --type-card: 17px;
+  --text-secondary: #626b80;
+}
+
+/* Learner controls and discovery content. Existing 16px global menu stays intact. */
+.ws-unified-layout { font-size:var(--type-body); }
+.ws-unified-layout .ws-search input { font-size:var(--type-secondary); }
+.ws-unified-layout .ws-profile strong { font-size:var(--type-body); }
+.ws-unified-layout .wb-access p { font-size:var(--type-meta); line-height:1.7; }
+.ws-unified-layout .wb-access>button { font-size:var(--type-secondary); min-height:44px; }
+.ws-unified-layout .ws-content :is(input,select,textarea) { font-size:var(--type-body); }
+.ws-unified-layout .ws-content :is(p,label) { font-size:var(--type-body); line-height:1.75; }
+.ws-unified-layout .ws-content small { font-size:var(--type-meta); line-height:1.7; }
+.ws-unified-layout .ws-content :is(button,summary) { line-height:1.6; }
+.ws-unified-layout :is(.pd-page,.oc-page,.rc-layout,.ps-layout,.wd-layout) { font-size:var(--type-body); }
+.ws-unified-layout :is(.pd-categories button,.pd-toolbar select,.pd-view,.pd-primary,.oc-categories button,.oc-search-row select,.rc-filters button,.rc-filters select,.ps-tabs button,.ps-primary,.ps-outline,.wd-primary) { font-size:var(--type-body); min-height:44px; }
+.ws-unified-layout :is(.pd-card h2,.oc-card h2,.oc-card h3,.rc-card-title h3,.fv-title h2,.ac-card h3,.wd-project-card h3,.wd-current h3) { font-size:var(--type-card); line-height:1.55; }
+.ws-unified-layout :is(.wd-section-heading h2,.pd-panel h2,.rc-panel h2,.ps-panel h2,.oc-rail h2) { font-size:18px; line-height:1.5; }
+.ws-unified-layout :is(.pd-description,.oc-card-copy>p,.rc-card-body>p,.fv-body>p,.wd-current p) { font-size:var(--type-body); line-height:1.75; }
+.ws-unified-layout :is(.pd-meta,.pd-difficulty,.pd-counts span,.pd-benefits small,.pd-guide p,.pd-hint,.oc-byline,.oc-card footer,.oc-values small,.rc-card footer,.rc-category small,.rc-latest-item small,.fv-body>footer,.wd-current small,.wd-recent-row time,.wd-metrics small,.wd-outcome small,.wd-calendar-stats small) { font-size:var(--type-meta); line-height:1.7; color:var(--text-secondary); }
+.ws-unified-layout :is(.pd-tags span,.oc-badges span,.rc-tags button,.ps-inline-tags button,.ps-inline-tags span,.wd-tags span,.wd-stage-chips button) { font-size:var(--type-meta); line-height:1.6; }
+.ws-unified-layout :is(.pd-benefits strong,.pd-guide strong,.rc-category strong,.rc-latest-item strong,.wd-phase strong,.wd-recent-row>strong,.wd-outcome strong) { font-size:var(--type-body); line-height:1.65; }
+.ws-unified-layout :is(.pd-panel header>button,.pd-questions button,.pd-current li button,.rc-text,.ps-text,.oc-text-link,.oc-rail-link,.wd-link,.wd-check-in,.wd-suggestions button) { font-size:var(--type-secondary)!important; min-height:40px; white-space:normal; }
+.ws-unified-layout :is(.pd-meta,.pd-difficulty,.wd-stage-chips,.rc-card footer,.oc-card footer) { flex-wrap:wrap; row-gap:8px; }
+.ws-unified-layout .pd-description { min-height:0; }
+.ws-unified-layout .wd-project-card { min-width:0; }
+.ws-unified-layout .wd-phase small { font-size:var(--type-meta); line-height:1.7; }
+.ws-unified-layout .wd-recent-row { min-height:58px; }
+.ws-unified-layout .wd-recent-row>strong { white-space:normal; }
+.ws-unified-layout .wd-task-list label { line-height:1.7; }
+.ws-unified-layout :is(.wsp-button,.wsp-tabs button,.wsp-text-button) { font-size:var(--type-body); min-height:44px; }
+.ws-unified-layout :is(.wsp-course-meta,.wsp-progress-label,.wsp-note-footer,.wsp-tabs button span) { font-size:var(--type-meta); color:var(--text-secondary); line-height:1.7; }
+.ws-unified-layout .wsp-course-body>p { color:var(--text-secondary); }
+
+/* Long reading and authoring take priority over compact dashboard metadata. */
+.ws-unified-layout .tc-page { font-size:var(--type-reading); --tc-muted:#696579; }
+.ws-unified-layout :is(.tc-answer-markdown,.tc-message .ps-markdown,.tc-message .ps-markdown p,.tc-answer-markdown p,.tc-user p,.tc-composer textarea,.ls-rich-read,.ls-rich-read p,.ls-rich-editor .tiptap,.ls-rich-editor .tiptap p,.ls-note p,.rc-document,.oc-markdown,.oc-markdown p,.notes-studio .ps-markdown,.notes-studio .ps-markdown p,.ns-writing textarea,.ns-learning-content .ls-rich-read) { font-size:var(--type-reading); line-height:1.85; }
+.ws-unified-layout :is(.tc-code-block pre,.tc-answer-table table,.notes-studio .ps-markdown pre,.ls-material pre) { font-size:var(--type-secondary); line-height:1.8; }
+.ws-unified-layout :is(.tc-header-actions button,.tc-faq-list>button,.tc-faq-tabs button,.tc-mode button,.tc-compose-bottom .tc-web-toggle,.tc-reference-panel summary) { font-size:var(--type-secondary); min-height:44px; }
+.ws-unified-layout :is(.tc-status,.tc-history-status,.tc-faq-intro,.tc-faq-hint,.tc-faq-mode,.tc-web-privacy,.tc-reference-date,.tc-reference-expand,.tc-reference-content small) { font-size:var(--type-meta); line-height:1.7; color:#70667c; }
+.ws-unified-layout .tc-faq-desktop-title h2 { font-size:var(--type-card); }
+.ws-unified-layout .tc-answer-markdown a.tc-citation { font-size:12px; }
+.ws-unified-layout .notes-studio { --ns-muted:#696579; }
+.ws-unified-layout :is(.ns-note-title strong,.ns-collection-bar strong) { font-size:16px; line-height:1.65; }
+.ws-unified-layout .ns-note p { font-size:14px; color:#6e657b; line-height:1.75; }
+.ws-unified-layout :is(.ns-private,.ns-note-meta,.ns-save-status,.ns-document-meta,.ns-index-footer,.ns-writing-footer,.ns-document-label,.ns-collection-bar>div>span) { font-size:var(--type-meta); color:#756a81; line-height:1.7; }
+.ws-unified-layout :is(.notes-studio .ns-button,.ns-filters button,.ns-sources button,.ns-inline-tags button,.ns-tags summary) { font-size:var(--type-secondary); min-height:44px; }
+.ws-unified-layout .ns-editor-toolbar { flex-wrap:wrap; gap:10px; }
+.ws-unified-layout .ns-filters { flex-wrap:wrap; }
+.ws-unified-layout .ns-filters small { font-size:12px; }
+.ws-unified-layout :is(.cl-directory-tabs button,.ls-directory-items button,.cl-chapter>summary,.ls-directory-files a,.ls-tabs button,.ls-note-actions button,.ls-study-subtabs button,.study-columns-tools button) { font-size:var(--type-secondary); min-height:44px; line-height:1.65; }
+.ws-unified-layout :is(.cl-course-select select,.ls-notes input,.ls-notes textarea) { font-size:var(--type-reading); }
+.ws-unified-layout :is(.ls-note small,.cl-course-summary small,.cl-directory-summary small,.study-columns-tools) { font-size:var(--type-meta); line-height:1.7; }
+.ws-unified-layout .ls-note-actions { flex-wrap:wrap; }
+.ws-unified-layout :is(.cl-lesson,.cl-chapter-toggle) { font-size:var(--type-body); line-height:1.65; min-height:48px; }
+.ws-unified-layout .ls-note-toolbar { flex-wrap:wrap; }
+.ws-unified-layout .ls-note-toolbar button { flex:0 0 auto; min-width:36px; min-height:40px; white-space:nowrap; font-size:14px; }
+
+/* Sales destination: retain the approved mascot, hero, colors and price hierarchy. */
+.co-site { font-size:var(--type-body); }
+.co-site .co-nav nav button { font-size:var(--type-body); }
+.co-site :is(.co-login,.co-nav-buy,.co-link) { font-size:var(--type-secondary)!important; min-height:44px; }
+.co-site .co-search { flex-shrink:1; min-width:140px; }
+.co-site .co-search input { font-size:var(--type-secondary); }
+.co-site .co-hero-copy>p { font-size:18px; line-height:1.8; max-width:100%; }
+.co-site .co-checks { font-size:var(--type-secondary); line-height:1.7; }
+.co-site :is(.co-kicker,.co-metrics small,.co-metrics div>span,.co-scope,.co-price>span,.co-payment-note,.co-course-options,.co-purchase-assurances span,.co-closing-kicker,.co-closing-points) { font-size:var(--type-meta); line-height:1.7; }
+.co-site :is(.co-metrics div>span,.co-scope,.co-payment-note) { color:#69718a; }
+.co-site :is(.co-section>p,.co-purchase>p,.co-questions article p,.co-footer,.co-payment-labels,.co-closing-action button) { font-size:var(--type-body); line-height:1.75; }
+.co-site :is(.co-section>p,.co-purchase>p,.co-questions article p) { color:var(--text-secondary); }
+.co-site .co-main { container:offer-main / inline-size; }
+.co-site .co-benefits { grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
+.co-site .co-benefits article { padding:20px 16px; gap:12px; height:auto; }
+.co-site :is(.co-benefits h3,.co-curriculum h3,.co-questions h3) { font-size:var(--type-card); line-height:1.55; }
+.co-site .co-benefits p { font-size:var(--type-secondary); line-height:1.8; color:var(--text-secondary); }
+.co-site .co-curriculum { grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; }
+.co-site .co-curriculum article { padding:18px 14px; height:auto; }
+.co-site .co-curriculum li button { font-size:var(--type-secondary); line-height:1.7; min-height:44px; gap:8px; align-items:flex-start; }
+.co-site .co-curriculum li button>span { white-space:normal; overflow:visible; overflow-wrap:anywhere; text-overflow:clip; }
+.co-site .co-curriculum small { font-size:var(--type-meta); line-height:1.7; color:#687187; }
+.co-site .co-curriculum em { font-size:12px; background:#087f4e; }
+.co-site :is(.co-primary,.co-preview),.co-checkout .co-primary { font-size:16px!important; min-height:48px; line-height:1.6; }
+.co-site .co-course-select { font-size:var(--type-meta); }
+.co-site .co-course-select select { font-size:var(--type-secondary); min-height:44px; }
+.co-site .co-questions article h4 { font-size:16px; line-height:1.6; }
+.co-site .co-section { margin-top:30px; }
+.co-site .co-section h2 { font-size:24px; }
+.co-site .co-closing-action button { min-height:48px; }
+.co-site .co-purchase-assurances span { grid-template-columns:1fr; text-align:center; gap:4px; }
+.co-site .co-purchase-assurances svg { grid-row:auto; justify-self:center; }
+.co-checkout :is(p,button) { font-size:var(--type-body); line-height:1.75; }
+.co-checkout :is(small,.co-payment-methods small,.co-order-history small) { font-size:var(--type-meta); line-height:1.7; color:#6c6379; }
+
+/* Public marketing and management retain their own geometry and visual identity. */
+.sales-page :is(.sales-links button,.sales-login,.sales-start,.sales-search input) { font-size:var(--type-body); }
+.sales-page :is(.course-card-copy p,.sales-benefits p,.sales-section>p,.sales-section-head p) { font-size:15px; line-height:1.8; }
+.sales-page :is(.sales-pill,.course-card-meta,.sales-footer,.course-card-badge,.sales-stats small,.sales-benefits small) { font-size:var(--type-meta); line-height:1.7; }
+.sales-page .sales-button { font-size:16px; min-height:48px; }
+.admin-layout .admin-content { font-size:var(--type-body); }
+.admin-layout :is(.admin-content p,.admin-content label,.admin-content input,.admin-content select,.admin-content textarea,.admin-content button),.admin-layout>aside nav button { font-size:var(--type-body); line-height:1.7; }
+.admin-layout :is(.admin-content input:not([type=checkbox]):not([type=radio]),.admin-content select,.admin-content button) { min-height:44px; }
+.admin-layout :is(.account-table,.admin-content small,.admin-content .content-kind,.admin-content .admin-opc-edit) { font-size:var(--type-secondary); line-height:1.7; }
+.admin-layout .admin-content :is(.admin-form-row,.account-row-actions) { gap:14px; }
+:is(.user-auth-card,.admin-login,.auth-page) :is(input,select,textarea) { font-size:16px; min-height:44px; }
+
+/* Reflow instead of lowering font sizes when usable content width is constrained. */
+@container offer-main (max-width:1000px) {
+  .co-site .co-benefits { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .co-site .co-curriculum { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@container learner (max-width:1200px) {
+  .ws-unified-layout .wd-layout { grid-template-columns:minmax(0,1fr); }
+  .ws-unified-layout .wd-rail { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@container workbench-main (max-width:1280px) {
+  .ws-unified-layout .wd-project-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@container learner (max-width:800px) {
+  .ws-unified-layout .wd-rail { grid-template-columns:minmax(0,1fr); }
+}
+@container learner (max-width:600px) {
+  .ws-unified-layout .wd-project-grid { grid-template-columns:minmax(0,1fr); }
+  .ws-unified-layout .ws-content :is(input,select,textarea) { font-size:16px; }
+}
+@media(max-width:1180px) {
+  .co-site .co-search { display:none; }
+  .co-site .co-nav nav { gap:18px; }
+}
+@media(max-width:1000px) {
+  .co-site .co-benefits { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .co-site .co-curriculum { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media(max-width:700px) {
+  .admin-layout .admin-content :is(input,select,textarea) { font-size:16px; }
+  .co-site .co-hero-copy>p { font-size:16px; max-width:100%; }
+  .co-site .co-hero-art { opacity:.12; }
+  .co-site .co-benefits { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+  .co-site .co-benefits article { flex-direction:column; padding:18px 14px; }
+  .co-site .co-curriculum { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .co-site .co-curriculum article { padding:16px 12px; }
+  .co-site .co-footer { align-items:flex-start; }
+  .co-site .co-footer span { align-items:flex-start; }
+  .co-site .co-footer svg { flex-shrink:0; margin-top:3px; }
+  .co-site .co-course-select select { font-size:16px; }
+  .co-site .co-checks { max-width:100%; }
+}
+@media(max-width:380px) {
+  .co-site :is(.co-benefits,.co-curriculum) { grid-template-columns:minmax(0,1fr); }
+  .co-site .co-benefits article { flex-direction:row; }
+  .co-site .co-purchase-assurances { grid-template-columns:minmax(0,1fr); gap:10px; }
+}

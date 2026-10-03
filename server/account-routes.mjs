@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { loginCapabilities } from './login-configuration.mjs';
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -7,6 +8,7 @@ import { db, row, rows, run } from "./db.mjs";
 import { requireAuth, requireOwner, signUser } from "./auth.mjs";
 import { sendEmail, emailStatus, verifyEmailTransport } from "./email.mjs";
 import { AccountError, audit, rateLimit } from "./account-security.mjs";
+import { installAccountProfile, profileFor } from './account-profile.mjs';
 
 const email = z.string().trim().toLowerCase().email().max(254);
 // bcrypt only processes the first 72 UTF-8 bytes: reject longer input explicitly.
@@ -75,7 +77,9 @@ async function requestCode(req, res, data, purpose) {
 
 export function accountRouter() {
   const router = Router();
-  router.get("/status", (_req, res) => res.json({
+  installAccountProfile(router);
+  router.get("/status", (_req, res) => res.set('Cache-Control','no-store').json({
+    ...loginCapabilities(),
     registrationEnabled: config.registrationEnabled && emailAvailable,
     passwordResetEnabled: emailAvailable,
     deliveryMode: config.allowDevEmail && !config.isProduction ? "development" : "email",
@@ -126,7 +130,7 @@ export function accountRouter() {
     const safe = { id: user.id, email: user.email, name: user.name, role: user.role, status: user.status, email_verified: user.email_verified, token_version: user.token_version };
     res.json({ token: signUser(safe), user: safe });
   }));
-  router.get("/me", requireAuth, (req, res) => res.json({ user: req.user }));
+  router.get("/me", requireAuth, (req, res) => res.set('Cache-Control','no-store').json({ user: {...req.user, avatar:profileFor(req.user.id).avatar} }));
   router.post("/password/change", requireAuth, validate(z.object({ currentPassword: z.string().min(1).max(128), newPassword: password }), async (req, res, data) => {
     rateLimit("change-password", req.user.id, 5, 600);
     const original = row("SELECT * FROM users WHERE id=?", [req.user.id]);
@@ -159,10 +163,12 @@ export function accountAdminRouter() {
     const page = Math.max(1, Math.floor(Number(req.query.page) || 1));
     const q = String(req.query.q || "").trim().slice(0, 100);
     const status = ["active", "disabled"].includes(req.query.status) ? req.query.status : "";
-    const params = [q, `%${q}%`, `%${q}%`, status, status];
-    const where = "(?='' OR u.email LIKE ? OR u.name LIKE ?) AND (?='' OR u.status=?)";
+    const params = [q, `%${q}%`, `%${q}%`, `%${q}%`, status, status];
+    const where = "(?='' OR u.email LIKE ? OR u.name LIKE ? OR EXISTS(SELECT 1 FROM login_identities i WHERE i.user_id=u.id AND i.provider='phone' AND i.subject LIKE ?)) AND (?='' OR u.status=?)";
     const total = row(`SELECT COUNT(*) total FROM users u WHERE ${where}`, params).total;
     const items = rows(`SELECT u.id,u.email,u.name,u.role,u.status,u.email_verified,u.created_at,u.last_login_at,
+      (SELECT group_concat(provider) FROM login_identities WHERE user_id=u.id) login_methods,
+      (SELECT substr(subject,1,3)||'****'||substr(subject,-4) FROM login_identities WHERE user_id=u.id AND provider='phone') phone_masked,
       (SELECT COUNT(*) FROM entitlements e WHERE e.user_id=u.id AND e.status='active') pack_count,
       (SELECT COUNT(*) FROM orders o WHERE o.user_id=u.id) order_count
       FROM users u WHERE ${where} ORDER BY u.id DESC LIMIT 20 OFFSET ?`, [...params, (page - 1) * 20]);

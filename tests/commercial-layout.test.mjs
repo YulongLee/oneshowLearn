@@ -150,11 +150,11 @@ test('the legacy demo is retired and every course detail reaches the shared read
   assert.match(reader,/metadata.locked/);
   assert.match(reader,/revision!==request.current/);
 });
-test('workbench prioritizes course/project continuation, private tools and responsive phases',()=>{
+test('workbench prioritizes actual lessons, adaptive records and the approved compact rail',()=>{
   const workbench=source('Workbench.jsx');
   assert.ok(workbench.indexOf('<ProductHero model=')<workbench.indexOf('<PersonalProducts items='));
-  assert.ok(workbench.indexOf('<PersonalProducts items=')<workbench.indexOf('className="wd-panel wd-recommendations"'));
-  assert.match(workbench,/phaseState\(extra.phases.find/);
+  assert.ok(workbench.indexOf('<RecentLearning recent=')<workbench.indexOf('className="wd-recommendations"'));
+  assert.match(workbench,/workbenchPhaseState\(selection.lessons/);
   assert.match(workbench,/currentProductAchievement\(items\)/);
   assert.ok(workbench.indexOf('<TutorPanel model=')<workbench.indexOf('<LearningCalendar model='));
   assert.match(source('workbench-product.css'),/@container learner \(max-width:1050px\)/);
@@ -162,6 +162,10 @@ test('workbench prioritizes course/project continuation, private tools and respo
   assert.match(workbench,/实时回答未接入/);
   assert.doesNotMatch(workbench,/wb-hero|method:\s*['"]POST['"]/);
   assert.match(workbench,/recommendations.length>0\|\|extra.loading\|\|extra.errors.projects/);
+  assert.match(workbench,/personalProduct&&<PersonalProducts/);
+  assert.match(workbench,/recent.length>0&&<RecentLearning/);
+  assert.match(workbench,/stored.accountId===accountId/);
+  assert.doesNotMatch(workbench,/wd-metrics|calendarMonth\(/);
   const routes=source('LearningRoutes.jsx');
   assert.match(routes,/aria-expanded=\{expanded\}/);
   assert.match(routes,/expandedPhase===null\?data.current/);

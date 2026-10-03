@@ -112,6 +112,6 @@ export default function CourseOffer({model,navigate,embedded=false}) {
       <footer className="co-footer"><span><ShieldCheck size={18}/>课程范围清晰可查</span><span><PlayCircle size={18}/>免费内容先行体验</span><span><LockKey size={18}/>核验到账后自动开通</span><span><NotePencil size={18}/>学习记录，账号保存</span></footer><ServiceLinks/></>}
     </Content>
     {authOpen&&<Modal title="登录学习账号" close={()=>setAuthOpen(false)}><UserAuthCard onSuccess={()=>setAuthOpen(false)}/></Modal>}
-    {confirm&&offer&&<CourseCheckout offer={offer} initialOrderId={returnOrderId} close={()=>{setConfirm(false);setReturnOrderId(null);}} onPaid={()=>setRetry(n=>n+1)}/>}
+    {confirm&&offer&&<CourseCheckout offer={offer} initialOrderId={returnOrderId} close={()=>{setConfirm(false);setReturnOrderId(null);}} onPaid={()=>{setRetry(n=>n+1);model.refresh({preserve:true});}}/>}
   </div>;
 }

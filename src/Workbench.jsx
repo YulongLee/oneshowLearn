@@ -1,123 +1,142 @@
-import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, BookOpenText, CalendarCheck, CaretLeft, CaretRight, Check, CheckCircle, Code, Cube, FileText, HandWaving, Plus, Robot, Trophy, X } from '@phosphor-icons/react';
-import { api } from './api.js';
-import { useSitePage } from './useSitePage.js';
-import { courseArt, localDay } from './Workspace.jsx';
-import { courseLearningPath } from './course-reader-model.js';
-import { courseProgress, dashboardCourses } from './dashboard-model.js';
-import { calendarMonth, currentProject, currentProductAchievement, learningEntries, phaseState, recentStudyItems, watchPercent } from './workbench-model.js';
-import { lessonLink } from './LessonWorkspace.jsx';
-import { liveAchievements, liveNotes, STAGES } from './personal-model.js';
-import { safeResourceUrl } from './opc-model.js';
-import welcomeArt from './assets/workbench-welcome-v2.webp';
-import robotArt from './assets/tutor-robot-v2.webp';
+import {useEffect,useRef,useState} from 'react';
+import {ArrowRight,BookOpenText,CalendarBlank,Check,CheckCircle,Code,Cube,FileText,Lightbulb,NotePencil,Play,Plus,Robot,SquaresFour,Trophy,X} from '@phosphor-icons/react';
+import {api} from './api.js';
+import {useSitePage} from './useSitePage.js';
+import {localDay,courseArt} from './Workspace.jsx';
+import {courseLearningPath} from './course-reader-model.js';
+import {currentProject,currentProductAchievement,recentStudyItems,watchPercent,workbenchSelection,workbenchPhaseState} from './workbench-model.js';
+import {lessonLink} from './LessonWorkspace.jsx';
+import {liveAchievements,STAGES} from './personal-model.js';
+import {safeResourceUrl} from './opc-model.js';
+import {prepareTutorQuestion,useAiCapabilities} from './useAiCapabilities.js';
 import projectWebArt from './assets/project-web-cover-v1.webp';
 import projectMobileArt from './assets/project-mobile-cover-v1.webp';
 import projectAgentArt from './assets/project-agent-cover-v1.webp';
 import './workbench-overview.css';
 import './workbench-product.css';
-import { prepareTutorQuestion, useAiCapabilities } from './useAiCapabilities.js';
 
-const phases = [['产品与机会','找到需求，确定方向','green'],['AI 产品开发','用 AI 做出产品','violet'],['上线与合规','域名 / 服务器 / 上架','blue'],['收款与商业化','支付 / 订阅 / 定价','amber'],['运营与增长','SEO / 内容 / 社区','pink']];
-const questions = ['我下一步应该做什么？','帮我检查我的 MVP 功能清单','如何用 Codex 开发支付功能？','帮我整理今天的学习问题'];
-function Heading({children,action,onClick}) { return <header className="wd-section-heading"><h2>{children}</h2>{action&&<button className="wd-link" onClick={onClick}>{action}<ArrowRight size={14}/></button>}</header>; }
-function Progress({value,label}) { return <div className="wd-progress-row"><div className="wd-progress" role="progressbar" aria-label={label} aria-valuenow={value} aria-valuemin={0} aria-valuemax={100}><i style={{width:`${value}%`}}/></div><span>{value}%</span></div>; }
-function Empty({icon:Icon=BookOpenText,title,children,action,onClick}) { return <div className="wd-empty"><span><Icon size={27} weight="duotone"/></span><h3>{title}</h3><p>{children}</p>{action&&<button className="wd-link" onClick={onClick}>{action}<ArrowRight size={14}/></button>}</div>; }
-function Cover({item}) { const [failed,setFailed]=useState(false);const source=safeResourceUrl(item.cover_url);const project=item.lessonCount!=null;const fallback=project?(/移动|小程序|App/i.test(item.title)?projectMobileArt:/Agent|自动化/i.test(item.title)?projectAgentArt:projectWebArt):courseArt(item);return <div className="wd-cover"><img src={source&&!failed?source:fallback} alt="" onError={()=>setFailed(true)}/>{(!source||failed)&&<small>分类示意</small>}</div>; }
-function studyDate(value) { if(!value)return '';const date=new Date(value.includes('T')?value:`${value.replace(' ','T')}Z`);return Number.isNaN(date.getTime())?'':new Intl.DateTimeFormat('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(date); }
+const phases=['产品与机会','AI 产品开发','上线与合规','收款与商业化','运营与增长'];
+const blank=accountId=>({accountId,loading:true,projects:[],mine:[],entry:{},errors:{}});
+function Heading({children,action,onClick}) {return <header className="wd-section-heading"><h2>{children}</h2>{action&&<button className="wd-link" onClick={onClick}>{action}<ArrowRight size={15}/></button>}</header>;}
+function Progress({value,label}) {return <div className="wd-progress-row"><div className="wd-progress" role="progressbar" aria-label={label} aria-valuenow={value} aria-valuemin={0} aria-valuemax={100}><i style={{width:`${value}%`}}/></div><span>{value}%</span></div>;}
+function Cover({item}) {const [failed,setFailed]=useState(false);const source=safeResourceUrl(item.cover_url);const fallback=item.lessonCount!=null?(/移动|小程序|App/i.test(item.title)?projectMobileArt:/Agent|自动化/i.test(item.title)?projectAgentArt:projectWebArt):courseArt(item);return <div className="wd-cover"><img src={source&&!failed?source:fallback} alt="" onError={()=>setFailed(true)}/>{(!source||failed)&&<small>分类示意</small>}</div>;}
+function studyDate(value) {if(!value)return '';const date=new Date(value.includes('T')?value:`${value.replace(' ','T')}Z`);return Number.isNaN(date.getTime())?'':new Intl.DateTimeFormat('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(date);}
 
-function ProductHero({model,extra,current,activeLesson,currentPath,project,ownedIds,navigate}) {
-  const unavailable=model.loading||Boolean(model.error)||!model.user;
+function ProductHero({model,extra,selection,navigate}) {
+  const {course,lesson,total,completed,percent,started,finished,owned}=selection;
+  const loading=model.loading||extra.loading, error=model.error||extra.errors.entry;
+  const path=lesson?lessonLink(lesson):course?courseLearningPath(course.slug):'/opc';
+  const title=loading?'正在读取你的课程…':error?'课程记录暂时无法读取':lesson?.title||course?.title||'从课程开始，建立你的产品能力';
+  const status=!model.user?'登录后保存学习记录':!owned?'免费课时体验':finished?'课程学习已完成':started?'继续上次学习':'尚未开始';
   return <section className="wd-product-hero" aria-labelledby="wd-hero-title">
-    <div className="wd-hero-copy"><span className="wd-hero-eyebrow">AI OPC · 一个人的产品公司</span><h2 id="wd-hero-title">从想法到上线，<br/>一步步做出属于<span>自己的产品。</span></h2>
-      <ol className="wd-hero-phases" aria-label="我的五阶段学习进度">{phases.map(([title],index)=>{const status=unavailable||extra.loading||extra.errors.phases?'unavailable':phaseState(extra.phases.find(p=>p.id===index+1),ownedIds);return <li key={title} className={status}><button onClick={()=>navigate(`/opc/phase/${index+1}`)}><span>{status==='completed'?<Check size={15} weight="bold"/>:`0${index+1}`}</span><strong>{title}</strong><small>{{completed:'已完成',started:'学习中',ready:'待学习',pending:'未开始',unavailable:'进度待读取'}[status]}</small></button></li>;})}</ol>
-      <div className="wd-hero-actions"><button className="wd-primary" disabled={model.loading||extra.loading} onClick={()=>navigate(model.user?currentPath:'/login')}>{!model.user?'登录后开始学习':current?'继续学习课程':'选择学习课程'}<ArrowRight size={17}/></button><button className="wd-secondary" onClick={()=>navigate(project?`/projects/${encodeURIComponent(project.slug)}/workspace`:'/projects')}>{project?'继续实战项目':'探索实战项目'}<ArrowRight size={17}/></button></div>
-      {current&&!unavailable&&<div className="wd-hero-current"><BookOpenText size={16}/><span>{activeLesson?.title||current.title}</span><b>{courseProgress(current)}%</b><small>课程进度</small></div>}
+    <div className="wd-hero-copy"><span className="wd-hero-eyebrow">{lesson?.chapter?`${started?'继续学习':'从这里开始'} · ${lesson.chapter}`:'你的课程学习入口'}</span><h2 id="wd-hero-title">{title}</h2>
+      <p className="wd-hero-goal">{!error?(lesson?.subtitle||'按课程顺序学习，把每一次理解变成下一步实践。'):'请重新加载后继续，已保存的学习记录不会丢失。'}</p>
+      {!loading&&!error&&<span className="wd-study-status">{status}</span>}
+      <div className="wd-hero-actions"><button className="wd-primary" disabled={loading||Boolean(error)} onClick={()=>navigate(model.user?path:'/login')}>{!model.user?'登录后开始学习':finished?'回顾课程':!owned&&lesson?'开始免费试听':started?'继续学习':'开始学习'}<ArrowRight size={18}/></button><button className="wd-link" onClick={()=>navigate(course?courseLearningPath(course.slug):'/opc')}>查看完整课程目录<ArrowRight size={15}/></button></div>
     </div>
-    <div className="wd-hero-preview"><section className="wd-hero-project"><Heading action={project?'继续项目':'查看项目'} onClick={()=>navigate(project?`/projects/${encodeURIComponent(project.slug)}/workspace`:'/projects')}>我的实战项目</Heading>{project&&!unavailable&&!extra.errors.mine?<><div className="wd-hero-project-title"><span className="wd-product-icon"><Cube size={25} weight="duotone"/></span><div><h3>{project.title}</h3><span className="wd-product-status">{project.progress.percent===100?'学习与验收已完成':'学习与实践中'}</span></div></div><Progress value={project.progress.percent} label="项目学习与验收进度"/><p className="wd-hero-project-meta">学完 {project.progress.completed} / {project.progress.total} 节 · 验收 {project.progress.accepted} / {project.progress.stageCount} 阶段</p><div className="wd-hero-milestones">{project.stages.slice(0,6).map(stage=><span className={stage.accepted?'done':''} key={stage.id}><CheckCircle size={14} weight={stage.accepted?'fill':'regular'}/>{stage.title}</span>)}</div></>:<Empty icon={Cube} title={extra.loading?'正在读取项目…':extra.errors.mine?'项目记录暂不可用':'让你的想法迈出第一步'}>从感兴趣的项目开始实践，真实学习进度会记录在这里。</Empty>}</section><span className="wd-build-note" aria-hidden="true">Build<br/>Your Idea<br/>With AI ✦</span><img className="wd-hero-art" src={projectMobileArt} alt=""/><small className="wd-hero-art-label">界面示意</small></div>
+    <div className="wd-course-art" aria-hidden="true"><div className="wd-course-art-back"/><div className="wd-course-art-page"><span><Play size={22} weight="fill"/></span><strong>{course?.title||'AI OPC'}</strong><i/><i/></div></div>
+    <div className="wd-course-meter"><span>课程进度</span><div className="wd-progress" role="progressbar" aria-label="课程完成进度" aria-valuenow={error?0:percent} aria-valuemin={0} aria-valuemax={100}><i style={{width:`${error?0:percent}%`}}/></div><strong>{loading||error?'待读取':total?`${completed} / ${total} 节`:'目录待更新'}</strong></div>
   </section>;
 }
 
-function PersonalProducts({items,unavailable,loading,error,navigate}) {
+function LearningPath({selection,extra,model,navigate}) {
+  return <section className="wd-learning-path"><Heading>你的五章学习路径</Heading><p className="wd-panel-subtitle">按课程顺序，逐步建立产品能力。</p><ol className="wd-learning-phases" aria-label="课程五章学习进度">{phases.map((title,index)=>{
+    const status=model.loading||model.error||extra.loading||extra.errors.entry?'unavailable':workbenchPhaseState(selection.lessons,index+1,selection.lesson);
+    const label={completed:'已完成',started:'学习中',current:'从这里开始',pending:'尚未开始',unconfigured:'目录待更新',unavailable:'进度待读取'}[status];
+    return <li key={title} className={status}><button aria-current={status==='current'||selection.lesson?.phase===index+1?'step':undefined} onClick={()=>navigate(`/opc/phase/${index+1}`)}><span>{status==='completed'?<Check size={19}/>:String(index+1).padStart(2,'0')}</span><strong>{title}</strong><small>{label}</small></button></li>;
+  })}</ol></section>;
+}
+function RecentLearning({recent,navigate}) {
+  return <section className="wd-panel wd-recent"><Heading action="查看课程" onClick={()=>navigate('/courses')}>最近学习</Heading>{recent.slice(0,3).map(lesson=><button key={`${lesson.kind}-${lesson.id}`} className="wd-recent-row" onClick={()=>navigate(lessonLink(lesson))}><span className={`wd-item-icon ${lesson.kind==='project'?'mint':'violet'}`}>{lesson.kind==='project'?<Code size={20}/>:<BookOpenText size={20}/>}</span><strong>{lesson.title}</strong><em>{lesson.kind==='project'?'项目':'课程'}</em><span className="wd-recent-progress">{lesson.progress.completed_at?<span className="wd-done"><CheckCircle size={16} weight="fill"/>已完成</span>:<Progress value={watchPercent(lesson)} label="视频观看进度"/>}</span><time>{studyDate(lesson.progress.updated_at)}</time></button>)}</section>;
+}
+function CurrentProject({project,navigate}) {
+  return <section className="wd-panel wd-current-project"><Heading action="查看我的项目" onClick={()=>navigate('/projects')}>继续你的实战项目</Heading><div className="wd-resume-project"><Cover item={project}/><div><h3>{project.title}</h3><p>课程学习与阶段验收进度，不代表产品已上线。</p><Progress value={project.progress?.percent||0} label="项目学习与验收进度"/><small>学完 {project.progress?.completed||0} / {project.progress?.total||0} 节 · 验收 {project.progress?.accepted||0} / {project.progress?.stageCount||0} 阶段</small></div><button className="wd-secondary" onClick={()=>navigate(`/projects/${encodeURIComponent(project.slug)}/workspace`)}>继续项目<ArrowRight size={16}/></button></div></section>;
+}
+function PersonalProducts({items,model,navigate}) {
   const item=currentProductAchievement(items);
-  return <section className="wd-panel wd-personal-products"><Heading action="查看全部产品" onClick={()=>navigate('/achievements')}>我的 AI 产品</Heading><p className="wd-panel-subtitle">从 0 到 1，记录属于自己的产品与成长</p>{item&&!unavailable?<div className="wd-personal-product"><div className="wd-product-title"><span className="wd-product-icon"><Cube size={26} weight="duotone"/></span><div><h3>{item.title}</h3><span className="wd-product-status">{STAGES[item.stage]||'个人记录'}</span></div></div><p>{item.description||'为你的产品留下一份进展记录。'}</p><div className="wd-product-stage" aria-label="个人记录的产品阶段">{[['idea','产品想法'],['building','开发中'],['launched','已上线']].map(([stage,title])=><span key={stage} className={item.stage===stage?'active':''}><i/>{title}</span>)}</div><div className="wd-tags">{(item.tags||[]).slice(0,3).map(tag=><span key={tag}>{tag}</span>)}</div><footer><small>更新于 {studyDate(item.updatedAt)} · 个人记录</small><button className="wd-secondary" onClick={()=>navigate('/achievements')}>查看产品<ArrowRight size={15}/></button></footer></div>:<Empty icon={Cube} title={loading?'正在加载产品…':error?'产品记录暂不可用':unavailable?'登录后管理你的产品':'你的第一个 AI 产品，从这里开始'} action={loading||error?null:unavailable?'登录账号':'记录我的产品'} onClick={()=>navigate(unavailable?'/login':'/achievements')}>把想法、原型与上线成果记录下来。这里展示你的个人产品，不把课程示例当成已完成作品。</Empty>}</section>;
+  return <section className="wd-panel wd-personal-products"><Heading action="查看全部产品" onClick={()=>navigate('/achievements')}>我的 AI 产品</Heading><div className="wd-personal-product"><span className="wd-product-icon"><Cube size={27}/></span><div><h3>{item.title}</h3><p>{item.description||'为自己的产品留下一份进展记录。'}</p><span className="wd-study-status">{STAGES[item.stage]||'个人记录'}</span><small>更新于 {studyDate(item.updatedAt)} · 个人记录</small></div><button className="wd-link" disabled={model.loading||Boolean(model.error)} onClick={()=>navigate('/achievements')}>查看产品<ArrowRight size={15}/></button></div></section>;
 }
-
-function LearningCalendar({model,selectedDay,onSelect,navigate,notify}) {
-  const [month,setMonth]=useState(()=>new Date(new Date().getFullYear(),new Date().getMonth(),1,12));
-  const today=localDay(),checked=model.state.checkIns.includes(today),monthKey=localDay(month).slice(0,7);
-  const unavailable=model.loading||Boolean(model.error)||!model.user;
-  const shift=n=>setMonth(d=>new Date(d.getFullYear(),d.getMonth()+n,1,12));
-  const checkIn=async()=>{if(!model.user)return navigate('/login');if(await model.saveState({...model.state,checkIns:[...new Set([...model.state.checkIns,today])]}))notify('今日学习打卡已保存');};
-  return <section className="wd-panel wd-calendar" aria-label="学习日历"><Heading action="查看计划" onClick={()=>navigate('/plan')}>学习日历</Heading>
-    <div className="wd-month"><button aria-label="上个月" onClick={()=>shift(-1)}><CaretLeft size={16}/></button><button aria-label="返回本月和今天" onClick={()=>{setMonth(new Date(new Date().getFullYear(),new Date().getMonth(),1,12));onSelect(today);}}>{month.getFullYear()} 年 {month.getMonth()+1} 月</button><button aria-label="下个月" onClick={()=>shift(1)}><CaretRight size={16}/></button></div>
-    <div className="wd-calendar-grid">{['一','二','三','四','五','六','日'].map(day=><span key={day}>{day}</span>)}{calendarMonth(month.getFullYear(),month.getMonth()).map((date,index)=>date?<button key={localDay(date)} className={`${selectedDay===localDay(date)?'selected':''} ${localDay(date)===today?'today':''} ${model.state.checkIns.includes(localDay(date))?'checked':''}`} aria-pressed={selectedDay===localDay(date)} aria-label={`${localDay(date)}${model.state.checkIns.includes(localDay(date))?'，已打卡':''}，查看任务`} onClick={()=>onSelect(localDay(date))}>{date.getDate()}{model.state.checkIns.includes(localDay(date))&&<i/>}</button>:<span key={`empty-${index}`}/>)}</div>
-    <div className="wd-calendar-stats">{[[model.stats.streakDays,'连续打卡'],[model.state.checkIns.filter(day=>day.startsWith(monthKey)).length,'当月打卡'],[model.state.tasks.filter(task=>task.done&&task.date.startsWith(monthKey)).length,'当月完成任务']].map(([value,label])=><div key={label}><strong>{unavailable?'—':value}</strong><small>{label}</small></div>)}</div>
-    <button className="wd-check-in" disabled={checked||model.busy||model.loading||Boolean(model.error)} onClick={checkIn}><CalendarCheck size={16}/>{checked?'今日已打卡':'完成学习，打卡记录'}</button>
+function GrowthEntry({model,items,navigate}) {
+  const product=currentProductAchievement(items), outcomes=items.filter(item=>item.type!=='product').sort((a,b)=>String(b.updatedAt).localeCompare(String(a.updatedAt)));
+  const error=model.error,loading=model.loading;
+  return <section className="wd-panel wd-growth-entry" aria-label="产品与成果记录">
+    <div><span className="wd-product-icon"><Cube size={27}/></span><div><h2>{product?'记录产品的下一步':'记录你的产品想法'}</h2><p>{loading?'正在读取个人记录…':error?'个人记录暂不可用，请重试加载。':'把想法、原型和上线过程，留在自己的成长档案里。'}</p><button className="wd-link" disabled={loading||Boolean(error)} onClick={()=>navigate(model.user?'/achievements':'/login')}>{model.user?'记录我的产品':'登录后记录'}<ArrowRight size={15}/></button></div></div>
+    <div><span className="wd-product-icon"><Trophy size={27}/></span><div><h2>{outcomes.length?'最近的成果':'每一步，都值得留下'}</h2><p>{!loading&&!error&&outcomes[0]?outcomes[0].title:'课程笔记与实践成果，随时整理和回顾。'}</p><button className="wd-link" disabled={loading||Boolean(error)} onClick={()=>navigate(model.user?'/achievements':'/login')}>查看我的成果<ArrowRight size={15}/></button></div></div>
   </section>;
 }
-
-function TutorPanel({model,navigate,notify}) {
-  const ai=useAiCapabilities(model.user?.id);
-  const [question,setQuestion]=useState(''),[draft,setDraft]=useState('');const dialog=useRef(null);
+function TutorPanel({model,selection,navigate,notify}) {
+  const ai=useAiCapabilities(model.user?.id),[question,setQuestion]=useState(''),[draft,setDraft]=useState(''),saving=useRef(false),dialog=useRef(null);
+  const available=Boolean(model.user&&ai?.available&&ai.features?.tutor!==false);
   useEffect(()=>{if(draft)dialog.current?.showModal();},[draft]);
   const close=()=>{dialog.current?.close();setDraft('');};
-  const ask=value=>{if(!value.trim())return;if((ai?.available&&ai.features?.tutor!==false)){prepareTutorQuestion(value.trim());navigate('/tutor');}else setDraft(value.trim());};
-  const save=async()=>{if(!model.user){close();return navigate('/login');}const note={id:crypto.randomUUID(),title:draft.slice(0,120),body:`待解答的问题：\n${draft}\n\n我的思考与实践记录：\n`,updatedAt:new Date().toISOString()};if(await model.saveState({...model.state,notes:[note,...model.state.notes]})){close();setQuestion('');notify('问题已保存为私人学习笔记');}};
-  const available=ai?.available&&ai.features?.tutor!==false;
-  return <section className="wd-panel wd-tutor"><Heading action="进入导师" onClick={()=>navigate('/tutor')}><Robot size={21}/>AI OPC 导师</Heading><div className="wd-tutor-intro"><img src={robotArt} alt="AI 学习助手插图"/><div><span className={`wd-preview-label ${available?'available':''}`}>{available?'AI 问答已接通':ai?'实时回答未接入':'正在检查服务…'}</span><p>从一个好问题开始，让下一步实践更清晰。</p></div></div><div className="wd-tutor-guidance"><p>梳理产品思路、拆解开发任务，或讨论学习中遇到的难题。</p><small>{available?'进入导师后，可结合你选择的学习资料提问。':'暂不生成模拟回答，可以先保存问题。'}</small></div><button className="wd-primary" onClick={()=>ask(questions[0])}>让 AI 帮我开始<ArrowRight size={16}/></button>
-    <form className="wd-question" onSubmit={e=>{e.preventDefault();ask(question);}}><input aria-label="向 AI 导师提问" placeholder="问我一个问题…" value={question} onChange={e=>setQuestion(e.target.value)} maxLength={500} required/><button aria-label="发送学习问题" disabled={!question.trim()}><ArrowRight size={18}/></button></form>
-    <dialog ref={dialog} className="wd-dialog" aria-labelledby="wd-question-title" onCancel={close} onClose={()=>setDraft('')}><button className="wd-dialog-close" aria-label="关闭导师说明" onClick={close}><X size={20}/></button><Robot size={32}/><h2 id="wd-question-title">先收好这个好问题</h2><p>AI 导师尚未接入实时回答。可以先把问题保存为私人笔记，不会生成模拟答案。</p><blockquote>{draft}</blockquote><button className="wd-primary" onClick={save} disabled={model.busy}>保存为学习笔记<ArrowRight size={16}/></button></dialog>
+  const ask=value=>{
+    if(!value.trim())return;if(!model.user)return navigate('/login');
+    const text=selection.lesson?`我正在学习《${selection.course.title}》的“${selection.lesson.title}”。\n${value.trim()}\n请依据可访问的已发布课程文字资料回答，资料没有涉及时请说明。`:value.trim();
+    if(available){prepareTutorQuestion(text,{accountId:model.user.id,courseId:selection.owned?selection.course?.id:null});navigate('/tutor');}else setDraft(text);
+  };
+  const save=async()=>{
+    if(saving.current||model.busy||model.loading||model.error)return;
+    if(model.state.notes.length>=100)return notify('笔记已达上限，请先整理学习笔记。');
+    saving.current=true;
+    try{const note={id:crypto.randomUUID(),title:draft.slice(0,120),body:`待解答的问题：\n${draft}\n\n我的思考与实践记录：\n`,updatedAt:new Date().toISOString()};if(await model.saveState({...model.state,notes:[note,...model.state.notes]})){close();setQuestion('');notify('问题已保存为私人学习笔记');}}finally{saving.current=false;}
+  };
+  return <section className="wd-panel wd-tutor"><Heading action="进入导师" onClick={()=>navigate('/tutor')}>课程学习助手</Heading><span className="wd-tutor-scope">{selection.lesson?'围绕当前课程准备问题':'选择课程，获取学习帮助'}</span><p className="wd-panel-subtitle">{!model.user?'登录后使用课程答疑。':available?'学习遇到问题？让 AI 帮你把难点讲清楚。':ai?'实时回答未接入，可先保存问题。':'正在检查服务…'}</p><div className="wd-tutor-shortcuts">{[[Lightbulb,'解释本节核心概念'],[FileText,'梳理本节学习重点'],[Cube,'我该如何开始实践']].map(([Icon,title])=><button key={title} disabled={model.loading||Boolean(model.error)||!ai} onClick={()=>ask(selection.lesson?title:`请帮我${title.replace('本节','课程')}，先问我正在学习哪个课程。`)}><Icon size={19}/><span>{title}</span><ArrowRight size={14}/></button>)}</div><small className="wd-tutor-confirm">点击后准备问题，由你确认发送，不自动调用 AI。</small>
+    <form className="wd-question" onSubmit={e=>{e.preventDefault();ask(question);}}><input aria-label="向 AI 导师提问" placeholder="问一个课程相关问题…" value={question} onChange={e=>setQuestion(e.target.value)} maxLength={500} required/><button aria-label="准备课程问题" disabled={!question.trim()||model.loading||Boolean(model.error)||!ai}><ArrowRight size={19}/></button></form>
+    <dialog ref={dialog} className="wd-dialog" aria-labelledby="wd-question-title" onCancel={close} onClose={()=>setDraft('')}><button className="wd-dialog-close" aria-label="关闭导师说明" onClick={close}><X size={20}/></button><Robot size={32}/><h2 id="wd-question-title">先收好这个好问题</h2><p>AI 导师暂不可用。可以先保存为私人笔记，不会生成模拟回答。</p><blockquote>{draft}</blockquote><button className="wd-secondary" onClick={save} disabled={model.busy||model.loading||Boolean(model.error)}>保存为学习笔记<ArrowRight size={16}/></button></dialog>
   </section>;
+}
+function LearningCalendar({model,recent,navigate}) {
+  const unavailable=model.loading||model.error||!model.user,checked=model.state.checkIns.length;
+  return <section className="wd-panel wd-calendar-summary"><Heading>学习节奏</Heading><div><CalendarBlank size={28}/><p>{model.loading?'正在读取学习记录…':model.error?'学习记录暂时不可用。':!model.user?'登录后保存自己的学习记录。':recent.length?`最近学习：${recent[0].title}`:checked?`已有 ${checked} 天手动打卡记录，打卡不代表课程完成。`:'完成第一次学习后，在这里回顾你的学习记录。'}</p></div><button className="wd-link" disabled={model.loading||Boolean(model.error)} onClick={()=>navigate(unavailable?'/login':'/plan')}>打开学习日历<ArrowRight size={15}/></button></section>;
 }
 
 export function Workbench({model,navigate,notify}) {
   const {data:site}=useSitePage('workbench');
-  const [extra,setExtra]=useState({loading:true,projects:[],mine:[],entry:{},phases:[],notes:[],errors:{}}),[reload,setReload]=useState(0);
-  const [selectedDay,setSelectedDay]=useState(localDay),[newTask,setNewTask]=useState('');
+  const accountId=model.user?.id??null,[stored,setStored]=useState(()=>blank(accountId)),[reload,setReload]=useState(0),[newTask,setNewTask]=useState('');
+  const taskSaving=useRef(false);
+  // During account changes do not show a previous account's project/progress snapshot.
+  const extra=stored.accountId===accountId?stored:blank(accountId);
   useEffect(()=>{
-    let active=true;setExtra({loading:true,projects:[],mine:[],entry:{},phases:[],notes:[],errors:{}});
-    const requests={projects:'/learning/projects?limit=12',phases:'/opc/curriculum',...(model.user?{mine:'/learning/me/projects',entry:'/learning/entry',notes:'/learning/notes'}:{})};
+    let active=true;setStored(blank(accountId));
+    const requests={projects:'/learning/projects?limit=12',entry:'/learning/entry',...(accountId?{mine:'/learning/me/projects'}:{})};
     Promise.all(Object.entries(requests).map(async([key,url])=>{try{return [key,await api(url)];}catch(e){return [key,{error:e.message}];}})).then(results=>{
       if(!active)return;const data=Object.fromEntries(results),errors=Object.fromEntries(results.filter(([,value])=>value.error).map(([key,value])=>[key,value.error]));
-      setExtra({loading:false,projects:data.projects?.items||[],mine:data.mine?.items||[],entry:data.entry||{},phases:data.phases?.phases||[],notes:data.notes?.items||[],notesMore:data.notes?.nextOffset!=null,errors});
+      setStored({accountId,loading:false,projects:data.projects?.items||[],mine:data.mine?.items||[],entry:data.entry||{},errors});
     });return()=>{active=false;};
-  },[model.user?.id,reload]);
-  const {current}=dashboardCourses(model.library,model.recent),project=currentProject(extra.mine),ownedIds=model.library.map(course=>course.id);
-  const currentLessons=(extra.entry.lessons||[]).filter(lesson=>lesson.owner_id===current?.id&&!lesson.locked);
-  const activeLesson=[...currentLessons].filter(lesson=>lesson.progress?.version>0&&!lesson.progress.completed_at).sort((a,b)=>String(b.progress.updated_at||'').localeCompare(String(a.progress.updated_at||'')))[0]||currentLessons.find(lesson=>!lesson.progress.completed_at)||currentLessons[0];
-  const currentPath=activeLesson?lessonLink(activeLesson):current?courseLearningPath(current.slug):'/courses';
-  const recent=recentStudyItems(model.library,extra.entry,extra.mine),legacyRecent=recent.length?[]:learningEntries(model.library,model.recent);
+  },[accountId,reload]);
+  const selection=workbenchSelection(model.library,extra.entry,model.recent),unavailable=model.loading||Boolean(model.error)||!model.user;
+  const recent=unavailable||extra.loading?[]:recentStudyItems(model.library,extra.entry,extra.mine);
+  const project=!unavailable&&!extra.loading&&!extra.errors.mine?currentProject(extra.mine):null;
   const configuredIds=new Set((site.projects||[]).map(item=>item.id));
   const recommendations=(configuredIds.size?extra.projects.filter(item=>configuredIds.has(item.id)):extra.projects).slice(0,3);
-  const tasks=model.state.tasks.filter(task=>task.date===selectedDay),completed=tasks.filter(task=>task.done).length;
-  const achievements=liveAchievements(model.state),privateNotes=liveNotes(model.state).length+extra.notes.filter(note=>!note.deleted_at).length;
-  const unavailable=model.loading||Boolean(model.error)||!model.user;
-  const addTask=async e=>{e.preventDefault();const title=newTask.trim();if(!title)return;if(!model.user)return navigate('/login');if(await model.saveState({...model.state,tasks:[...model.state.tasks,{id:crypto.randomUUID(),title,date:selectedDay,done:false}]})){setNewTask('');notify('学习任务已添加');}};
+  const tasks=model.state.tasks.filter(task=>task.date===localDay()),completed=tasks.filter(task=>task.done).length;
+  const achievements=unavailable?[]:liveAchievements(model.state),personalProduct=currentProductAchievement(achievements);
+  const suggestedTitle=selection.lesson?`学习 ${selection.lesson.title}`.slice(0,160):'选择一节课程，开始今天的学习';
+  const suggestionAdded=tasks.some(task=>task.title===suggestedTitle);
+  const saveTask=async(title)=>{
+    if(taskSaving.current||model.busy||model.loading||model.error)return;
+    if(!model.user)return navigate('/login');
+    if(model.state.tasks.length>=200)return notify('任务已达上限，请先在学习计划中整理。');
+    if(!title.trim())return;
+    taskSaving.current=true;try{if(await model.saveState({...model.state,tasks:[...model.state.tasks,{id:crypto.randomUUID(),title:title.trim().slice(0,160),date:localDay(),done:false}]})){setNewTask('');notify('学习任务已添加');}}finally{taskSaving.current=false;}
+  };
   const retry=()=>{setReload(value=>value+1);model.refresh({preserve:true});};
-  return <div className="wd-layout wd-product-layout" aria-busy={model.loading||extra.loading}>
-    <div className="wd-main">
-      <header className="wd-welcome"><div><h1>欢迎回来，<span>{model.user?.name?.trim()||'学习者'}</span><HandWaving size={25} weight="duotone"/></h1><p>继续你的 AI OPC 之旅，让想法变成真实的产品。</p></div><blockquote>“不是更努力地打工，而是用 AI 创造属于自己的机会。”<cite>— OneShowLearn</cite></blockquote></header>
+  return <div className="wd-layout wd-product-layout wd-refined" aria-busy={model.loading||extra.loading}>
+    <div className="wd-main"><header className="wd-welcome"><div><h1>{model.user?'欢迎回来，':'欢迎来到工作台'}{model.user&&<span>{model.user.name?.trim()||'学习者'}</span>}</h1><p>{selection.started?'继续上次的学习，让想法向前推进一步。':'今天，从一节课开始，把想法向前推进一步。'}</p></div><span className="wd-workspace-tag"><SquaresFour size={17}/>我的学习工作台</span></header>
       {(model.error||Object.keys(extra.errors).length>0)&&<div className="wd-error" role="alert">部分学习数据暂时无法读取，已保存内容不会丢失。<button onClick={retry}>重新加载</button></div>}
-      <ProductHero model={model} extra={extra} current={current} activeLesson={activeLesson} currentPath={currentPath} project={project} ownedIds={ownedIds} navigate={navigate}/>
-      <div className="wd-product-grid">
-        <PersonalProducts items={achievements} unavailable={unavailable} loading={model.loading} error={model.error} navigate={navigate}/>
-        {(recommendations.length>0||extra.loading||extra.errors.projects)&&<section className="wd-panel wd-recommendations"><Heading action="查看全部" onClick={()=>navigate('/projects')}>推荐实战项目</Heading><p className="wd-panel-subtitle">选择一个感兴趣的项目，开始动手实践</p><div className="wd-project-grid">{recommendations.map(item=><button className="wd-project-card" key={item.id} onClick={()=>navigate(`/projects/${encodeURIComponent(item.slug)}`)}><Cover item={item}/><div><h3>{item.title}</h3><p>{item.description||'跟随教程，从想法走向真实作品'}</p><div className="wd-tags">{(item.settings?.tech_stack?.length?item.settings.tech_stack:item.tags||[]).slice(0,3).map(tag=><span key={tag}>{tag}</span>)}</div></div><span className="wd-project-arrow"><ArrowRight size={15}/></span></button>)}</div>{!recommendations.length&&<p className="wd-muted">{extra.loading?'正在加载已发布项目…':'项目推荐暂时无法读取。'}</p>}</section>}
-      </div>
-      <div className="wd-bottom-grid">
-        <section className="wd-panel wd-recent"><Heading action="查看课程" onClick={()=>navigate('/courses')}>最近学习</Heading>
-          {recent.map(lesson=><button key={`${lesson.kind}-${lesson.id}`} className="wd-recent-row" onClick={()=>navigate(lessonLink(lesson))}><span className={`wd-item-icon ${lesson.kind==='project'?'mint':'violet'}`}>{lesson.kind==='project'?<Code size={19}/>:<BookOpenText size={19}/>}</span><strong>{lesson.title}</strong><em>{lesson.kind==='project'?'项目':'课程'}</em><span className="wd-recent-progress">{lesson.progress.completed_at?<span className="wd-done"><CheckCircle size={14} weight="fill"/>已完成</span>:<Progress value={watchPercent(lesson)} label={`${lesson.title} 视频观看进度`}/>}</span><time>{studyDate(lesson.progress.updated_at)}</time></button>)}
-          {legacyRecent.map(course=><button className="wd-recent-row" key={course.id} onClick={()=>navigate(courseLearningPath(course.slug))}><span className="wd-item-icon violet"><FileText size={19}/></span><strong>{course.title}</strong><em>课程</em><Progress value={courseProgress(course)} label="最近课程进度"/></button>)}
-          {!recent.length&&!legacyRecent.length&&<Empty title={extra.loading?'正在读取记录…':'每一次学习，都会留下足迹'} action="浏览学习课程" onClick={()=>navigate('/opc')}>开始阅读或观看后，在这里继续上次的内容。</Empty>}
-        </section>
-        <section className="wd-panel wd-achievements"><Heading action="查看全部" onClick={()=>navigate('/achievements')}>我的成果</Heading><div className="wd-metrics">{[[model.stats.completedPacks,'完成课程','/courses'],[extra.errors.mine?'—':extra.mine.length,'已开始项目','/projects'],[extra.errors.notes?'—':`${privateNotes}${extra.notesMore?'+':''}`,'学习笔记','/notes'],[achievements.length,'成果记录','/achievements']].map(([value,label,path])=><button key={label} onClick={()=>navigate(path)}><strong>{unavailable||extra.loading?'—':value}</strong><small>{label}</small></button>)}</div><h3 className="wd-small-title">最近成果</h3>{achievements.slice().sort((a,b)=>String(b.updatedAt).localeCompare(String(a.updatedAt))).slice(0,2).map(item=><button key={item.id} className="wd-outcome" onClick={()=>navigate('/achievements')}><span className="wd-item-icon amber"><Trophy size={20}/></span><span><strong>{item.title}</strong><small>{studyDate(item.updatedAt)}</small></span><ArrowRight size={15}/></button>)}{!achievements.length&&<div className="wd-outcome-empty"><Trophy size={26} weight="duotone"/><p>一份 PRD、一个原型，<br/>都是值得记录的进步。</p><button className="wd-link" onClick={()=>navigate('/achievements')}>记录成果<ArrowRight size={14}/></button></div>}</section>
-      </div>
+      <ProductHero model={model} extra={extra} selection={selection} navigate={navigate}/>
+      <LearningPath selection={selection} extra={extra} model={model} navigate={navigate}/>
+      {recent.length>0&&<RecentLearning recent={recent} navigate={navigate}/>}
+      {project&&<CurrentProject project={project} navigate={navigate}/>}
+      {(recommendations.length>0||extra.loading||extra.errors.projects)&&<section className="wd-recommendations"><Heading action="查看全部项目" onClick={()=>navigate('/projects')}>从学习，走向实战</Heading><p className="wd-panel-subtitle">先了解课程，再选择适合你的练习项目。</p><div className="wd-project-grid">{recommendations.map(item=><button className="wd-project-card" key={item.id} onClick={()=>navigate(`/projects/${encodeURIComponent(item.slug)}`)}><Cover item={item}/><div className="wd-project-card-copy"><h3>{item.title}</h3><p>{item.description||'跟随教程，从想法走向真实作品。'}</p><span className="wd-link">了解项目<ArrowRight size={15}/></span></div></button>)}</div>{!recommendations.length&&<p className="wd-muted">{extra.loading?'正在加载已发布项目…':'项目推荐暂时无法读取，请重新加载。'}</p>}</section>}
+      {personalProduct&&<PersonalProducts items={achievements} model={model} navigate={navigate}/>}
+      <GrowthEntry model={model} items={achievements} navigate={navigate}/>
     </div>
     <aside className="wd-rail" aria-label="个人学习工具">
-      <section className="wd-panel wd-tasks"><Heading action={unavailable?'查看计划':`${completed} / ${tasks.length}`} onClick={()=>navigate('/plan')}>{selectedDay===localDay()?'今日任务':`${selectedDay.slice(5).replace('-','/')} 的任务`}</Heading><div className="wd-task-meter" role="progressbar" aria-label="当天任务完成进度" aria-valuenow={tasks.length?Math.round(completed/tasks.length*100):0} aria-valuemin={0} aria-valuemax={100}><i style={{width:`${tasks.length?completed/tasks.length*100:0}%`}}/></div><div className="wd-task-list">{tasks.slice(0,4).map(task=><label key={task.id} className={task.done?'done':''}><input type="checkbox" checked={task.done} disabled={model.busy||unavailable} onChange={()=>model.saveState({...model.state,tasks:model.state.tasks.map(item=>item.id===task.id?{...item,done:!item.done}:item)})}/><span>{task.title}</span></label>)}{!tasks.length&&<p className="wd-muted">{model.loading?'正在加载任务…':model.error?'任务暂时无法读取':'给今天定一个小目标，从完成一节内容开始。'}</p>}</div><form className="wd-task-add" onSubmit={addTask}><input value={newTask} onChange={e=>setNewTask(e.target.value)} aria-label="新学习任务" placeholder="添加一个学习任务…" maxLength={160} required/><button aria-label="添加任务" disabled={model.busy||model.loading||Boolean(model.error)||!newTask.trim()}><Plus size={18}/></button></form><button className="wd-primary" onClick={()=>navigate('/plan')}>{tasks.length?'查看学习计划':'安排今日任务'}<ArrowRight size={15}/></button></section>
-      <TutorPanel model={model} navigate={navigate} notify={notify}/>
-      <LearningCalendar model={model} selectedDay={selectedDay} onSelect={setSelectedDay} navigate={navigate} notify={notify}/>
-      <div className="wd-inspiration"><img src={welcomeArt} alt=""/><strong>Learn. Build. Grow.</strong><span>更好的你，从今天开始。</span></div>
+      <section className="wd-panel wd-tasks"><Heading action="查看学习计划" onClick={()=>navigate('/plan')}>{tasks.length?'今日任务':'今日下一步'}</Heading>{tasks.length>0&&!unavailable?<><p className="wd-task-count">已完成 {completed} / {tasks.length} 项</p><div className="wd-task-list">{tasks.slice(0,3).map(task=><label key={task.id} className={task.done?'done':''}><input type="checkbox" checked={task.done} disabled={model.busy||unavailable} onChange={()=>model.saveState({...model.state,tasks:model.state.tasks.map(item=>item.id===task.id?{...item,done:!item.done}:item)})}/><span>{task.title}</span></label>)}</div><form className="wd-task-add" onSubmit={e=>{e.preventDefault();saveTask(newTask);}}><input value={newTask} onChange={e=>setNewTask(e.target.value)} aria-label="新学习任务" placeholder="添加一个学习任务…" maxLength={160} required/><button aria-label="添加任务" disabled={model.busy||unavailable||!newTask.trim()}><Plus size={18}/></button></form></>:<><span className="wd-task-suggestion-label">建议任务 · 尚未加入计划</span><div className="wd-task-suggestion"><BookOpenText size={24}/><div><strong>{model.loading||extra.loading?'正在读取建议…':model.error||extra.errors.entry?'建议暂不可用':suggestedTitle}</strong><p>从一节内容开始，建立今天的学习节奏。</p></div></div><button className="wd-secondary" disabled={model.loading||extra.loading||model.busy||Boolean(model.error)||Boolean(extra.errors.entry)||suggestionAdded} onClick={()=>saveTask(suggestedTitle)}>{model.user?'加入今日计划':'登录后加入计划'}<Plus size={17}/></button></>}</section>
+      <TutorPanel key={accountId||'guest'} model={model} selection={selection} navigate={navigate} notify={notify}/>
+      <LearningCalendar model={model} recent={recent} navigate={navigate}/>
+      <div className="wd-inspiration"><strong>Learn. Build. Grow.</strong><span>让学习有方向，让想法有作品。</span></div>
     </aside>
   </div>;
 }

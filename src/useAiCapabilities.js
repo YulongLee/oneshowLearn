@@ -19,7 +19,4 @@ export function useAiCapabilities(accountId) {
   return cap;
 }
 
-// A navigation-only draft: no persistence, never sent until the learner presses Send.
-let pendingDraft = '';
-export function prepareTutorQuestion(question) { pendingDraft = question.slice(0, 4000); }
-export function takeTutorQuestion() { const question = pendingDraft; pendingDraft = ''; return question; }
+export {prepareTutorQuestion} from './tutor-navigation.js';

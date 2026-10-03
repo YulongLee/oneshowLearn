@@ -1,6 +1,5 @@
 import {useEffect,useRef,useState} from 'react';
 import {api} from './api.js';
-import {takeTutorQuestion} from './useAiCapabilities.js';
 
 const root='/learning/ai/conversations';
 const read=key=>{try{return sessionStorage.getItem(key)||'';}catch{return '';}};
@@ -13,7 +12,7 @@ export function useTutorConversations(userId){
   const [id,setId]=useState(initial.current==='new'?'':initial.current);
   const idRef=useRef(id), mounted=useRef(false), operation=useRef(false), epoch=useRef(0);
   const [data,setData]=useState(null),[items,setItems]=useState([]),[nextOffset,setNextOffset]=useState(null);
-  const [draft,setDraftState]=useState(()=>takeTutorQuestion()||read(prefix+'draft:'+(id||'new')));
+  const [draft,setDraftState]=useState(()=>read(prefix+'draft:'+(id||'new')));
   const draftRef=useRef(draft);draftRef.current=draft;
   const [loading,setLoading]=useState(Boolean(userId)),[sending,setSending]=useState(false),[error,setError]=useState('');
   const [historyOpen,setHistoryOpen]=useState(false);

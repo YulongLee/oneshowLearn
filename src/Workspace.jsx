@@ -105,7 +105,7 @@ export function WorkspaceShell({ route, navigate, notify, children, resourceSear
       {learningFocused&&<div className="ws-learning-directory-slot" ref={setLearningHost}/>}
       <nav hidden={learningFocused} aria-label="学习工作空间导航">{navItem(["/app", "工作台", House])}{groups.map(([name, items]) => <div className="wb-nav-group" key={name}><span>{name}</span>{items.map(navItem)}</div>)}</nav>
       <div hidden={learningFocused} className="ws-sidebar-bottom">
-        <SidebarCourseOffer route={route} navigate={go}/><button className="ws-compact-access" aria-label="购买课程" title="购买课程" onClick={()=>go('/membership')}><Crown size={23}/></button>
+        <SidebarCourseOffer route={route} navigate={go} model={model}/><button className="ws-compact-access" aria-label="课程与学习服务" title="课程与学习服务" onClick={()=>go('/membership')}><Crown size={23}/></button>
       </div>
     </aside>
     {!sidebar.mobile&&sidebar.mode==='expanded'&&<div className="ws-sidebar-resize" {...sidebar.separator} aria-controls="workspace-sidebar"/>}

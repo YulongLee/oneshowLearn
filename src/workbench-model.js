@@ -41,3 +41,35 @@ export function watchPercent(lesson) {
   const time = Number(lesson.progress?.video_time), duration = Number(lesson.progress?.video_duration);
   return duration > 0 && Number.isFinite(time) && Number.isFinite(duration) ? Math.min(100, Math.max(0, Math.round(time / duration * 100))) : 0;
 }
+
+// Catalog metadata may offer a preview, but it must never become an owned course.
+export function workbenchSelection(library = [], entry = {}, recent = null) {
+  const owned = library.find(c => c.id === recent?.id) || library.find(c => c.progressPercent > 0 && c.progressPercent < 100) || library.find(c => c.progressPercent < 100) || library[0];
+  const course = owned || (entry.courses || []).find(c => c.id === entry.defaultCourseId) || null;
+  const lessons = (entry.lessons || []).filter(l => l.kind !== 'project' && l.owner_id === course?.id);
+  const readable = lessons.filter(l => !l.locked && (owned || l.is_preview));
+  const lesson = [...readable].filter(l => l.progress?.version > 0 && !l.progress.completed_at)
+    .sort((a,b) => String(b.progress.updated_at || '').localeCompare(String(a.progress.updated_at || '')))[0]
+    || readable.find(l => !l.progress?.completed_at) || readable[0] || null;
+  const completed = lessons.filter(l => l.progress?.completed_at).length;
+  return {course, lesson, lessons, owned:Boolean(owned), completed, total:lessons.length,
+    started:Boolean(lesson?.progress?.version > 0),
+    finished:Boolean(lessons.length && completed === lessons.length),
+    percent:lessons.length ? Math.round(completed / lessons.length * 100) : Math.min(100,Math.max(0,Number(owned?.progressPercent)||0))};
+}
+
+export function workbenchPhaseState(lessons, phase, currentLesson) {
+  const items = lessons.filter(l => l.phase === phase);
+  if (!items.length) return 'unconfigured';
+  if (items.every(l => l.progress?.completed_at)) return 'completed';
+  if (items.some(l => l.id === currentLesson?.id)) return currentLesson.progress?.version > 0 ? 'started' : 'current';
+  if (items.some(l => l.progress?.version > 0)) return 'started';
+  return 'pending';
+}
+
+export function sidebarCourseAccess(offer, model) {
+  if (!model || model.error || (model.loading && !model.user)) return 'checking';
+  if (!model.user) return 'purchase';
+  if (['admin','editor'].includes(model.user.role)) return 'management';
+  return offer?.productId && offer.slug && (model.library || []).some(c => c.slug === offer.slug) ? 'unlocked' : 'purchase';
+}

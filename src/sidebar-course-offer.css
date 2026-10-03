@@ -39,3 +39,10 @@
   .ws-course-offer .ws-offer-price { margin-top:8px; }
   .ws-unified-layout .ws-course-offer { padding:12px; }
 }
+.ws-unified-layout .ws-course-offer.ws-course-unlocked { background:linear-gradient(135deg,#f0ebff,#f9f7ff); border-color:#e4dcfb; color:#28203f; box-shadow:none; }
+.ws-unified-layout .ws-course-unlocked h3 { display:flex; align-items:center; gap:7px; color:#302044; font-size:16px; }
+.ws-course-unlocked h3 svg { color:#8251f8; flex-shrink:0; }
+.ws-unified-layout .ws-course-unlocked :is(p.ws-offer-value,.ws-offer-eyebrow) { color:#675b84; }
+.ws-course-unlocked .ws-unlocked-course { margin:12px 0 0; font-size:14px; color:#645b7c; line-height:1.7; overflow-wrap:anywhere; }
+.ws-unified-layout .ws-course-unlocked>button { border:1px solid #e3dafa; color:#633bd0; }
+.ws-course-unlocked>small { color:#706885; }

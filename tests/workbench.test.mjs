@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { calendarMonth, learningEntries, recentStudyItems, currentProject, currentProductAchievement, phaseState, watchPercent } from "../src/workbench-model.js";
+import { calendarMonth, learningEntries, recentStudyItems, currentProject, currentProductAchievement, phaseState, watchPercent,workbenchSelection,workbenchPhaseState,sidebarCourseAccess } from "../src/workbench-model.js";
+import {prepareTutorQuestion,takeTutorIntent,peekTutorIntent} from '../src/tutor-navigation.js';
 
 test('personal product selects the latest non-archived product without mutating account data',()=>{
   const items=[
@@ -64,4 +65,51 @@ test('phase status and watching percentages use actual records only',()=>{
   assert.equal(watchPercent({progress:{video_time:-10,video_duration:100}}),0);
   assert.equal(watchPercent({progress:{video_time:32}}),0);
   assert.equal(watchPercent({progress:{completed_at:'2026-09-30'}}),100);
+});
+
+const entry={defaultCourseId:8,courses:[{id:8,slug:'opc',title:'课程'}],lessons:[
+  {id:1,kind:'course',owner_id:8,phase:1,is_preview:true,progress:{version:0}},
+  {id:2,kind:'course',owner_id:8,phase:1,locked:true,is_preview:false,progress:{version:0}},
+  {id:3,kind:'course',owner_id:8,phase:2,locked:true,progress:{version:0}},
+]};
+test('first-time guests and trial accounts get only explicit unlocked previews, never ownership',()=>{
+  const result=workbenchSelection([],entry);
+  assert.equal(result.course.id,8);assert.equal(result.lesson.id,1);assert.equal(result.owned,false);
+  assert.equal(result.started,false);assert.equal(result.completed,0);assert.equal(result.total,3);
+  assert.equal(workbenchSelection([],{...entry,lessons:entry.lessons.map(l=>({...l,locked:true}))}).lesson,null);
+  assert.equal(workbenchSelection([],{}).course,null);
+});
+test('continuation chooses an incomplete, readable recent lesson within the current owned course',()=>{
+  const lessons=[{...entry.lessons[0],progress:{version:2,completed_at:'date'}},{...entry.lessons[1],locked:false,progress:{version:2,updated_at:'2026-10-04'}},{...entry.lessons[2],locked:false,progress:{version:1,updated_at:'2026-10-03'}},{id:99,owner_id:90,progress:{version:8,updated_at:'2026-10-05'}}];
+  const result=workbenchSelection([{id:8,slug:'opc'}],{...entry,lessons},{id:90});
+  assert.equal(result.lesson.id,2);assert.equal(result.completed,1);assert.equal(result.percent,33);assert.equal(result.started,true);
+  assert.equal(result.total,3);assert.equal(result.owned,true);
+});
+test('course phase learning status never substitutes project shipping or checklist acceptance',()=>{
+  assert.equal(workbenchPhaseState(entry.lessons,1,entry.lessons[0]),'current');
+  assert.equal(workbenchPhaseState(entry.lessons,2,entry.lessons[0]),'pending');
+  assert.equal(workbenchPhaseState(entry.lessons,5,entry.lessons[0]),'unconfigured');
+  const lesson={...entry.lessons[0],progress:{version:1}};
+  assert.equal(workbenchPhaseState([lesson],1,lesson),'started');
+  assert.equal(workbenchPhaseState([{...lesson,progress:{completed_at:'date'}}],1,lesson),'completed');
+});
+test('sidebar ownership matches only the configured offered course and treats admins separately',()=>{
+  const offer={productId:9,slug:'opc'},model={user:{id:1,role:'learner'},library:[{slug:'opc'}]};
+  assert.equal(sidebarCourseAccess(offer,model),'unlocked');
+  assert.equal(sidebarCourseAccess({...offer,slug:'different'},model),'purchase');
+  assert.equal(sidebarCourseAccess({...offer,productId:null},model),'purchase');
+  assert.equal(sidebarCourseAccess(offer,{...model,library:[]}),'purchase');
+  assert.equal(sidebarCourseAccess(offer,{...model,user:{role:'admin'}}),'management');
+  assert.equal(sidebarCourseAccess(offer,{...model,loading:true}),'unlocked');
+  assert.equal(sidebarCourseAccess(offer,{...model,user:null,loading:true}),'checking');
+  assert.equal(sidebarCourseAccess(offer,{...model,error:'failed'}),'checking');
+  assert.equal(sidebarCourseAccess(offer,{...model,user:null}),'purchase');
+});
+test('tutor navigation intent is bounded, single-use, account-bound and never web mode',()=>{
+  prepareTutorQuestion('strict render',{accountId:1,courseId:8});assert.equal(peekTutorIntent(1),peekTutorIntent(1));assert.equal(peekTutorIntent(2),null);assert.equal(takeTutorIntent(1).question,'strict render');assert.equal(peekTutorIntent(1),null);
+  prepareTutorQuestion('课程问题',{accountId:1,courseId:8});assert.equal(takeTutorIntent(2),null);assert.equal(takeTutorIntent(1),null);
+  prepareTutorQuestion('x'.repeat(4100),{accountId:1,courseId:8});
+  const intent=takeTutorIntent(1);assert.equal(intent.question.length,4000);assert.equal(intent.courseId,8);assert.equal(intent.mode,undefined);assert.equal(takeTutorIntent(1),null);
+  prepareTutorQuestion('preview',{accountId:1,courseId:-1});assert.equal(takeTutorIntent(1).courseId,null);
+  prepareTutorQuestion('unbound');assert.equal(takeTutorIntent(1),null);
 });

@@ -4,6 +4,7 @@ import {Markdown} from './PersonalShared.jsx';
 import {TutorAnswer,TutorSources,answerLabel} from './TutorAnswer.js';
 import {questionNote, TUTOR_FAQ, handleTutorComposerKeyDown} from './tutor-model.js';
 import {useTutorConversations} from './useTutorConversations.js';
+import {peekTutorIntent,takeTutorIntent} from './tutor-navigation.js';
 
 const suggestions = [
   {Icon:BookOpenText,title:'基于我的课程内容回答',description:'例如：解释一下 RAG 的原理',question:'请基于我可访问的课程资料，解释 RAG 的原理；如果资料没有涉及，请明确说明。',mode:'knowledge'},
@@ -23,6 +24,9 @@ export function AiTutorChat({model, cap, navigate, notify}) {
     ...(t.result?[{id:t.id+'-answer',role:'assistant',content:t.result.answer,question:t.question,mode:t.mode,courseId:t.courseId,sources:t.result.sources||[],grounded:t.result.grounded,retrieval:t.result.retrieval,searchedAt:t.result.searchedAt,answerKind:t.result.answerKind,answeredAt:t.result.answeredAt,unavailable:t.result.unavailable}]:[])]);
   const [mode,setMode]=useState('knowledge');
   const [courseId,setCourseId]=useState(''), [includeProduct,setIncludeProduct]=useState(false);
+  const [incoming,setIncoming]=useState(()=>peekTutorIntent(model.user?.id));
+  useEffect(()=>{takeTutorIntent(model.user?.id);},[]);
+  const [incomingReady,setIncomingReady]=useState(false);
   const [settingsOpen,setSettingsOpen]=useState(false);
   const [saved,setSaved]=useState([]), [saveBusy,setSaveBusy]=useState(false);
   const [faqOpen,setFaqOpen]=useState(false), [faqGroup,setFaqGroup]=useState('course');
@@ -30,6 +34,19 @@ export function AiTutorChat({model, cap, navigate, notify}) {
   const composing=useRef(false);
   useEffect(()=>{if(messages.length||pending)bottom.current?.scrollIntoView({block:'nearest',behavior:'smooth'});else scroll.current?.scrollTo({top:0});},[session.id,messages.length,pending?.id]);
   useEffect(()=>{const last=session.data?.turns.at(-1);if(last&&scopeId.current!==session.id){scopeId.current=session.id;setMode(last.mode);setCourseId(String(last.courseId||''));setIncludeProduct(false);}},[session.data,session.id]);
+  const applyIncoming=()=>{
+    if(!incoming || busy || model.loading)return;
+    setDraft(incoming.question);setMode('knowledge');setIncludeProduct(false);
+    setCourseId(model.library.some(c=>c.id===incoming.courseId)?String(incoming.courseId):'');
+    setIncoming(null);composer.current?.focus({preventScroll:true});
+  };
+  useEffect(()=>{
+    if(incoming && !incomingReady && !session.loading && !model.loading){
+      setIncomingReady(true);
+      // Keep an existing unsent draft; the learner explicitly chooses replacement.
+      if(!session.draft.trim() && !busy)applyIncoming();
+    }
+  },[incoming, incomingReady, session.loading, model.loading, busy]);
   const selectQuestion = item => {setDraft(item.question);setMode(item.mode);composer.current?.focus();};
   const send=async (event,quick=null)=>{
     event?.preventDefault();
@@ -83,6 +100,7 @@ export function AiTutorChat({model, cap, navigate, notify}) {
       </div>
     </div>
     <div className="tc-composer-wrap"><form className="tc-composer" onSubmit={send}>
+      {incoming&&incomingReady&&<div className="tc-workbench-intent" role="status"><p>工作台准备了一个课程问题。当前草稿已保留，是否替换？</p><blockquote>{incoming.question}</blockquote><button type="button" disabled={busy||model.loading} onClick={applyIncoming}>使用工作台问题</button><button type="button" onClick={()=>setIncoming(null)}>保留当前草稿</button></div>}
       {settingsOpen&&<section className="tc-settings" aria-label="问答设置"><div><strong>添加学习上下文</strong><p>资料问答检索可访问的已发布课件文字与配套资料；通用建议不作为课程结论。不解析视频或图片，也不会自动读取私人笔记。</p></div><label><input type="checkbox" checked={mode==='web'?false:includeProduct} disabled={busy||mode==='web'} onChange={e=>setIncludeProduct(e.target.checked)}/>同时附带我的产品简介</label><p>模型：{cap?.model||'尚未连接'} · 由后台统一配置{cap?.dailyLimit?` · 每账号 24 小时最多 ${cap.dailyLimit} 次`:''}。发送内容由阿里云百炼处理。联网回答不附带私人学习资料；搜索可能产生额外服务费用。</p></section>}
       <div className="tc-scope" hidden={!settingsOpen}><div className="tc-mode" role="group" aria-label="回答模式"><button type="button" disabled={busy} aria-pressed={mode==='knowledge'} onClick={()=>setMode('knowledge')}><BookOpenText size={16}/>资料问答</button><button type="button" disabled={busy} aria-pressed={mode!=='knowledge'} onClick={()=>setMode('general')}><Sparkle size={16}/>通用建议</button></div></div>
       <textarea ref={composer} value={draft} onChange={e=>setDraft(e.target.value)} disabled={busy} maxLength={4000} rows={3} aria-label="向 AI 导师提问" aria-description="Enter 发送，Shift Enter 换行" placeholder={mode==='web'?'搜索公开网络信息，回答将附网页来源…':mode==='knowledge'?'提问课程或项目中的问题，回答将附参考来源…':'描述你的目标、问题和已经尝试的方法…'} onCompositionStart={()=>{composing.current=true;}} onCompositionEnd={()=>{composing.current=false;}} onBlur={()=>{composing.current=false;}} onKeyDown={e=>handleTutorComposerKeyDown(e,send,composing.current)}/>

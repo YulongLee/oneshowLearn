@@ -43,3 +43,12 @@ Scope: local development of /app from the owner's reference 9a5080f8. No product
 - Deploy only `dist/client` through `deploy/update-workbench-refinement.sh`, guarded by prior entry SHA-256 `0d2b24d02c35cd5a6e794d07d13340a9fb85974dc7e9a5c639af7a7b6fed3bae` and new entry `1319a6903030297682b3169644c5760f4f8a111b8aecb2dad75e19f095a83030`.
 - Recoverable frontend/backend/environment/dependency-manifest backup plus consistent database snapshot before replacement. Keep old content-addressed assets; replace only the entry atomically and restore it automatically on verification failure.
 - Verify exact HTTPS entries/assets, anonymous account/order guards, unchanged server/provider settings/pricing/catalogues, existing record identities/historical amounts, and unchanged service PIDs/restart counts. No backend/configuration mutation, fixtures, gateway calls or service restart.
+
+### Production publication result — October 4
+
+- Platform archive `82bf8fc` and refinement `bebeb5f` pushed to `origin/main`; remote head verified. All previously uncommitted platform development is now maintained in Git; secrets/databases/generated temporary media are excluded.
+- Frontend-only release succeeded on `https://oneshowlearn.com/app`. Exact entry SHA-256 `1319a6903030297682b3169644c5760f4f8a111b8aecb2dad75e19f095a83030` verified on all 37 HTTPS routes; all 45 staged frontend assets match their local hashes.
+- Recoverable backup: `/var/backups/oneshowlearn/workbench-1grFGVVX` (frontend, server, environment, manifests and consistent database snapshot). No rollback was required. Old assets are retained.
+- API health, public offer/login status/resource/course/project metadata and anonymous account/identity/order/project-run guards verified. Existing account/private-record identities and historical order identities/amounts preserved; provider configurations, pricing, content and CMS settings equal the backup.
+- Backend/environment/package/nginx/systemd hashes and service PIDs/restart counts match before release. OneShowLearn/nginx/OneShowSEO/PocketLedger remained active without restart. No authenticated production save, order creation/closure, SMS/email/AI/payment gateway call, fixture upload or database migration was performed.
+- In-app browser navigation did not complete its accessibility inspection within the tool timeout; this is not counted as a successful visual production check. Release acceptance is based on the exact HTTPS entry/asset checks and the isolated built-version visual/interaction regressions above.

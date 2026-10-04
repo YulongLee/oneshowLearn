@@ -48,3 +48,18 @@ or service restart.
 
 Expected previous entry: `540e2567889012983f7272aac7c7ac60954dab3fcfa08b6524edd1a4071ea9f6`.
 Verified new entry: `3801736586eb64344da0ff0f51d5784e655069dfc83058fdc7e6f5cd9125d2bb`.
+
+## Published result
+
+- Source commit `9db04e499001d2fff7dbf0672730478323f5dd4a` pushed to `origin/main`,
+  including the reviewed pending learner UI source changes. Staged-file checks
+  excluded environment/database/private-media files and found no credential material.
+- Frontend publication passed 39 HTTPS entry and 50 asset hash checks, API health,
+  anonymous privacy checks, preserved record identities/historical order amounts,
+  unchanged configuration/pricing/catalogues/protected hashes and service processes.
+- Independent live anonymous browser smoke verified the exact entry, desktop footer
+  alignment, normal composer, actual cover/thumbnail, five chapters and 390px mobile
+  response height/overflow. Zero script errors or attempted writes; external requests
+  were blocked and no AI/payment/email/SMS calls were issued.
+- Recoverable snapshot: `/var/backups/oneshowlearn/workbench-I13CZLFb`.
+- Verified staging: `/tmp/oneshowlearn-workbench-FQCOQLrg`.

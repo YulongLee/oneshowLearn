@@ -84,9 +84,9 @@
 .cr-lesson-page .cs-ai-disclosure button { margin-right:6px; font-size:13px; min-height:44px; }
 .cr-ai-composer { position:relative; border:1px solid #e5e2f1; border-radius:10px; padding:0 0 49px; background:#fff; }
 .cr-ai-composer { flex:0 0 auto; }
-.cr-lesson-page .cr-ai-composer textarea { width:100%; min-height:82px; border:0; border-radius:10px; padding:12px; font-size:14px; background:transparent; resize:vertical; }
+.cr-lesson-page .cr-ai-composer textarea { display:block; width:100%; min-height:68px; max-height:132px; border:0; border-radius:10px; padding:12px; font-size:14px; line-height:22px; background:transparent; resize:none; outline:none; box-shadow:none; overflow-y:hidden; }
 .cr-lesson-page .cr-ai-composer>.ls-btn { position:absolute; right:8px; bottom:8px; display:grid; place-items:center; min-height:36px; width:38px; height:38px; padding:0; border:0; border-radius:8px; background:#7748ef; color:#fff; margin:0; cursor:pointer; }
-.cr-ai-composer:focus-within { border-color:#a88ce5; box-shadow:0 0 0 2px #a88ce512; }
+.cr-ai-composer:focus-within { border-color:#936ce2; box-shadow:0 0 0 3px #936ce21f; }
 .cr-ai-footnote { font-size:12px; color:#74809c; line-height:1.7; margin:10px 0 0; }
 /* Preserve the pre-existing project/standalone composer presentation. */
 .cs-assistant .cs-ai-question>.ls-btn { display:block; margin:10px 0 0 auto; min-height:40px; border-radius:8px; color:#fff; background:#7445ff; border:0; padding:8px 16px; }

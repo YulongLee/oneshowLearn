@@ -80,7 +80,7 @@ const aligned=async p=>{
  try {await p.waitForFunction(()=>Math.abs((document.querySelector('.cr-next-lesson')||document.querySelector('.cr-completion')).getBoundingClientRect().bottom-document.querySelector('.cs-assistant-panel').getBoundingClientRect().bottom)<2);}
  catch(error){console.log('Alignment diagnostic',await p.evaluate(()=>['.ls-reading','.cr-completion','.cr-next-lesson','.cs-rail','.cs-assistant-slot','.cs-assistant-panel'].map(selector=>{const el=document.querySelector(selector);if(!el)return{selector};const rect=el.getBoundingClientRect(),style=getComputedStyle(el);return{selector,top:rect.top,bottom:rect.bottom,height:rect.height,margin:style.margin,padding:style.padding,display:style.display,alignSelf:style.alignSelf,gap:style.gap};})));throw error;}
  check(true,'assistant and actual next-lesson footer aligned');
- check(await p.locator('.cr-ai-composer').evaluate(el=>el.getBoundingClientRect().height<160),'composer remains normal sized');
+ check(await p.locator('.cr-ai-composer').evaluate(el=>el.getBoundingClientRect().height<190),'composer remains bounded and normal sized');
  check(await p.evaluate(()=>document.querySelector('.cr-ai-response').getBoundingClientRect().bottom<=document.querySelector('.cr-ai-composer').getBoundingClientRect().top),'response above bottom composer');
 };
 const output=path.resolve('artifacts/course-refinement');mkdirSync(output,{recursive:true});
@@ -97,6 +97,39 @@ try{
  check(await p.locator('video').evaluate(el=>getComputedStyle(el).objectFit==='contain'));
  await p.locator('.cr-thumbnail img').evaluate(img=>img.decode());check(await p.locator('.cr-thumbnail img').evaluate(img=>img.naturalWidth>0));
  await aligned(p);check(await p.locator('.cr-ai-empty').isVisible());
+ const input=p.getByLabel('向 AI 提问'),send=p.getByRole('button',{name:'发送问题',exact:true});
+ const untouchedRequests=aiRequests.length;
+ check(await send.isDisabled(),'empty question stays disabled');
+ await input.click();
+ check(await input.evaluate(el=>{const s=getComputedStyle(el);return s.outlineStyle==='none'&&s.borderTopWidth==='0px'&&s.boxShadow==='none'&&s.resize==='none';}),'mouse focus has no nested ring or drag handle');
+ check(await p.locator('.cr-ai-composer').evaluate(el=>getComputedStyle(el).borderColor==='rgb(147, 108, 226)'&&getComputedStyle(el).boxShadow!=='none'),'outer focus ring remains visible');
+ await p.locator('.cr-ai-response').focus();await p.keyboard.press('Tab');
+ check(await input.evaluate(el=>document.activeElement===el),'keyboard focus reaches composer');
+ check(await input.evaluate(el=>getComputedStyle(el).outlineStyle==='none'),'keyboard focus also uses only outer ring');
+ await p.locator('.cr-ai-composer').screenshot({path:path.join(output,'course-composer-focused.png')});
+ const emptyHeight=await input.evaluate(el=>el.clientHeight);
+ await input.fill('   ');check(await send.isDisabled(),'whitespace cannot send');
+ await input.fill('什么是 OPC？');check(!await send.isDisabled(),'nonempty available question enables sending');
+ await input.fill(Array.from({length:12},(_,i)=>`第 ${i+1} 行：多行问题必须保留完整内容。`).join('\n'));
+ check(await input.evaluate(el=>el.clientHeight===132&&el.scrollHeight>el.clientHeight&&getComputedStyle(el).overflowY==='auto'),'long questions grow to limit then scroll internally');
+ check(await input.evaluate((el,h)=>el.clientHeight>h,emptyHeight),'multiline input grows');
+ check(await p.locator('.cr-ai-composer').evaluate(el=>{const field=el.querySelector('textarea').getBoundingClientRect(),button=el.querySelector('button').getBoundingClientRect(),box=el.getBoundingClientRect();return field.bottom<=button.top&&button.right<box.right&&button.bottom<box.bottom;}),'send stays inside toolbar without overlapping text');
+ const multilineDraft=await input.inputValue();
+ await p.getByRole('button',{name:'隐藏学习助手',exact:true}).click();await p.getByRole('button',{name:'显示学习助手',exact:true}).click();
+ check(await input.inputValue()===multilineDraft,'hidden composer retains multiline draft');
+ await aligned(p);
+ await input.fill('短问题');check(await input.evaluate((el,h)=>el.clientHeight===h,emptyHeight),'short replacement shrinks composer');
+ const splitter=p.getByRole('separator',{name:'调整课程侧栏宽度',exact:true});
+ await input.fill('课程问题'.repeat(12));
+ await splitter.focus();await p.keyboard.press('End');await p.waitForTimeout(100);
+ const wideHeight=await input.evaluate(el=>el.clientHeight);
+ await p.keyboard.press('Home');await p.waitForTimeout(100);
+ check(await input.evaluate((el,h)=>el.clientHeight>h&&el.clientHeight<=132,wideHeight),'width changes recalculate wrapped question height');
+ check(await input.inputValue()==='课程问题'.repeat(12),'resizing never changes question text');
+ await p.keyboard.press('Enter');await p.waitForTimeout(100);
+ await input.fill('');check(await send.isDisabled());
+ check(aiRequests.length===untouchedRequests,'focus and text resizing never send automatically');
+ await input.blur();
  await p.screenshot({path:path.join(output,'course-desktop-1600.png'),fullPage:true});
  await p.locator('.cr-file-actions button').click();check(await p.locator('.cs-slide-preview').getAttribute('open')!==null);
  await p.getByRole('button',{name:'第 2 页',exact:true}).click();check((await p.locator('.ls-slide-canvas img').getAttribute('alt')).includes('第二页'));
@@ -136,7 +169,15 @@ try{
   check(await p.locator('.cr-file-actions button').isVisible());check(await p.locator('.cs-quick-actions button').count()===2);
   if(await p.locator('.cs-rail').evaluate(el=>getComputedStyle(el).display!=='contents'))await aligned(p);
   else check(await p.locator('.cr-ai-response').evaluate(el=>el.getBoundingClientRect().height<430),'stacked response area resets natural height');
-  if(width===390)await p.screenshot({path:path.join(output,'course-mobile-390.png'),fullPage:true});
+  if(width===390){
+   await p.screenshot({path:path.join(output,'course-mobile-390.png'),fullPage:true});
+   await input.fill('窄屏课程问题需要自然换行，不应挤压发送按钮。'.repeat(30));await input.focus();
+   check(await input.evaluate(el=>el.clientHeight===132&&el.scrollHeight>el.clientHeight&&getComputedStyle(el).resize==='none'),'mobile question is bounded and scrollable');
+   check(await input.evaluate(el=>getComputedStyle(el).outlineStyle==='none'),'mobile focus has no inner ring');
+   await p.locator('.cr-ai-composer').screenshot({path:path.join(output,'course-composer-mobile-focused.png')});
+   await input.fill('短问题');check(await input.evaluate(el=>el.clientHeight===68),'mobile shrinks after replacing long text');
+   await input.fill('');
+  }
  }
  await p.setViewportSize({width:1600,height:1150});await p.goto(base+`/opc/lessons/${formal}`);await ready(p);check(await p.locator('.lp-course-cover').count()===0);check(await p.locator('.cr-demo-notice').count()===0);
  await p.getByRole('button',{name:'完成本节 →',exact:true}).click();await p.waitForURL(base+`/opc/lessons/${placements[3]}`);await ready(p);check(Boolean(row('SELECT completed_at FROM learning_progress WHERE user_id=? AND placement_id=?',[paid.id,formal]).completed_at));
@@ -150,6 +191,7 @@ try{
  const flags=await context(paid,{summary:false}),f=await flags.newPage();await f.goto(base+`/opc/lessons/${placements[0]}`);await ready(f);check(await f.getByRole('button',{name:'整理学习要点',exact:true}).isDisabled());check(!await f.getByRole('button',{name:'解释本节难点',exact:true}).isDisabled());
  const jc=await context(paid),j=await jc.newPage();await j.goto(base+`/projects/isolated-project/workspace/${projectPlacement}`);await j.locator('.cs-project-page .learning-player').waitFor();
  check(await j.locator('.cr-lesson-page,.cr-resources,.lp-course-cover,.cr-next-lesson').count()===0);check(await j.locator('.cs-content-tabs button').count()===3);check(await j.locator('.cs-quick-actions>button').count()===4);
+ check(await j.getByLabel('向 AI 提问').evaluate(el=>getComputedStyle(el).resize==='vertical'),'project composer keeps previous styling');
  await j.getByRole('button',{name:'实验',exact:true}).click();check(await j.getByText('隔离实验必需任务（必需）',{exact:true}).isVisible());
  check(await j.getByRole('button',{name:'完成本节 →',exact:true}).isDisabled());
  const noteId=row('SELECT id FROM learning_notes WHERE title=?',['隔离私密笔记']).id;

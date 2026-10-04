@@ -63,3 +63,49 @@ Verified new entry: `3801736586eb64344da0ff0f51d5784e655069dfc83058fdc7e6f5cd912
   were blocked and no AI/payment/email/SMS calls were issued.
 - Recoverable snapshot: `/var/backups/oneshowlearn/workbench-I13CZLFb`.
 - Verified staging: `/tmp/oneshowlearn-workbench-FQCOQLrg`.
+
+## Composer focus follow-up
+
+The owner subsequently reported nested focus outlines and requested optimization.
+Initially verified locally only; a subsequent explicit publication request approved
+the frontend-only release recorded below. No new Git commit or push was requested.
+
+- Course composer now has one visible outer focus ring for pointer and keyboard
+  input. Only its inner textarea outline/resize handle are suppressed; other forms,
+  project and standalone AI inputs retain their existing styles.
+- The textarea grows from 68px to 132px, then scrolls internally. Shortened questions
+  shrink again; width changes and panel restoration recalculate wrapping without
+  changing the draft. The separate send toolbar does not overlap text.
+- Full regression: 374 tests, zero failures; build passed with the existing bundle
+  size advisory. Course browser suite: 170 checks, including actual mouse/Tab focus,
+  whitespace disabled state, multiline growth/shrink, width reflow, mobile scrolling,
+  hide/restore drafts and all preceding learning flows. Workbench: 171 checks;
+  commercial: 56 checks. Total browser checks: 397, zero script errors.
+- Focused desktop/mobile composer screenshots inspected. All API writes, users,
+  notes and AI answers used isolated fixtures/mocks; no production records,
+  configuration or real provider calls were involved.
+
+### Composer publication
+
+- Repeated full regression/build and all 397 isolated browser checks against the
+  exact release build. All passed; existing bundle-size advisory unchanged.
+- Live entry guarded from
+  `3801736586eb64344da0ff0f51d5784e655069dfc83058fdc7e6f5cd9125d2bb` to
+  `9fd4de7bfd16387e634281785347f99627e751935ca41e62bab05304f35ae143`.
+  Compiled frontend only; prior content-addressed assets retained and entry
+  replaced atomically with automatic rollback on failed verification.
+- Recoverable frontend/protected backend/environment/manifests/database snapshot:
+  `/var/backups/oneshowlearn/workbench-CrDKp9nO`. Staging:
+  `/tmp/oneshowlearn-workbench-DVZLtLc7`. Local package:
+  `/tmp/oneshowlearn-composer-release-k6TdfCOi/frontend.tar.gz`, SHA-256
+  `76dd5d482c83d0b31302e046a66e6ebc7fb63edcc5a57694e600f08b22488942`.
+- 39 exact HTTPS entry checks, 50 asset hashes, API health and anonymous privacy
+  guards passed. Existing private-record/order identities and historical amounts,
+  catalogue/provider/pricing configuration, protected backend hashes and service
+  processes verified unchanged. No production fixtures, migration or restart.
+- `deploy/check-course-composer-live.mjs`: 15 anonymous production checks passed
+  against an actual published preview. Pointer/Tab focus, single ring, bounded
+  multiline growth/shrink, preserved local drafts and 390px mobile overflow were
+  verified; focused desktop/mobile screenshots reviewed. Zero script errors,
+  attempted writes or AI/payment/email/SMS calls; external requests blocked.
+- No new Git commit/push; scoped source remains in the working tree.

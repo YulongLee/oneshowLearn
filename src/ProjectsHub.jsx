@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, money } from "./api.js";
 import { safeResourceUrl } from "./opc-model.js";
 import { LessonWorkspace, lessonLink } from "./LessonWorkspace.jsx";
@@ -264,6 +264,7 @@ function ProjectOutcome({ project, model, navigate }) {
   );
 }
 function ProjectDetail({ slug, workspace, placementId, model, navigate }) {
+  const starting=useRef(false);
   const [project, setProject] = useState(null),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
@@ -288,6 +289,8 @@ function ProjectDetail({ slug, workspace, placementId, model, navigate }) {
   };
   const start = async () => {
     if (!model.user) return navigate("/login");
+    if (starting.current) return;
+    starting.current=true;
     setBusy(true);
     try {
       const p = await api(
@@ -299,6 +302,7 @@ function ProjectDetail({ slug, workspace, placementId, model, navigate }) {
     } catch (e) {
       setError(e.message);
     } finally {
+      starting.current=false;
       setBusy(false);
     }
   };
@@ -404,9 +408,10 @@ function ProjectDetail({ slug, workspace, placementId, model, navigate }) {
             {project.run
               ? "继续项目"
               : project.entitled
-                ? "开始项目"
+                ? model.user ? "开始学习" : "登录后开始学习"
                 : "需要项目权益"}
           </button>
+          {!project.run&&lessons.some(l=>l.is_preview)&&<button onClick={()=>navigate(`/projects/${encodeURIComponent(slug)}/preview/${lessons.find(l=>l.is_preview).id}`)}>预览课程</button>}
           {!project.entitled &&
             project.settings?.access_type === "paid" &&
             project.product && (
@@ -621,5 +626,5 @@ export function ProjectsHub({ route, model, navigate }) {
       const entry=projectStudyEntry(project,Boolean(model.user));
       if(entry.start)await api(`/learning/projects/${encodeURIComponent(project.slug)}/start`,{method:'POST'});
       navigate(entry.path);
-    }}/>;
+    }} onDetails={project=>navigate(`/projects/${encodeURIComponent(project.slug)}`)}/>;
 }

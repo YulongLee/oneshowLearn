@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowsOut, Robot, FileText, DownloadSimple, PlayCircle, Notebook, Sparkle, Flask, ArrowRight, ArrowLeft, Lightbulb, PaperPlaneTilt, BookOpen } from "@phosphor-icons/react";
 import { api } from "./api.js";
 import { Markdown } from "./PersonalShared.jsx";
@@ -487,7 +487,27 @@ export function CourseAiPanel({ lesson, mode, user, onNote, slideId=null, compac
     [saveBusy, setSaveBusy] = useState(false),
     [busy, setBusy] = useState(false);
   const [evidence, setEvidence] = useState(null);
-  const active = useRef(null), saving = useRef(false);
+  const active = useRef(null), saving = useRef(false), questionInput = useRef(null);
+  useLayoutEffect(() => {
+    const field = questionInput.current;
+    if (!refined || mode !== 'ask' || !field) return;
+    const resize = () => {
+      // Hidden panels stay mounted; wait for a real width before measuring wraps.
+      if (!field.clientWidth) return;
+      field.style.height = 'auto';
+      const style = getComputedStyle(field);
+      const height = Math.min(parseFloat(style.maxHeight), Math.max(parseFloat(style.minHeight), field.scrollHeight));
+      field.style.height = `${height}px`;
+      field.style.overflowY = field.scrollHeight > height ? 'auto' : 'hidden';
+    };
+    resize();
+    let width = field.clientWidth;
+    const observer = new ResizeObserver(() => {
+      if (field.clientWidth !== width) { width = field.clientWidth; resize(); }
+    });
+    observer.observe(field);
+    return () => observer.disconnect();
+  }, [question, refined, mode]);
   useEffect(() => {
     setQuestion(''); setResponse(''); setEvidence(null); setError(''); setNotice(''); setBusy(false); setSavedAnswer(false);
     return () => { active.current?.abort(); active.current = null; };
@@ -545,6 +565,8 @@ export function CourseAiPanel({ lesson, mode, user, onNote, slideId=null, compac
       {mode === "ask" ? (
         <div className={refined ? 'cr-ai-composer' : 'cs-ai-question'}>
           <textarea
+            ref={questionInput}
+            rows={refined ? 2 : undefined}
             aria-label="向 AI 提问"
             maxLength={4000}
             value={question}

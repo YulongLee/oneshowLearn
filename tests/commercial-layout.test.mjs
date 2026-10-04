@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {courseLearningPath,learningSlug,readingProgress,nextReadingItem} from '../src/course-reader-model.js';
 import {activeWorkspaceNav} from '../src/workspace-navigation.js';
 import {HOME_CARDS,homepageCards} from '../server/homepage-cards.mjs';
-import {discoveryProgress,projectDuration,currentProject,projectLearningSummary} from '../src/project-discovery-model.js';
+import {discoveryProgress,projectDuration,currentProject,projectLearningSummary,projectDifficulty,projectAccessLabel} from '../src/project-discovery-model.js';
 import {projectStudyEntry,studyMaterials} from '../src/project-study-model.js';
 import {mediaTime,seekTime,playbackRate} from '../src/player-model.js';
 const source=file=>readFileSync(new URL('../src/'+file,import.meta.url),'utf8');
@@ -46,6 +46,19 @@ test('course assistant fills desktop rail with bounded answers and resets on sta
   assert.match(css,/\.cr-lesson-page \.cs-layout \{ align-items:stretch/);
   assert.match(css,/\.cr-ai-response \{[^}]*contain:size; overflow:auto/);
   assert.match(css,/@container courseStudy \(max-width:960px\)[\s\S]*contain:none; height:auto; max-height:min\(420px,60dvh\)/);
+});
+
+test('course composer uses one focus ring and bounded width-aware auto-growth without changing project inputs',()=>{
+  const page=source('LessonWorkspace.jsx'),css=source('course-lesson-refinement.css');
+  assert.match(css,/\.cr-lesson-page \.cr-ai-composer textarea \{[^}]*min-height:68px; max-height:132px;[^}]*resize:none; outline:none; box-shadow:none/);
+  assert.match(css,/\.cr-ai-composer:focus-within \{[^}]*border-color:[^;]+; box-shadow:/);
+  assert.match(page,/if \(!refined \|\| mode !== 'ask' \|\| !field\) return/);
+  assert.match(page,/if \(!field.clientWidth\) return/);
+  assert.match(page,/new ResizeObserver/);
+  assert.match(page,/field.clientWidth !== width/);
+  assert.match(page,/observer.disconnect\(\)/);
+  assert.match(page,/\[question, refined, mode\]/);
+  assert.match(page,/rows=\{refined \? 2 : undefined\}/);
 });
 
 test('shared video controls clamp seeks and validate remembered playback preferences',()=>{
@@ -106,6 +119,29 @@ test('project cards use an equal grid without suppressing or featuring CMS recor
   assert.match(page,/探索项目/);assert.match(page,/className="pd-card-action"/);
   const css=source('project-editorial.css');
   assert.match(css,/repeat\(3,minmax\(0,1fr\)\)/);
+});
+
+test('commercial project cards use read-only details, visible demonstration and independent sharp covers',()=>{
+ const page=source('ProjectDiscovery.jsx'),hub=source('ProjectsHub.jsx'),css=source('project-catalog-refinement.css');
+ assert.match(page,/onOpen=\{project.run\?onOpen:onDetails\}/);
+ assert.match(hub,/onDetails=\{project=>navigate\(`/);
+ assert.match(page,/visual.demo&&<span className="pd-demo-status">演示/);
+ assert.match(page,/workbenchProjectSummary\(project\)/);
+ assert.match(page,/project.settings\?\.audience/);
+ assert.match(page,/project.pptCount>0/);assert.match(page,/教程待发布/);
+ assert.match(page,/project.promptCount>0/);
+ assert.match(page,/开始你的第一个项目/);
+ assert.match(css,/position:relative; z-index:auto; width:100%; height:auto;[^}]*opacity:1; mask-image:none/);
+ assert.match(page,/visual.useIllustration/);assert.match(page,/useEffect\(\(\)=>setFailed\(false\)/);
+ assert.match(hub,/if \(starting.current\) return/);
+});
+
+test('project difficulty and access labels cannot fabricate included course rights',()=>{
+ assert.equal(projectDifficulty(1),'入门');assert.equal(projectDifficulty(5),'高级');assert.equal(projectDifficulty(0),'难度待配置');
+ assert.equal(projectAccessLabel({settings:{access_type:'free'}}),'免费项目');
+ assert.equal(projectAccessLabel({entitled:true,settings:{access_type:'paid'}}),'已获学习权限');
+ assert.equal(projectAccessLabel({settings:{access_type:'paid'},stages:[{lessons:[{is_preview:true}]}]}),'可试看 · 完整学习需权限');
+ assert.equal(projectAccessLabel({entitled:false}),'完整学习需项目权限');
 });
 
 test('continuation uses private project runs and actual lesson completion, not acceptance percentage',()=>{

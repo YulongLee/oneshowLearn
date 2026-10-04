@@ -11,6 +11,17 @@ export function projectDuration(minutes) {
   return minutes < 60 ? `${minutes} 分钟` : `${Math.round(minutes / 60 * 10) / 10} 小时`;
 }
 
+export function projectDifficulty(value) {
+  return ({1:'入门',2:'基础',3:'进阶',4:'挑战',5:'高级'})[value] || '难度待配置';
+}
+
+export function projectAccessLabel(project) {
+  if (project.settings?.access_type === 'free') return '免费项目';
+  if (project.entitled) return '已获学习权限';
+  return (project.stages || []).some(stage => (stage.lessons || []).some(lesson => lesson.is_preview))
+    ? '可试看 · 完整学习需权限' : '完整学习需项目权限';
+}
+
 export function currentProject(items = []) {
   return items.find(item => item.run && Number(item.progress?.percent || 0) < 100)
     || items.find(item => item.run) || null;

@@ -1,0 +1,131 @@
+// Fresh isolated accounts/CMS and an in-process fake adapter; no real providers.
+import assert from 'node:assert/strict';
+import {mkdtempSync,rmSync,mkdirSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {randomUUID} from 'node:crypto';
+import {createRequire} from 'node:module';
+import path from 'node:path';
+import express from 'express';
+const require=createRequire('/Users/liyulong/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/_audit.cjs');
+const {chromium}=require('playwright'),dir=mkdtempSync(path.join(tmpdir(),'osl-tutor-studio-'));
+Object.assign(process.env,{NODE_ENV:'test',DATABASE_PATH:path.join(dir,'isolated.db'),UPLOAD_DIR:path.join(dir,'uploads'),JWT_SECRET:'isolated-tutor-browser-only',ASSET_STORAGE:'local',AI_ENABLED:'false',AI_USER_DAILY_LIMIT:'500',AI_GLOBAL_DAILY_LIMIT:'10000',EMAIL_API_KEY:''});
+const {db,row,run}=await import('../server/db.mjs');
+const {signUser}=await import('../server/auth.mjs');
+const {createApp}=await import('../server/index.mjs');
+const {courseAIService}=await import('../server/course-ai-service.mjs');
+const insert=(sql,args=[])=>Number(run(sql,args).lastInsertRowid);
+const user=name=>{const id=insert("INSERT INTO users(email,password_hash,name,role,email_verified) VALUES(?,?,?,'learner',1)",[name+'@example.invalid','unused',name]);return{id,token:signUser(row('SELECT * FROM users WHERE id=?',[id]))};};
+const a=user('隔离课程学员'),b=user('隔离另一学员'),trial=user('隔离试听学员');
+const pathId=insert("INSERT INTO learning_paths(slug,title,status) VALUES('tutor-study','导师测试','published')");
+const pack=insert("INSERT INTO project_packs(path_id,slug,title,status) VALUES(?,'tutor-opc','AI OPC：一个人的产品公司','published')",[pathId]);
+const second=insert("INSERT INTO project_packs(path_id,slug,title,status) VALUES(?,'tutor-second','隔离第二课程','published')",[pathId]);
+const placements=[];
+for(const [i,title] of ['产品与机会','AI 产品开发','上线与合规','收款与商业化','运营与增长'].entries()){
+ const chapter=insert("INSERT INTO project_steps(pack_id,title,status,sort_order) VALUES(?,?,'published',?)",[pack,'第 '+(i+1)+' 章 · '+title,i]);
+ run('INSERT INTO opc_stage_steps(step_id,phase) VALUES(?,?)',[chapter,i+1]);
+ const lesson=insert("INSERT INTO learning_lessons(title,config,status) VALUES(?,?,'published')",[(i+1)+'.1 隔离课时 '+title,JSON.stringify({slides:[{id:'s1',text:`${title}。OPC 的产品需求验证从目标用户开始；区分自由职业与产品业务，先确定目标用户，验证需求，再缩小 MVP 范围。一次性购买和订阅是不同的商业模式。上线需要检查合规，增长需要用户反馈。`} ]})]);
+ placements.push(insert("INSERT INTO lesson_placements(lesson_id,chapter_id,is_preview,status) VALUES(?,?,?,'published')",[lesson,chapter,i===0?1:0]));
+}
+const ch2=insert("INSERT INTO project_steps(pack_id,title,status) VALUES(?,'隔离第二课程章节','published')",[second]);
+const l2=insert("INSERT INTO learning_lessons(title,config,status) VALUES('隔离第二课程课时',?,'published')",[JSON.stringify({slides:[{id:'other',text:'第二课程仅用于范围测试。'}]})]);
+insert("INSERT INTO lesson_placements(lesson_id,chapter_id,status) VALUES(?,?,'published')",[l2,ch2]);
+for(const [u,id] of [[a,pack],[a,second],[b,second]])run("INSERT INTO entitlements(user_id,pack_id,status,starts_at) VALUES(?,?,'active','2000-01-01')",[u.id,id]);
+run('INSERT INTO learning_progress(user_id,placement_id,updated_at) VALUES(?,?,?)',[a.id,placements[3],'2026-10-04T00:00:00Z']);
+const history=(u,title,courseId=null,mode='general')=>{
+ const id=randomUUID(),time='2026-10-03T00:00:00Z';
+ run('INSERT INTO tutor_conversations(id,user_id,title,created_at,updated_at) VALUES(?,?,?,?,?)',[id,u.id,title,time,time]);
+ run("INSERT INTO tutor_turns(id,conversation_id,question,mode,course_id,status,result_json,created_at,updated_at) VALUES(?,?,?,?,?,'complete',?,?,?)",[randomUUID(),id,title,mode,courseId,JSON.stringify({answer:'这是隔离保存的历史回答。',mode,sources:[],grounded:false}),time,time]);return id;
+};
+const older=history(a,'如何验证我的实际产品需求？'),latest=history(a,'上一次的 MVP 范围讨论',pack,'knowledge'),foreign=history(b,'另一账号的私人讨论');
+const requests=[],calls=[],errors=[],external=[];let held,failNext=false,checks=0;
+const adapter={provider:'isolated-fake',model:'isolated-model',webSearch:false,generate:async req=>{
+ calls.push(req);
+ if(req.question.includes('HOLD_TEST'))return new Promise(resolve=>{held=resolve;});
+ if(failNext){failNext=false;throw Error('isolated fake failure');}
+ if(req.action==='web'){const result={answer:'官方测试资料 [W1]',sources:[{id:'W1',kind:'web',href:'https://help.aliyun.com/zh/model-studio/',label:'隔离网页来源',excerpt:'官方测试资料'}],searchedAt:new Date().toISOString()};req.onWebResult(result);return result.answer;}
+ if(req.context?.sources?.length)return '先明确目标用户，再验证需求并缩小 MVP 范围。[S1]';
+ return '请提供完整报错和复现步骤，这是通用建议。';
+}};
+courseAIService.configure(adapter);
+const app=createApp(),client=path.resolve('dist/client');app.use(express.static(client));app.get('/{*route}',(_q,res)=>res.sendFile(path.join(client,'index.html')));
+const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
+const base=`http://127.0.0.1:${server.address().port}`,browser=await chromium.launch({headless:true});
+const check=(ok,label)=>{assert.ok(ok,label);checks++;};
+const output=path.resolve('artifacts/tutor-studio');mkdirSync(output,{recursive:true});
+const context=async(u,options={})=>{
+ const c=await browser.newContext({viewport:{width:1700,height:1150},reducedMotion:'reduce'});
+ await c.route('**/*',route=>{const req=route.request();if(!req.url().startsWith(base)){external.push(req.url());return route.abort();}if(req.method()==='POST'&&req.url().includes('/conversations'))requests.push({url:req.url(),body:req.postDataJSON()});return route.continue();});
+ if(u)await c.addInitScript(({u,options})=>{if(location.protocol!=='http:')return;localStorage.setItem('oneshowlearn_token',u.token);if(sessionStorage.getItem(`oneshowlearn:tutor:${u.id}:active`)===null){sessionStorage.setItem(`oneshowlearn:tutor:${u.id}:active`,'new');if(options.draft)sessionStorage.setItem(`oneshowlearn:tutor:${u.id}:draft:new`,options.draft);}},{u,options});
+ c.on('page',p=>p.on('pageerror',e=>errors.push(e.message)));return c;
+};
+const ready=async p=>{await p.locator('.tc-course-studio .tc-welcome').waitFor();await p.waitForFunction(()=>!document.querySelector('.tc-course-picker select')?.disabled);};
+const answerReady=async p=>{await p.locator('.tc-message.is-assistant').last().waitFor();await p.getByRole('button',{name:'发送给 AI 导师',exact:true}).waitFor();};
+try {
+ const c=await context(a,{draft:'保留我的真实草稿'}),p=await c.newPage();await p.goto(base+'/tutor');await ready(p);
+ await p.waitForFunction(id=>document.querySelector('.tc-course-picker select')?.value===String(id),pack);
+ await p.getByText('最近学习：第 4 章 · 收款与商业化 · 4.1 隔离课时 收款与商业化',{exact:true}).waitFor();
+ check(await p.locator('.tc-learning-scope').isVisible(),'visible course scope');check(await p.getByLabel('选择课程',{exact:true}).count()===1,'one selector');check(await p.locator('.tc-recent-row').count()===2,'two real private histories');
+ check(await p.getByText('另一账号的私人讨论',{exact:true}).count()===0,'owner history isolation');check(await p.locator('.tc-composer textarea').inputValue()==='保留我的真实草稿','restored unsent draft');
+ check((await p.locator('.tc-suggestions').innerText()).includes('一次性购买和订阅'),'actual current phase suggestion');check(requests.length===0,'opening generates no conversation or call');
+ for(const width of [320,390,768,1024,1440,1920,2560]){
+  await p.setViewportSize({width,height:1150});await p.waitForTimeout(100);
+  check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'no horizontal overflow '+width);
+  check(await p.getByLabel('选择课程',{exact:true}).isVisible(),'scope accessible '+width);
+  check(await p.locator('.tc-suggestions button').evaluateAll(buttons=>buttons.every(b=>b.getBoundingClientRect().height>=44)),'touch shortcuts '+width);
+  check(await p.locator('.tc-learning-scope .tc-course-picker').evaluate(el=>el.getBoundingClientRect().height>=44),'picker target '+width);
+  check(await p.locator('.tc-compose-bottom').evaluate(el=>{const parent=el.getBoundingClientRect();return [...el.children].every(c=>c.getBoundingClientRect().right<=parent.right+1);}), 'composer controls contained '+width);
+  if([390,1440,1920].includes(width))await p.screenshot({path:path.join(output,'welcome-'+width+'.png'),fullPage:true});
+ }
+ await p.setViewportSize({width:1700,height:1150});
+ await p.getByLabel('选择课程',{exact:true}).selectOption(String(second));check(await p.locator('.tc-composer textarea').inputValue()==='保留我的真实草稿','scope switch preserves draft');check(requests.length===0,'scope never auto-sends');
+ check(await p.locator('.tc-scope-copy').innerText().then(t=>t.includes('隔离第二课程')),'actual second course');
+ await p.getByLabel('选择课程',{exact:true}).selectOption('');await p.waitForTimeout(50);check(await p.getByLabel('选择课程',{exact:true}).inputValue()==='','explicit all scope not overridden');
+ await p.getByLabel('选择课程',{exact:true}).selectOption(String(pack));
+ await p.getByRole('button',{name:'解释课程难点',exact:false}).click();check((await p.locator('.tc-composer textarea').inputValue()).includes('一次性购买和订阅'),'shortcut prepares contextual draft');check(requests.length===0,'shortcut no model call');
+ await p.locator('.tc-composer textarea').fill('明确产品需求和目标用户');await p.locator('.tc-composer textarea').press('Shift+Enter');check(requests.length===0,'shift enter newline only');
+ await p.locator('.tc-composer textarea').evaluate(el=>el.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',keyCode:229,isComposing:true,bubbles:true})));check(requests.length===0,'IME confirmation does not send');
+ await p.locator('.tc-composer textarea').press('Enter');await answerReady(p);
+ check(requests.filter(r=>r.url.endsWith('/turns')).length===1,'single send');check(calls.length===1,'one fake model call');check(await p.locator('.tc-welcome,.tc-starter-section,.tc-recent-conversations').count()===0,'reading replaces welcome');
+ check(await p.locator('.tc-citation').count()>0,'real local evidence citation');check(await p.getByText('资料问答 · 附参考来源',{exact:true}).isVisible());
+ await p.locator('.tc-reference-panel summary').click();check((await p.locator('.tc-reference-content').innerText()).includes('缩小 MVP 范围'),'inspectable source excerpt matches actual fixture');
+ await p.getByRole('button',{name:'保存笔记',exact:true}).click();await p.getByRole('button',{name:'已保存',exact:true}).waitFor();check(JSON.parse(row('SELECT state_json FROM workspace_state WHERE user_id=?',[a.id]).state_json).notes.length===1,'private note persists');
+ const sentId=row('SELECT conversation_id FROM tutor_turns WHERE question LIKE ?',['明确产品需求和目标用户%']).conversation_id;
+ await p.reload();await p.locator('.tc-message.is-assistant').waitFor();check(await p.getByLabel('选择课程',{exact:true}).inputValue()===String(pack),'reload restores historical scope');check(await p.locator('.tc-message.is-user').count()===1,'saved history survives reload');
+ await p.getByRole('button',{name:'新对话',exact:true}).click();await ready(p);check(await p.locator('.tc-recent-row').count()===2,'recent actual discussion after new');
+ await p.getByRole('button',{name:'继续对话：明确产品需求和目标用户',exact:false}).click();await p.locator('.tc-message.is-assistant').waitFor();check(true,'resume actual conversation');
+ await p.getByRole('button',{name:'新对话',exact:true}).click();await ready(p);
+ await p.getByRole('button',{name:'排查开发问题',exact:false}).click();check((await p.locator('.tc-learning-scope').innerText()).includes('通用建议'),'general visibly distinct');check(await p.getByText('联网回答暂不可用',{exact:true}).count()===0,'no erroneous web warning for general advice');
+ check(await p.getByRole('button',{name:'联网回答',exact:true}).isDisabled(),'real web gate');
+ await p.locator('.tc-composer textarea').fill('开发报错如何排查');await p.locator('.tc-composer textarea').press('Enter');await answerReady(p);check(await p.getByText('通用建议 · 非课程结论',{exact:true}).count()>0,'general answer label');
+ await p.getByRole('button',{name:'新对话',exact:true}).click();await ready(p);
+ adapter.webSearch=true;await p.evaluate(()=>window.dispatchEvent(new Event('oneshowlearn:ai-config')));await p.getByRole('button',{name:'联网回答',exact:true}).waitFor();await p.waitForFunction(()=>!document.querySelector('.tc-web-toggle')?.disabled);
+ await p.getByRole('button',{name:'添加上下文与问答设置',exact:true}).click();await p.getByLabel('同时附带我的产品简介').check();
+ await p.getByRole('button',{name:'联网回答',exact:true}).click();check(await p.getByLabel('同时附带我的产品简介').isDisabled(),'web product context disabled');check(await p.getByLabel('同时附带我的产品简介').isChecked()===false,'web removes product context');
+ check((await p.locator('.tc-learning-scope').innerText()).includes('公开网络搜索'),'web scope visible');
+ await p.locator('.tc-composer textarea').fill('查找公开开发资料');await p.locator('.tc-composer textarea').press('Enter');await answerReady(p);
+ const webRequest=requests.filter(r=>r.url.endsWith('/turns')).at(-1).body;check(webRequest.mode==='web'&&webRequest.courseId===null&&webRequest.includeProduct===false,'web payload privacy');check(calls.at(-1).context===undefined&&calls.at(-1).history.length===0,'backend does not include private course/general history');check(await p.getByText('联网回答 · 网页参考',{exact:true}).isVisible(),'web source mode label');
+ await p.getByRole('button',{name:'新对话',exact:true}).click();await ready(p);await p.getByRole('button',{name:'排查开发问题',exact:false}).click();
+ run('DELETE FROM auth_rate_limits');failNext=true;await p.locator('.tc-composer textarea').fill('FAIL_TEST 请求失败如何恢复');await p.locator('.tc-composer textarea').press('Enter');await p.getByRole('button',{name:'重试此问题',exact:true}).waitFor();check(await p.locator('.tc-turn-error').isVisible(),'recoverable failure');
+ const failedId=row('SELECT id FROM tutor_turns WHERE question LIKE ?',['FAIL_TEST%']).id;
+ await p.getByRole('button',{name:'重试此问题',exact:true}).click();await answerReady(p);check(row('SELECT attempt FROM tutor_turns WHERE id=?',[failedId]).attempt===2,'retry reuses saved turn');
+ await p.getByRole('button',{name:'新对话',exact:true}).click();await ready(p);await p.getByRole('button',{name:'排查开发问题',exact:false}).click();
+ await p.locator('.tc-composer textarea').fill('HOLD_TEST 长请求');await p.locator('.tc-composer textarea').press('Enter');await p.getByRole('button',{name:'停止回答',exact:true}).waitFor();check(await p.getByLabel('选择课程',{exact:true}).isDisabled(),'busy prevents scope change');
+ await p.getByRole('button',{name:'停止回答',exact:true}).click();await p.getByRole('button',{name:'重试此问题',exact:true}).waitFor();held('不应显示的迟到回答');await p.waitForTimeout(80);check(await p.getByText('不应显示的迟到回答',{exact:true}).count()===0,'late stopped answer rejected');
+ await p.getByRole('button',{name:'新对话',exact:true}).click();await ready(p);await p.locator('.tc-composer textarea').fill('随范围切换保留的草稿');await p.getByRole('button',{name:'历史对话',exact:true}).click();await p.locator('.tc-history').waitFor();
+ await p.locator('.tc-history-list button').filter({hasText:'上一次的 MVP 范围讨论'}).click();await p.locator('.tc-message.is-assistant').waitFor();check(await p.getByLabel('选择课程',{exact:true}).inputValue()===String(pack),'history selection restores old scope');
+ await p.getByRole('button',{name:'新对话',exact:true}).click();await ready(p);check(await p.locator('.tc-composer textarea').inputValue()==='随范围切换保留的草稿','new draft retained after history excursion');
+ await p.getByRole('button',{name:'常见问题',exact:true}).click();await p.locator('.tc-faq.is-open').waitFor();await p.locator('.tc-faq').press('Escape');check(await p.locator('.tc-faq.is-open').count()===0,'FAQ escape');
+ await p.getByRole('button',{name:'历史对话',exact:true}).click();await p.getByRole('button',{name:'历史对话',exact:true}).press('Escape');check(await p.locator('.tc-history').count()===0,'history escape from trigger');
+ const oc=await context(b),o=await oc.newPage();await o.goto(base+'/tutor');await ready(o);check(await o.getByLabel('选择课程',{exact:true}).inputValue()===String(second),'other account default only own library');check(await o.locator('.tc-recent-row').count()===1,'other account only own recent');check(await o.getByText('如何验证我的实际产品需求？',{exact:true}).count()===0);
+ const tc=await context(trial),t=await tc.newPage();await t.goto(base+'/tutor');await ready(t);check(await t.getByLabel('选择课程',{exact:true}).inputValue()==='','no owned course does not invent entitlement');check((await t.locator('.tc-recent-empty').innerText()).includes('还没有历史对话'),'honest empty');check((await t.locator('.tc-scope-copy').innerText()).includes('全部可访问资料'),'all permitted includes preview fallback');
+ const gc=await context(),g=await gc.newPage();await g.goto(base+'/tutor');await g.locator('.tc-welcome').waitFor();check(await g.getByLabel('选择课程',{exact:true}).isDisabled(),'guest selector disabled');check(await g.getByRole('button',{name:'发送给 AI 导师',exact:true}).isDisabled(),'guest sends disabled');check(await g.getByRole('button',{name:'登录后使用',exact:true}).isVisible(),'guest login action');
+ const ec=await context(a),e=await ec.newPage();await ec.route('**/api/learning/ai/conversations',route=>route.fulfill({status:503,json:{error:'隔离历史加载失败'}}));await e.goto(base+'/tutor');await e.getByRole('button',{name:'重新加载对话',exact:true}).waitFor();check(await e.locator('.tc-recent-row').count()===0,'history error not fake records');
+ const pc=await context(a),ep=await pc.newPage();let entryFailure=true;await pc.route('**/api/learning/entry',route=>entryFailure?route.fulfill({status:503,json:{error:'隔离学习位置不可用'}}):route.continue());await ep.goto(base+'/tutor');await ready(ep);await ep.getByRole('button',{name:'重试读取',exact:true}).waitFor();check(await ep.getByLabel('选择课程',{exact:true}).inputValue()===String(pack),'entry error retains authorized course');await ep.locator('.tc-composer textarea').fill('重试时保留的问题');entryFailure=false;await ep.getByRole('button',{name:'重试读取',exact:true}).click();await ep.getByText('最近学习：第 4 章 · 收款与商业化 · 4.1 隔离课时 收款与商业化',{exact:true}).waitFor();check(await ep.locator('.tc-composer textarea').inputValue()==='重试时保留的问题','entry retry preserves draft');
+ const uc=await context(a),u=await uc.newPage();await uc.route('**/api/learning/ai/capabilities',route=>route.fulfill({json:{available:false,reason:'隔离暂停',features:{tutor:false,web:false}}}));await u.goto(base+'/tutor');await ready(u);await u.locator('.tc-composer textarea').fill('服务暂停时保留问题');check(await u.getByRole('button',{name:'发送给 AI 导师',exact:true}).isDisabled(),'service off guard');await u.getByRole('button',{name:'保存问题',exact:true}).click();check(await u.locator('.tc-composer textarea').inputValue()==='服务暂停时保留问题','save-only preserves draft');
+ run("UPDATE project_packs SET status='archived' WHERE id=?",[pack]);
+ const hc=await context(a),h=await hc.newPage();await h.goto(base+'/tutor');await ready(h);await h.getByRole('button',{name:'历史对话',exact:true}).click();await h.locator('.tc-history-list button').filter({hasText:'上一次的 MVP 范围讨论'}).click();await h.getByText('历史课程 · 当前不可选',{exact:true}).waitFor();check(await h.getByLabel('选择课程',{exact:true}).inputValue()===String(pack),'retains revoked historical selection, not silently widened');
+ check((await (await oc.request.get(base+'/api/learning/ai/conversations/'+sentId,{headers:{Authorization:'Bearer '+b.token}})).status())===404,'owner GET enforced');
+ check(row('SELECT COUNT(*) n FROM tutor_conversations WHERE user_id=?',[trial.id]).n===0,'opening no enrollment/history writes');
+ assert.deepEqual(errors,[]);assert.deepEqual(external.filter(url=>!/^https:\/\/fonts\.(googleapis|gstatic)\.com\//.test(url)),[]);
+ console.log(`PASS ${checks} isolated tutor checks: real scope/history, 320–2560px, drafts/keyboard/IME, cited answers/private notes, mode privacy, retry/stop/recovery, ownership and guest/error/unavailable states; no real providers or script errors.`);
+} finally {courseAIService.configure(null);await browser.close();await new Promise(r=>server.close(r));db.close();rmSync(dir,{recursive:true,force:true});}

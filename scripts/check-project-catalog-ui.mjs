@@ -71,7 +71,7 @@ try {
  const errorContext=await context(learner),e=await errorContext.newPage();await e.route('**/api/learning/me/projects',route=>route.fulfill({status:503,json:{error:'隔离读取失败'}}));await e.goto(base+'/projects');await ready(e);await e.getByRole('heading',{name:'暂时无法读取学习进度',exact:true}).waitFor();check(await e.getByRole('button',{name:'重新加载',exact:true}).isVisible());
  // Long real CMS text must reflow without hiding the only usable details action.
  run('UPDATE practice_projects SET title=?,description=? WHERE id=?',['超长项目标题用于验证真实后台内容换行而不是遮挡按钮'.repeat(3),'很长的真实项目说明。'.repeat(100),ids[2]]);
- await o.goto(base+'/projects');await ready(o);await o.setViewportSize({width:390,height:844});check(await o.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));check(await o.locator('.pd-card-action').count()===5);
+ await o.goto(base+'/projects');await ready(o);await o.setViewportSize({width:390,height:844});await o.waitForFunction(()=>document.documentElement.scrollWidth<=innerWidth+1);check(await o.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));check(await o.locator('.pd-card-action').count()===5);
  run('UPDATE practice_projects SET cover_url=? WHERE id=?',[base+'/broken-cover.webp',ids[2]]);
  await o.route('**/broken-cover.webp',route=>route.fulfill({status:404,body:''}));await o.goto(base+'/projects');await ready(o);
  check(await o.locator('.pd-card').filter({hasText:'超长项目标题'}).locator('.pd-art>small').innerText()==='界面示意','failed cover has truthful fallback');

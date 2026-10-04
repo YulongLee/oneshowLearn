@@ -5,6 +5,7 @@ import {createElement as h} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {TutorAnswer,TutorSources,answerHref,answerLabel} from '../src/TutorAnswer.js';
 import {readFileSync} from 'node:fs';
+import {tutorStudyPosition,tutorStarterQuestions,tutorScopeCopy,tutorRecentConversations,tutorConversationDate} from '../src/tutor-studio-model.js';
 
 function composerKey(overrides={}, composing=false) {
   let prevented=0, sent=0;
@@ -46,13 +47,61 @@ test('tutor studio preserves sessions and exposes a grounded course picker witho
   assert.match(page,/setCourseId\(e.target.value\);setMode\('knowledge'\)/);
   assert.match(page,/model.library.map\(p=><option/);
   assert.equal((page.match(/<select /g)||[]).length,1);
-  assert.ok(page.indexOf('aria-label="选择课程"')>page.indexOf('className="tc-tools"'));
+  assert.ok(page.indexOf('aria-label="选择课程"')<page.indexOf('className="tc-composer"'));
   assert.match(page,/courseId:selectedMode==='web'\?null:courseId,includeProduct:selectedMode==='web'\?false:includeProduct/);
   assert.ok(page.indexOf('aria-label="快捷开始"')>page.indexOf('className="tc-composer"'));
   assert.match(css,/\.tc-studio \[hidden\]\{display:none!important\}/);
   assert.match(css,/\.tc-studio \.tc-faq\.is-open\{display:block\}/);
   assert.match(css,/repeat\(4,minmax\(0,1fr\)\)/);
   assert.match(css,/@container learner \(max-width:600px\)/);
+});
+
+test('course-aware tutor position uses only selected readable course lessons and actual chapters',()=>{
+  const entry={chapters:[{id:3,pack_id:1,title:'产品与机会'},{id:4,pack_id:2,title:'其他账号的范围'}],lessons:[
+    {id:1,kind:'course',owner_id:1,chapter_id:3,title:'可开始课时',locked:false,phase:1},
+    {id:2,kind:'course',owner_id:1,chapter_id:3,title:'真实最近课时',locked:false,phase:1,progress:{version:1,updated_at:'2026-10-04'}},
+    {id:3,kind:'course',owner_id:1,chapter_id:3,title:'锁定课时',locked:true,progress:{version:1,updated_at:'2026-10-05'}},
+    {id:4,kind:'course',owner_id:2,chapter_id:4,title:'其他课程',locked:false,progress:{version:1,updated_at:'2026-10-06'}},
+    {id:5,kind:'project',owner_id:1,title:'不是课程',locked:false},
+  ]};
+  assert.equal(tutorStudyPosition('1',entry).lesson.id,2);assert.equal(tutorStudyPosition('1',entry).chapter.title,'产品与机会');
+  assert.equal(tutorStudyPosition('1',entry).recent,true);assert.equal(tutorStudyPosition('',entry),null);assert.equal(tutorStudyPosition(9,entry),null);
+  assert.equal(tutorStudyPosition(1,{lessons:[entry.lessons[0]]}).recent,false);
+  const mismatch={...entry,chapters:[{id:3,pack_id:2,title:'不属于课程'}]};assert.equal(tutorStudyPosition(1,mismatch).chapter,undefined);
+});
+test('starter questions are contextual drafts with evidence boundaries and never fabricated answers',()=>{
+  for(let phase=1;phase<=5;phase++){
+    const items=tutorStarterQuestions({lesson:{phase},chapter:{title:'后台章节 '+phase}});
+    assert.equal(items.length,4);assert.equal(items.filter(i=>i.mode==='knowledge').length,3);
+    for(const item of items){assert.ok(item.question.length<=4000);assert.equal(item.answer,undefined);}
+    for(const item of items.filter(i=>i.mode==='knowledge')){assert.match(item.question,/后台章节/);assert.match(item.question,/注明来源/);assert.match(item.question,/没有涉及时/);}
+  }
+  assert.match(tutorStarterQuestions({lesson:{phase:1}})[0].description,/OPC/);
+  assert.match(tutorStarterQuestions({lesson:{phase:4}})[0].description,/订阅/);
+  assert.doesNotMatch(tutorStarterQuestions(null)[0].description,/OPC|RAG/);
+  assert.equal(tutorStarterQuestions(null)[3].mode,'general');
+});
+test('visible scope distinguishes full course retrieval, historical access, general advice and web privacy',()=>{
+  assert.match(tutorScopeCopy('knowledge',{title:'课程'},1).note,/不限于最近学习章节/);
+  assert.equal(tutorScopeCopy('knowledge',null,'').title,'全部可访问资料');
+  assert.match(tutorScopeCopy('knowledge',null,9).title,/历史课程/);
+  assert.match(tutorScopeCopy('web',{title:'不应显示的私密课'},1).note,/不附带私人/);
+  assert.doesNotMatch(tutorScopeCopy('web',{title:'不应显示的私密课'},1).title,/私密课/);
+  assert.match(tutorScopeCopy('general',null,'').note,/不作为课程资料结论/);
+});
+test('recent conversations are only actual supplied owner records without invented modes or timestamps',()=>{
+  const items=[{id:'a',title:'实际问题',updated_at:'2026-10-04T00:00:00Z'},{id:'b',title:'第二个'},{id:'c',title:'第三个'}],before=structuredClone(items);
+  assert.deepEqual(tutorRecentConversations(items,'a'),items.slice(1));assert.deepEqual(tutorRecentConversations([]),[]);assert.deepEqual(items,before);
+  assert.equal(tutorConversationDate('bad-date'),'');assert.equal(tutorConversationDate(null),'');assert.ok(tutorConversationDate(items[0].updated_at));
+});
+test('studio keeps source/mode/privacy, real history and scoped responsive styles without an upload or execution claim',()=>{
+  const page=readFileSync(new URL('../src/AiTutorChat.jsx',import.meta.url),'utf8'),css=readFileSync(new URL('../src/tutor-course-studio.css',import.meta.url),'utf8');
+  assert.match(page,/mode==='web'&&!webAvailable/);assert.doesNotMatch(page,/mode!=='knowledge'&&!webAvailable/);
+  assert.match(page,/tutorRecentConversations\(session.items,session.id\)/);assert.match(page,/tutorStudyPosition\(courseId,entry\|\|\{\}\)/);
+  assert.match(page,/defaultScope.current\|\|incoming/);assert.match(page,/defaultScope.current=true;setDraft\(incoming.question\)/);
+  assert.match(page,/还没有历史对话/);assert.match(page,/暂时无法读取对话/);assert.match(page,/资料回答附来源/);
+  assert.match(page,/onClick=\{\(\)=>selectQuestion\(item\)\}/);assert.match(css,/@container learner \(max-width:360px\)/);
+  assert.doesNotMatch(css,/\.ws-sidebar|\.ws-topbar|\.ls-/);assert.match(css,/textarea:focus-visible\{outline:none\}/);
 });
 
 test('AI Markdown renders tables, nested lists, headings and copyable code safely',()=>{

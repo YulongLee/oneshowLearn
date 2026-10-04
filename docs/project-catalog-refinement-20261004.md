@@ -48,3 +48,23 @@ old asset retention, atomic entry replacement and automatic rollback on failed
 HTTPS verification. Preserve private-record/order identities, historical amounts,
 configuration/pricing/catalogues/backend hashes and all service processes.
 No production fixture/migration/CMS/config write, provider request or restart.
+
+## Published result
+
+- Source commit `af143dd38e68dd3606e45db7452050a37cc8274c` pushed to `origin/main`.
+- Recoverable production backup: `/var/backups/oneshowlearn/workbench-xbiqn1sm`;
+  staging: `/tmp/oneshowlearn-workbench-vd1yOT2H`.
+- Frontend archive SHA256:
+  `3505c0c0fb43f3c0a17b8a8f1f2c470ee096f2da9817e5690b30889f513e47f4`.
+  Verified live entry matches the new hash above.
+- Release verification passed: 39 HTTPS page entry hashes, 50 HTTPS asset hashes,
+  health/public catalogue and anonymous privacy guards. Existing private records,
+  historical order amounts, configuration/pricing/catalogues, protected backend
+  hashes and all service processes remained unchanged.
+- Read-only live browser verification passed: 12 project catalogue checks and
+  15 course composer checks, with no script errors, writes or provider calls.
+  Actual desktop/mobile production screenshots were inspected; independent covers,
+  actual demo/access metadata, responsive layout and authoritative ¥499 offer
+  were verified. Production has no configured recommendations, so none are invented.
+- Only compiled frontend was published. No production CMS/config/database changes,
+  fixture imports, migrations, gateway requests or service restarts occurred.

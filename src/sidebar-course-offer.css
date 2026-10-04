@@ -1,4 +1,4 @@
-/* One quiet, high-contrast purchase action shared by desktop and mobile drawer. */
+/* Quiet three-part course invitation; preview is a secondary text action. */
 .ws-unified-layout .ws-sidebar:has(.ws-course-offer)>nav { flex:1; min-height:0; overflow-y:auto; align-content:start; scrollbar-width:thin; }
 .ws-unified-layout .ws-sidebar:has(.ws-course-offer)>.ws-brand,
 .ws-unified-layout .ws-sidebar:has(.ws-course-offer)>.ws-sidebar-bottom { flex-shrink:0; }
@@ -6,43 +6,45 @@
   position:relative;
   isolation:isolate;
   overflow:hidden;
-  padding:17px 14px 13px;
+  padding:20px 14px 14px;
   border:1px solid #7141cb;
   border-radius:14px;
-  background:radial-gradient(ellipse at 105% 0%,#956aff60,transparent 65%),linear-gradient(150deg,#17123f,#382374 65%,#5327a8);
+  background:radial-gradient(ellipse at 105% 0%,#956aff35,transparent 65%),linear-gradient(150deg,#17123f,#302267 65%,#44248c);
   color:#fff;
   box-shadow:0 6px 18px #49277614;
 }
-.ws-course-offer::before { content:''; position:absolute; z-index:-1; pointer-events:none; inset:55% 0 0; opacity:.42; background:url('./assets/workspace-mountain-v1.webp') center bottom/cover; mask-image:linear-gradient(transparent,#000 65%); }
+.ws-course-offer::before { content:''; position:absolute; z-index:-1; pointer-events:none; inset:auto 0 0; height:74px; opacity:.22; background:url('./assets/workspace-mountain-v1.webp') 82% bottom/cover; mask-image:linear-gradient(transparent,#000 70%); }
 .ws-offer-account { display:inline-block; margin-bottom:9px; padding:3px 8px; border-radius:5px; color:#efe7ff; background:#ffffff16; font-size:12px; line-height:1.5; }
-.ws-course-offer .ws-offer-eyebrow { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; color:#e6d9ff; font-size:12px; }
-.ws-course-offer .ws-offer-eyebrow>span { display:flex; align-items:center; gap:5px; }
-.ws-unified-layout .ws-course-offer h3 { color:#fff; font-size:18px; line-height:1.4; margin:0 0 5px; white-space:normal; letter-spacing:.01em; }
+.ws-unified-layout .ws-course-offer h3 { color:#fff; font-size:20px; line-height:1.4; margin:0 0 7px; white-space:normal; letter-spacing:.01em; overflow-wrap:anywhere; }
 .ws-unified-layout .ws-course-offer p.ws-offer-value { color:#e6dbfa; font-size:13px; line-height:1.6; margin:0; display:block; }
-.ws-course-offer .ws-offer-price { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-top:13px; min-height:39px; }
+.ws-course-offer .ws-offer-price { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-top:18px; padding-top:15px; border-top:1px solid #ffffff21; min-height:39px; }
 .ws-course-offer .ws-offer-price strong { font-size:32px; letter-spacing:-.04em; line-height:1.2; font-weight:750; color:#fff; }
 .ws-course-offer .ws-offer-price del { color:#d1c0eb; font-size:14px; }
 .ws-course-offer .ws-offer-price>span { color:#eee5ff; font-size:14px; }
-.ws-course-offer .ws-offer-saving { display:inline-block; padding:3px 7px; margin-top:7px; border-radius:5px; background:#ffffff17; color:#f1e7ff; font-size:12px; line-height:1.5; }
-.ws-course-offer .ws-offer-saving-slot { min-height:31px; }
-.ws-course-offer ul { list-style:none; padding:0; margin:12px 0 0; display:grid; gap:5px; }
-.ws-course-offer li { display:flex; align-items:center; gap:7px; color:#eee5fc; font-size:12px; line-height:1.65; }
+.ws-offer-syllabus { margin-top:12px; color:#d7c9ed; font-size:13px; line-height:1.5; }
+.ws-offer-billing { min-height:22px; color:#e8ddfa; font-size:12px; line-height:1.7; margin-top:2px; }
+.ws-course-offer ul { list-style:none; padding:0; margin:17px 0 0; display:grid; gap:8px; }
+.ws-course-offer li { display:flex; align-items:center; gap:7px; color:#eee5fc; font-size:14px; line-height:1.6; }
 .ws-course-offer li svg { flex-shrink:0; color:#cbb2ff; }
+.ws-course-offer li span { min-width:0; overflow-wrap:anywhere; }
 .ws-unified-layout .ws-course-offer>button { background:#fff; color:#4e258b; min-height:44px; margin-top:14px; padding:10px 8px; border-radius:8px; font-size:14px; font-weight:650; gap:8px; }
 .ws-unified-layout .ws-course-offer>button:hover { background:#f0e7ff; }
 .ws-unified-layout .ws-course-offer>button:focus-visible { outline:2px solid white; outline-offset:4px; }
+.ws-unified-layout .ws-course-offer>button.ws-offer-preview { margin-top:4px; padding:8px 2px; gap:6px; background:transparent; color:#e7dbfa; border:0; font-weight:500; }
+.ws-unified-layout .ws-course-offer>button.ws-offer-preview:hover { background:#ffffff0c; color:#fff; }
+.ws-offer-preview span { white-space:nowrap; }
+.ws-offer-preview svg { flex-shrink:0; }
+.ws-course-offer>button:disabled { opacity:.6; cursor:wait; }
 .ws-course-offer>small { display:block; color:#ddceef; font-size:11px; line-height:1.6; text-align:center; margin-top:8px; }
-@media (max-height:1050px) {
-  .ws-course-offer .ws-offer-eyebrow,
-  .ws-unified-layout .ws-course-offer p.ws-offer-value { display:none; }
-  .ws-course-offer ul { margin-top:8px; }
-  .ws-course-offer>small { display:none; }
-}
 @media (max-height:700px) {
-  .ws-course-offer :is(.ws-offer-eyebrow,ul),
   .ws-unified-layout .ws-course-offer p.ws-offer-value { display:none; }
-  .ws-course-offer .ws-offer-price { margin-top:8px; }
+  .ws-course-offer ul { margin-top:10px; gap:5px; }
+  .ws-course-offer .ws-offer-price { margin-top:8px; padding-top:8px; }
+  .ws-course-offer .ws-offer-syllabus { margin-top:7px; }
   .ws-unified-layout .ws-course-offer { padding:12px; }
+}
+@media (max-height:520px) {
+  .ws-unified-layout .ws-course-offer { max-height:calc(100dvh - 180px); overflow-y:auto; scroll-padding-block:10px; }
 }
 .ws-unified-layout .ws-course-unlocked h3 { display:flex; align-items:center; gap:7px; font-size:17px; }
 .ws-course-unlocked h3 svg { color:#cfbaff; flex-shrink:0; }

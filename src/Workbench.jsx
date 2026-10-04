@@ -11,6 +11,8 @@ import {safeResourceUrl} from './opc-model.js';
 import {prepareTutorQuestion,useAiCapabilities} from './useAiCapabilities.js';
 import {BrandIdentity} from './BrandIdentity.jsx';
 import {workbenchProjectVisual,workbenchProjectSummary} from './workbench-visual-model.js';
+import {WorkbenchProjectCarousel} from './WorkbenchProjectCarousel.jsx';
+import {orderedWorkbenchProjects} from './workbench-carousel-model.js';
 import coursePreviewArt from './assets/workbench-course-preview-v1.webp';
 import interviewArt from './assets/workbench-interview-v1.webp';
 import directoryArt from './assets/workbench-directory-v1.webp';
@@ -130,8 +132,7 @@ export function Workbench({model,navigate,notify}) {
   const selection=workbenchSelection(model.library,extra.entry,model.recent),unavailable=model.loading||Boolean(model.error)||!model.user;
   const recent=unavailable||extra.loading?[]:recentStudyItems(model.library,extra.entry,extra.mine);
   const project=!unavailable&&!extra.loading&&!extra.errors.mine?currentProject(extra.mine):null;
-  const configuredIds=new Set((site.projects||[]).map(item=>item.id));
-  const recommendations=(configuredIds.size?extra.projects.filter(item=>configuredIds.has(item.id)):extra.projects).slice(0,3);
+  const recommendations=orderedWorkbenchProjects(extra.projects,site.projects||[]);
   const tasks=model.state.tasks.filter(task=>task.date===localDay()),completed=tasks.filter(task=>task.done).length;
   const achievements=unavailable?[]:liveAchievements(model.state),personalProduct=currentProductAchievement(achievements);
   const suggestedTitle=selection.lesson?`学习 ${selection.lesson.title}`.slice(0,160):'选择一节课程，开始今天的学习';
@@ -151,7 +152,7 @@ export function Workbench({model,navigate,notify}) {
       <LearningPath selection={selection} extra={extra} model={model} navigate={navigate}/>
       {recent.length>0&&<RecentLearning recent={recent} navigate={navigate}/>}
       {project&&<CurrentProject project={project} navigate={navigate}/>}
-      {(recommendations.length>0||extra.loading||extra.errors.projects)&&<section className="wd-recommendations"><Heading action="查看全部项目" onClick={()=>navigate('/projects')}>从学习，走向实战</Heading><p className="wd-panel-subtitle">从真实项目出发，练习完整的产品开发流程。</p><div className="wd-project-grid">{recommendations.map(item=>{const visual=workbenchProjectVisual(item);return <button className="wd-project-card" key={item.id} onClick={()=>navigate(`/projects/${encodeURIComponent(item.slug)}`)}><Cover item={item} project/><div className="wd-project-card-copy"><h3>{visual.title}</h3><p>{workbenchProjectSummary(item)}</p>{visual.tags.length>0&&<div className="wd-project-tags">{visual.tags.map(tag=><span key={tag}>{tag}</span>)}</div>}{visual.demo&&<small className="wd-project-demo">演示项目 · 正式教学内容待补充</small>}<span className="wd-link">了解项目<ArrowRight size={15}/></span></div></button>;})}</div>{!recommendations.length&&<p className="wd-muted">{extra.loading?'正在加载已发布项目…':'项目推荐暂时无法读取，请重新加载。'}</p>}</section>}
+      {(recommendations.length>0||extra.loading||extra.errors.projects)&&<section className="wd-recommendations"><Heading action="查看全部项目" onClick={()=>navigate('/projects')}>从学习，走向实战</Heading><p className="wd-panel-subtitle">从真实项目出发，练习完整的产品开发流程。</p><WorkbenchProjectCarousel items={recommendations} renderItem={item=>{const visual=workbenchProjectVisual(item);return <button className="wd-project-card" onClick={()=>navigate(`/projects/${encodeURIComponent(item.slug)}`)}><Cover item={item} project/><div className="wd-project-card-copy"><h3>{visual.title}</h3><p>{workbenchProjectSummary(item)}</p>{visual.tags.length>0&&<div className="wd-project-tags">{visual.tags.map(tag=><span key={tag}>{tag}</span>)}</div>}{visual.demo&&<small className="wd-project-demo">演示项目 · 正式教学内容待补充</small>}<span className="wd-link">了解项目<ArrowRight size={15}/></span></div></button>;}}/>{!recommendations.length&&<p className="wd-muted">{extra.loading?'正在加载已发布项目…':'项目推荐暂时无法读取，请重新加载。'}</p>}</section>}
       {personalProduct&&<PersonalProducts items={achievements} model={model} navigate={navigate}/>}
       <GrowthEntry model={model} items={achievements} navigate={navigate}/>
     </div>

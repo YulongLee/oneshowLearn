@@ -113,7 +113,7 @@ export function CourseDirectory({
   }, [currentId]);
   return (
     <aside className={`cl-directory ${variant === "rail" ? "cs-directory" : ""}`} aria-label="课程学习目录">
-      {variant === "rail" && <div className="cs-directory-progress"><div><h2>课程进度</h2><span>{completed} / {progressLessons.length} 节 <b>{percent}%</b></span></div><progress value={percent} max="100" aria-label="课程完成进度" /></div>}
+      {variant === "rail" && <div className="cs-directory-progress"><div><h2>{isProject ? '课程进度' : '课程目录'}</h2><span>{completed} / {progressLessons.length} 节 <b>{percent}%</b></span></div><progress value={percent} max="100" aria-label="课程完成进度" /></div>}
       {isProject && (
         <button
           className="cl-return"

@@ -3,7 +3,7 @@ import { Play, Pause, SpeakerHigh, SpeakerSlash, ArrowsOut, ArrowsIn, ArrowCount
 import { PLAYBACK_RATES, playbackRate, mediaTime, seekTime } from './player-model.js';
 import './learning-player.css';
 
-export function LearningVideoPlayer({ videoRef, source, subtitle, title, resumeTime, onTimeUpdate, onDuration, onSave, onRefresh, saveState }) {
+export function LearningVideoPlayer({ videoRef, source, subtitle, title, resumeTime, onTimeUpdate, onDuration, onSave, onRefresh, saveState, cover=null }) {
   const container = useRef(null), timer = useRef(null), position = useRef(resumeTime || 0), automaticRetry = useRef(false), retrying = useRef(false);
   const [paused, setPaused] = useState(true), [visible, setVisible] = useState(true), [duration, setDuration] = useState(0), [current, setCurrent] = useState(0);
   const [volume, setVolume] = useState(1), [muted, setMuted] = useState(false), [buffered, setBuffered] = useState(0), [waiting, setWaiting] = useState(false);
@@ -76,6 +76,7 @@ export function LearningVideoPlayer({ videoRef, source, subtitle, title, resumeT
       }}>
       {subtitle && <track src={subtitle} kind="subtitles" srcLang="zh" label="中文字幕" default />}
     </video>
+    {cover && paused && !error && (!current || (duration && current >= duration)) && <div className="lp-course-cover" onClick={toggle}>{cover}</div>}
     <div className="lp-topline"><span>课程视频</span><span>{title}</span></div>
     {error ? <div className="lp-overlay" role="alert"><strong>{error}</strong><button onClick={retry}><ArrowClockwise size={18} />重新加载</button></div>
       : waiting ? <div className="lp-loading" role="status">正在加载视频…</div>

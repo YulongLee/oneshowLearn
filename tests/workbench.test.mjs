@@ -3,7 +3,47 @@ import test from "node:test";
 import { calendarMonth, learningEntries, recentStudyItems, currentProject, currentProductAchievement, phaseState, watchPercent,workbenchSelection,workbenchPhaseState,sidebarCourseAccess } from "../src/workbench-model.js";
 import {prepareTutorQuestion,takeTutorIntent,peekTutorIntent} from '../src/tutor-navigation.js';
 import {workbenchProjectVisual,workbenchProjectSummary} from '../src/workbench-visual-model.js';
+import {PROJECT_FLOW_PX_PER_SECOND,advanceProjectFlow,orderedWorkbenchProjects} from '../src/workbench-carousel-model.js';
 import {readFileSync} from 'node:fs';
+
+test('project flow moves each frame at constant speed and wraps the identical seam',()=>{
+  assert.equal(PROJECT_FLOW_PX_PER_SECOND,24);
+  assert.equal(advanceProjectFlow(0,50,1000),1.2);
+  assert.ok(Math.abs(advanceProjectFlow(999,50,1000)-.2)<.0001);
+  assert.equal(advanceProjectFlow(0,10000,1000),1.536);
+  assert.equal(advanceProjectFlow(10,-1,1000),10);
+  assert.equal(advanceProjectFlow(NaN,NaN,1000),0);
+  assert.equal(advanceProjectFlow(20,50,0),0);
+});
+test('project rotation keeps CMS priorities and all remaining published recommendations',()=>{
+  const projects=[{id:1,slug:'interview'},{id:2,slug:'tools'},{id:3,slug:'mobile'},{id:4,slug:'draft',status:'draft'},{id:5,slug:'agent',status:'published'}];
+  assert.deepEqual(orderedWorkbenchProjects(projects,[{id:3},{id:999}]).map(p=>p.id),[3,1,2,5]);
+  assert.deepEqual(orderedWorkbenchProjects([]),[]);
+  assert.equal(orderedWorkbenchProjects(Array.from({length:30},(_,i)=>({id:i+1,slug:'p-'+i}))).length,12);
+  const carousel=readFileSync(new URL('../src/WorkbenchProjectCarousel.jsx',import.meta.url),'utf8');
+  assert.match(carousel,/loop&&!paused&&!hovered&&!focused&&!hidden&&inView/);
+  assert.match(carousel,/visibilitychange/);assert.match(carousel,/IntersectionObserver/);
+  assert.match(carousel,/cancelAnimationFrame\(frame\)/);assert.match(carousel,/tabIndex:-1/);
+  assert.doesNotMatch(carousel,/setTimeout|wd-carousel-footer|wd-carousel-caption|下一组实战项目/);
+});
+
+test('workbench columns align their final cards without stretching tool cards or mobile rails',()=>{
+  const css=readFileSync(new URL('../src/workbench-product.css',import.meta.url),'utf8');
+  assert.match(css,/grid-template-rows:auto auto auto minmax\(155px,1fr\)/);
+  assert.match(css,/\.wd-growth-entry \{ margin-top:auto; \}/);
+  assert.match(css,/@container learner \(max-width:1050px\)[\s\S]*?\.wd-rail \{[^}]*grid-template-rows:none; align-self:start/);
+  const ui=readFileSync(new URL('../src/Workbench.jsx',import.meta.url),'utf8');
+  assert.doesNotMatch(ui,/useWorkbenchRail|ref=\{rail\}/);
+});
+
+test('mountain detail stays opaque and bounded while the card keeps its flexible height',()=>{
+  const css=readFileSync(new URL('../src/workbench-product.css',import.meta.url),'utf8');
+  const scene=css.match(/\.wd-inspiration::after \{([^}]+)\}/)?.[1];
+  assert.ok(scene);assert.match(scene,/height:65%; max-height:min\(380px,calc\(100% - 96px\)\)/);
+  assert.match(scene,/opacity:1;/);assert.match(scene,/82% 65%\/cover no-repeat/);
+  assert.match(scene,/mask-image:linear-gradient\(to bottom,transparent,#000 32%\)/);
+  assert.doesNotMatch(scene,/filter:|background:linear-gradient/);
+});
 
 test('workbench differentiates labeled generic demo art while preserving real CMS covers',()=>{
   assert.equal(workbenchProjectVisual({title:'[演示] AI 面试助手'}).key,'interview');

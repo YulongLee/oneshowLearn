@@ -9,6 +9,45 @@ import {projectStudyEntry,studyMaterials} from '../src/project-study-model.js';
 import {mediaTime,seekTime,playbackRate} from '../src/player-model.js';
 const source=file=>readFileSync(new URL('../src/'+file,import.meta.url),'utf8');
 
+test('course refinement keeps permission-backed materials, private editors and uncropped video',()=>{
+  const page=source('LessonWorkspace.jsx'),resources=source('CourseLessonResources.jsx'),cover=source('CourseLessonCover.jsx'),css=source('course-lesson-refinement.css');
+  assert.match(page,/isCourse \? "cr-lesson-page"/);
+  assert.match(page,/cover=\{isCourse && config.isDemoMedia/);
+  assert.match(cover,/封面示意/);
+  assert.match(resources,/config.slides.find\(page => safeResourceUrl\(page.asset\?\.url\)\)/);
+  assert.match(resources,/safeResourceUrl\(config.ppt\?\.url\)/);
+  assert.match(resources,/onMaterial\(material.library_id\)/);
+  assert.match(resources,/config.slides.length/);
+  assert.match(page,/selectedMaterial===null \|\| m.library_id===selectedMaterial/);
+  assert.match(page,/ref=\{slidePreview\}/);
+  assert.match(page,/hidden=\{contentTab!=='notes'\}/);
+  assert.match(page,/isCourse && lessons\[index\+1\]/);
+  assert.match(page,/isCourse \? config.isDemoMedia && <span className="cr-demo-notice"/);
+  assert.doesNotMatch(css,/\.lp-video.*object-fit:cover|zoom:|scale\(/);
+});
+
+test('course AI keeps scoped two-action entry and all tools with guarded keyboard sending',()=>{
+  const page=source('LessonWorkspace.jsx');
+  assert.match(page,/refined=\{isCourse\} compact/);
+  assert.match(page,/\[\['ask','解释本节难点'\],\['summary','整理学习要点'\]\]/);
+  assert.match(page,/\['notes','整理学习笔记'\],\['keypoints','提取核心知识点'\],\['flashcards','生成复习卡片'\],\['mindmap','生成思维导图'\]/);
+  assert.match(page,/e.shiftKey \|\| e.repeat \|\| e.nativeEvent.isComposing \|\| e.nativeEvent.keyCode===229/);
+  assert.match(page,/cap.features\?\.ask!==false && !busy && !saveBusy && question.trim\(\)/);
+  assert.match(page,/不会直接观看视频或读取图片/);
+  assert.match(page,/保存为私人笔记/);
+});
+
+test('course assistant fills desktop rail with bounded answers and resets on stacked layouts',()=>{
+  const page=source('LessonWorkspace.jsx'),css=source('course-lesson-refinement.css');
+  assert.match(page,/className="cr-ai-response" role="region" aria-label="AI 回答" tabIndex=\{0\}/);
+  assert.match(page,/!busy && !error && !response && !notice && !evidence/);
+  assert.match(page,/!refined && answerContent/);
+  assert.ok(page.indexOf('className="cr-ai-response"')<page.indexOf("className={refined ? 'cr-ai-composer'"));
+  assert.match(css,/\.cr-lesson-page \.cs-layout \{ align-items:stretch/);
+  assert.match(css,/\.cr-ai-response \{[^}]*contain:size; overflow:auto/);
+  assert.match(css,/@container courseStudy \(max-width:960px\)[\s\S]*contain:none; height:auto; max-height:min\(420px,60dvh\)/);
+});
+
 test('shared video controls clamp seeks and validate remembered playback preferences',()=>{
   assert.equal(mediaTime(65.8),'01:05'); assert.equal(mediaTime(3665),'1:01:05');
   assert.equal(mediaTime(NaN),'00:00'); assert.equal(mediaTime(-2),'00:00');

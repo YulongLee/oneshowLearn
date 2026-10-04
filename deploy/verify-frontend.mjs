@@ -15,6 +15,7 @@ routes.push('/membership/', '/course-offer');
 routes.push('/account', '/account/', '/admin/account');
 routes.push('/admin/login-settings', '/admin/email');
 routes.push('/legal/terms','/legal/privacy','/legal/purchase','/support','/admin/service','/admin/support');
+routes.push('/opc/lessons/1','/projects/preview-project-2/workspace');
 for (const route of routes) {
   const response = await request(route);
   assert.equal(response.status, 200, route);

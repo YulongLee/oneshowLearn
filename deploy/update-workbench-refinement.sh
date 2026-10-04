@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Owner-approved frontend-only workbench release. No backend writes or restart.
+# Owner-approved frontend-only learner UI release. No backend writes or restart.
 set -euo pipefail
 umask 077
 staging="${1:?Verified staging directory required}"
 app=/var/www/oneshowlearn
 node=/opt/node-v22/bin/node
-live_entry=1319a6903030297682b3169644c5760f4f8a111b8aecb2dad75e19f095a83030
-new_entry=15c4d7d8460829a5f7beb466d1ccc3ca261990af39231105360ddb9eb478bea0
+live_entry=540e2567889012983f7272aac7c7ac60954dab3fcfa08b6524edd1a4071ea9f6
+new_entry=3801736586eb64344da0ff0f51d5784e655069dfc83058fdc7e6f5cd9125d2bb
 [[ "$EUID" -eq 0 && "$staging" == /tmp/oneshowlearn-workbench-* && -d "$staging" && ! -L "$staging" ]] || exit 1
 test -f "$staging/client/index.html"
 test -d "$staging/client/assets"

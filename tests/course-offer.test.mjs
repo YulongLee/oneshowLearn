@@ -69,14 +69,20 @@ test('embedded offer responds to usable workspace width without overriding sideb
   assert.doesNotMatch(css,/--sidebar-width|\.ws-sidebar|zoom:|scale\(/);
 });
 
-test('sidebar purchase entry uses backend pricing and a single non-payment action',()=>{
+// Included in the existing platform test entry, without changing dependencies.
+import './sidebar-offer.test.mjs';
+test('sidebar purchase and preview entries never create orders or invent prices',()=>{
   const card=readFileSync(new URL('../src/SidebarCourseOffer.jsx',import.meta.url),'utf8');
   assert.match(card,/api\('\/commerce\/offer'\)/);
-  assert.match(card,/offer.originalPriceCents-offer.priceCents/);
+  assert.match(card,/offer.originalPriceCents>offer.priceCents/);
   assert.match(card,/navigate\('\/membership'\)/);
   assert.doesNotMatch(card,/399|999|799|倒计时|永久|无限|commerce\/orders/);
   assert.match(card,/useState\(null\)/,'Initial load must not display an invented price');
-  assert.equal((card.match(/<button/g)||[]).length,1);
+  assert.equal((card.match(/<button/g)||[]).length,2);
+  assert.match(card,/navigate\(summary.previewPath\)/);
+  assert.match(card,/!learning&&summary.previewPath/);
+  assert.match(card,/AI 导师 · 课程答疑/);
+  assert.doesNotMatch(card,/试学用户|比原价省/);
 });
 
 test('sidebar revalidation preserves its last successful offer and ignores obsolete route requests',()=>{
@@ -87,7 +93,19 @@ test('sidebar revalidation preserves its last successful offer and ignores obsol
   assert.match(card,/return\(\)=>\{active=false;\}/,'A late response from the previous route cannot overwrite current pricing');
   assert.match(card,/\},\[route\]\)/,'Navigation still refreshes CMS pricing');
   assert.match(css,/\.ws-offer-price \{[^}]*min-height:39px/);
-  assert.match(css,/\.ws-offer-saving-slot \{ min-height:31px/);
+  assert.match(css,/\.ws-offer-billing \{ min-height:22px/);
+});
+
+test('simplified sidebar preserves tutor and preview without competing boxes or a second filled action',()=>{
+  const card=readFileSync(new URL('../src/SidebarCourseOffer.jsx',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../src/sidebar-course-offer.css',import.meta.url),'utf8');
+  assert.doesNotMatch(card,/ws-offer-eyebrow|Robot|Sparkle/);
+  assert.match(card,/课件 · Prompt 模板/);
+  assert.match(card,/className="ws-offer-ai"><CheckCircle size=\{15\} weight="fill"/);
+  assert.match(css,/>button\.ws-offer-preview \{[^}]*background:transparent[^}]*border:0/);
+  assert.match(css,/\.ws-offer-syllabus \{[^}]*font-size:13px/);
+  assert.doesNotMatch(css,/li\.ws-offer-ai \{|\.ws-offer-benefits>li:not/);
+  assert.match(css,/height:74px; opacity:\.22/);
 });
 
 test('sales reference keeps eight benefit cards without fabricated commerce claims',()=>{

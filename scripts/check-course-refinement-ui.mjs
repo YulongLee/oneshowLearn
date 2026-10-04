@@ -1,0 +1,180 @@
+// Fresh isolated lesson fixtures and mocked AI only. No production records/providers.
+import assert from 'node:assert/strict';
+import {mkdtempSync,mkdirSync,copyFileSync,writeFileSync,readFileSync,statSync,rmSync} from 'node:fs';
+import path from 'node:path';
+import {tmpdir} from 'node:os';
+import {spawnSync} from 'node:child_process';
+import {createRequire} from 'node:module';
+import express from 'express';
+const require=createRequire('/Users/liyulong/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/_audit.cjs');
+const {chromium}=require('playwright');
+const dir=mkdtempSync(path.join(tmpdir(),'osl-course-refinement-'));
+Object.assign(process.env,{NODE_ENV:'test',DATABASE_PATH:path.join(dir,'isolated.db'),UPLOAD_DIR:path.join(dir,'uploads'),JWT_SECRET:'isolated-course-refinement-only',ASSET_STORAGE:'local',AI_ENABLED:'false',EMAIL_API_KEY:'',PAYMENT_CONFIG_ENCRYPTION_KEY:'ab'.repeat(32)});
+const {db,row,run}=await import('../server/db.mjs');
+const {signUser}=await import('../server/auth.mjs');
+const {createApp}=await import('../server/index.mjs');
+const {paymentConfiguration,savePaymentConfig}=await import('../server/payment-configuration.mjs');
+const insert=(sql,args=[])=>Number(run(sql,args).lastInsertRowid);
+const user=(name,role='learner')=>{const id=insert('INSERT INTO users(email,password_hash,name,role,email_verified) VALUES(?,?,?,?,1)',[name+'@example.invalid','unused',name,role]);const u=row('SELECT * FROM users WHERE id=?',[id]);return {...u,token:signUser(u)};};
+const owner=user('隔离管理员','admin'),paid=user('隔离已购用户'),trial=user('隔离试听用户');
+const curriculum=JSON.parse(readFileSync('docs/curriculum/ai-opc-20261001.json','utf8'));
+const lp=insert("INSERT INTO learning_paths(slug,title,status) VALUES('isolated-path','隔离路径','published')");
+const pack=insert("INSERT INTO project_packs(path_id,slug,title,status) VALUES(?,?,?,'published')",[lp,curriculum.slug,curriculum.title]);
+run('INSERT INTO learning_entry_settings(id,course_id) VALUES(1,?)',[pack]);
+run("INSERT INTO entitlements(user_id,pack_id,status) VALUES(?,?,'active')",[paid.id,pack]);
+const product=insert("INSERT INTO products(pack_id,sku,title,price_cents,status) VALUES(?,'isolated-course','隔离课程',49900,'active')",[pack]);
+savePaymentConfig(owner,0,{settings:{...paymentConfiguration().settings,productId:product,priceCents:49900,originalPriceCents:99900},secrets:{}});
+const privateDir=path.join(dir,'uploads-private');mkdirSync(privateDir,{recursive:true});
+const media=path.join(dir,'fixture.mp4');
+const ffmpeg=spawnSync('/opt/homebrew/bin/ffmpeg',['-y','-f','lavfi','-i','color=c=0x29254f:s=960x540:r=12:d=8','-c:v','libx264','-pix_fmt','yuv420p',media],{stdio:'ignore'});
+assert.equal(ffmpeg.status,0,'isolated video fixture encoder');
+const ppt=path.join(dir,'fixture.pptx');writeFileSync(ppt,Buffer.from('Isolated download route fixture; never upload.'));
+const asset=(file,name,mime)=>{copyFileSync(file,path.join(privateDir,name));const id=insert('INSERT INTO assets(filename,original_name,mime_type,size_bytes,url,uploaded_by) VALUES(?,?,?,?,?,?)',[name,name,mime,statSync(file).size,'',owner.id]);run('UPDATE assets SET url=? WHERE id=?',[`/api/materials/${id}`,id]);return id;};
+const videoId=asset(media,'fixture.mp4','video/mp4'),pptId=asset(ppt,'fixture.pptx','application/vnd.openxmlformats-officedocument.presentationml.presentation');
+const first=asset('src/assets/resources-prd-v1.webp','first.webp','image/webp'),second=asset('src/assets/project-web-cover-v1.webp','second.webp','image/webp');
+const fixtureConfig={isDemoMedia:true,videoAssetId:videoId,pptAssetId:pptId,slides:[{id:'s1',assetId:first,text:'隔离课件第一页：理解 OPC 产品机会。'},{id:'s2',assetId:second,text:'隔离课件第二页：定义需求。'}],mappings:[{slideId:'s1',start:0,end:4},{slideId:'s2',start:4,end:8}],tasks:[{id:'required-task',title:'隔离实验必需任务',required:true}],operations:[]};
+const placements=[];let formal;
+for(const chapter of curriculum.chapters){
+ const id=insert("INSERT INTO project_steps(pack_id,title,summary,status,sort_order) VALUES(?,?,?,'published',?)",[pack,`第${chapter.number}章 ${chapter.title}`,chapter.goal,chapter.number]);
+ run('INSERT INTO opc_stage_steps(step_id,phase) VALUES(?,?)',[id,chapter.number]);
+ for(const [i,section] of chapter.sections.entries()){
+  const isFormal=chapter.number===1&&i===2;
+  const lesson=insert("INSERT INTO learning_lessons(title,subtitle,config,status) VALUES(?,?,?,'published')",[section.number+' '+section.title,'隔离目标：理解产品机会，明确目标用户。',JSON.stringify({...fixtureConfig,isDemoMedia:!isFormal})]);
+  const placement=insert("INSERT INTO lesson_placements(lesson_id,chapter_id,is_preview,sort_order,status) VALUES(?,?,?,?, 'published')",[lesson,id,chapter.number===1&&i<2?1:0,i]);placements.push(placement);if(isFormal)formal=placement;
+ }
+}
+const material=insert("INSERT INTO content_library(type,title,body,status) VALUES('article','隔离课程大纲','隔离资料正文：这是对应资料，不是其他资料。','published')"),other=insert("INSERT INTO content_library(type,title,body,status) VALUES('article','隔离第二份资料','另一份隔离资料正文，不应与选择项混淆。','published')");
+for(const id of [material,other])run("INSERT INTO lesson_materials(placement_id,library_id,role) VALUES(?,?,'article')",[placements[0],id]);
+const project=insert("INSERT INTO practice_projects(slug,title,status) VALUES('isolated-project','隔离项目','published')");
+run("INSERT INTO practice_project_settings(project_id,access_type) VALUES(?,'free')",[project]);
+const stage=insert("INSERT INTO practice_project_stages(project_id,title,status) VALUES(?,'项目阶段','published')",[project]);
+const projectLesson=insert("INSERT INTO learning_lessons(title,config,status) VALUES('隔离项目课时',?,'published')",[JSON.stringify({...fixtureConfig,isDemoMedia:false})]);
+const projectPlacement=insert("INSERT INTO lesson_placements(lesson_id,stage_id,status) VALUES(?,?,'published')",[projectLesson,stage]);
+run('INSERT INTO project_runs(user_id,project_id) VALUES(?,?)',[paid.id,project]);
+const app=createApp(),client=path.resolve('dist/client');app.use(express.static(client));app.get('/{*route}',(_q,res)=>res.sendFile(path.join(client,'index.html')));
+const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
+const base=`http://127.0.0.1:${server.address().port}`,browser=await chromium.launch({headless:true});
+const errors=[],aiRequests=[],externalRequests=[],blockedFonts=[];let checks=0;
+const check=(condition,message)=>{assert.ok(condition,message);checks++;};
+const context=async(u,options={})=>{
+ const c=await browser.newContext({viewport:{width:1600,height:1150},reducedMotion:'reduce'});
+ await c.route('**/*',async route=>{
+  const url=route.request().url();if(!url.startsWith(base)){
+   // Existing shared font imports are intercepted, never sent to the network.
+   (/^https:\/\/fonts\.(googleapis|gstatic)\.com\//.test(url)?blockedFonts:externalRequests).push(url);return route.abort();
+  }
+  if(url.endsWith('/api/learning/ai/capabilities'))return route.fulfill({json:{available:options.available!==false,reason:'隔离服务状态',features:{ask:true,summary:options.summary!==false,notes:true,keypoints:true,flashcards:true,mindmap:true}}});
+  if(/\/api\/learning\/placements\/\d+\/ai$/.test(url)){
+   aiRequests.push({url,body:route.request().postDataJSON()});
+   if(options.delay)await new Promise(resolve=>setTimeout(resolve,options.delay));
+   if(options.failAI)return route.fulfill({status:503,json:{error:'隔离 AI 暂不可用，草稿仍保留'}});
+   return route.fulfill({json:{answer:options.answer||'隔离模拟回答：仅用于验证课程来源与私人笔记保存。',sources:[{id:'fixture-source',label:'隔离课程资料',excerpt:'隔离证据内容'}],coverage:{partial:false,imageOnlyPages:0}}});
+  }
+  return route.continue();
+ });
+ if(u)await c.addInitScript(token=>{if(location.protocol==='http:'||location.protocol==='https:')localStorage.setItem('oneshowlearn_token',token);},u.token);
+ c.on('page',p=>p.on('pageerror',e=>errors.push(e.message)));return c;
+};
+const ready=async p=>{await p.locator('.cr-lesson-page .learning-player').waitFor();await p.locator('.cr-resources').waitFor();await p.locator('.cs-quick-actions button').first().waitFor();};
+const aligned=async p=>{
+ try {await p.waitForFunction(()=>Math.abs((document.querySelector('.cr-next-lesson')||document.querySelector('.cr-completion')).getBoundingClientRect().bottom-document.querySelector('.cs-assistant-panel').getBoundingClientRect().bottom)<2);}
+ catch(error){console.log('Alignment diagnostic',await p.evaluate(()=>['.ls-reading','.cr-completion','.cr-next-lesson','.cs-rail','.cs-assistant-slot','.cs-assistant-panel'].map(selector=>{const el=document.querySelector(selector);if(!el)return{selector};const rect=el.getBoundingClientRect(),style=getComputedStyle(el);return{selector,top:rect.top,bottom:rect.bottom,height:rect.height,margin:style.margin,padding:style.padding,display:style.display,alignSelf:style.alignSelf,gap:style.gap};})));throw error;}
+ check(true,'assistant and actual next-lesson footer aligned');
+ check(await p.locator('.cr-ai-composer').evaluate(el=>el.getBoundingClientRect().height<160),'composer remains normal sized');
+ check(await p.evaluate(()=>document.querySelector('.cr-ai-response').getBoundingClientRect().bottom<=document.querySelector('.cr-ai-composer').getBoundingClientRect().top),'response above bottom composer');
+};
+const output=path.resolve('artifacts/course-refinement');mkdirSync(output,{recursive:true});
+try{
+ const pc=await context(paid),p=await pc.newPage();await p.goto(base+`/opc/lessons/${placements[0]}`);await ready(p);
+ check((await p.locator('h1').innerText()).includes('1.1'));check((await p.locator('.cl-lesson-heading p').last().innerText()).includes('隔离目标'));
+ check(await p.locator('.cs-lesson-meta label,.cs-chapter-count').count()===0);check(await p.locator('.cr-demo-notice').isVisible());
+ check(await p.locator('.cs-directory .cl-chapter').count()===5);check(await p.locator('.cr-resources .ls-tabs').count()===0);
+ check(await p.locator('.cs-content-tabs button').count()===2);check(await p.locator('.cs-quick-actions>button').count()===2);
+ await p.locator('.cr-video-cover>img').evaluate(img=>img.decode());check(await p.locator('.cr-video-cover').isVisible());
+ check(await p.locator('.cr-cover-brand .osl-brand-wordmark').evaluate(el=>getComputedStyle(el).color==='rgb(255, 255, 255)'));
+ check(await p.locator('.cr-cover-brand .osl-brand-tagline').evaluate(el=>getComputedStyle(el).display==='none'));
+ check(await p.locator('.learning-player').evaluate(el=>Math.abs(el.clientWidth/el.clientHeight-16/9)<.015));
+ check(await p.locator('video').evaluate(el=>getComputedStyle(el).objectFit==='contain'));
+ await p.locator('.cr-thumbnail img').evaluate(img=>img.decode());check(await p.locator('.cr-thumbnail img').evaluate(img=>img.naturalWidth>0));
+ await aligned(p);check(await p.locator('.cr-ai-empty').isVisible());
+ await p.screenshot({path:path.join(output,'course-desktop-1600.png'),fullPage:true});
+ await p.locator('.cr-file-actions button').click();check(await p.locator('.cs-slide-preview').getAttribute('open')!==null);
+ await p.getByRole('button',{name:'第 2 页',exact:true}).click();check((await p.locator('.ls-slide-canvas img').getAttribute('alt')).includes('第二页'));
+ await p.locator('.cr-file-actions a').evaluate(el=>el.dataset.expected=el.href);
+ const downloadHref=await p.locator('.cr-file-actions a').getAttribute('href');
+ const downloadResponse=await pc.request.get(base+downloadHref);check(downloadResponse.status()===200);check((await downloadResponse.body()).toString().includes('Isolated download'));
+ await p.locator('.cr-materials button').first().click();check(await p.getByText('隔离资料正文：这是对应资料，不是其他资料。',{exact:true}).isVisible());
+ check(await p.getByText('另一份隔离资料正文，不应与选择项混淆。',{exact:true}).count()===0);
+ await p.getByRole('button',{name:'全部资料',exact:true}).click();check(await p.getByText('另一份隔离资料正文，不应与选择项混淆。',{exact:true}).isVisible());
+ await p.getByRole('button',{name:'返回课件与资料'}).click();await p.locator('.cr-resources').waitFor();checks++;
+ await p.locator('.cs-content-tabs button').nth(1).click();await p.getByLabel('笔记标题').fill('隔离私密笔记');await p.getByLabel('笔记内容').fill('我的隔离草稿，切换面板不能丢失。');
+ await p.locator('.cs-content-tabs button').first().click();await p.locator('.cs-content-tabs button').nth(1).click();check(await p.getByLabel('笔记标题').inputValue()==='隔离私密笔记');check((await p.getByLabel('笔记内容').innerText()).includes('不能丢失'));
+ await p.getByRole('button',{name:'保存',exact:true}).click();await p.getByText('笔记已保存',{exact:true}).waitFor();checks++;
+ await p.locator('.cs-content-tabs button').first().click();await p.getByLabel('向 AI 提问').fill('保留我的 AI 草稿');
+ await p.getByRole('button',{name:'隐藏学习助手',exact:true}).click();await p.getByRole('button',{name:'显示学习助手',exact:true}).click();check(await p.getByLabel('向 AI 提问').inputValue()==='保留我的 AI 草稿');
+ await p.getByRole('button',{name:'更多学习工具与使用说明',exact:true}).count();
+ await p.locator('.cs-ai-disclosure>summary').click();check(await p.locator('.cs-ai-disclosure button').count()===4);
+ await p.getByRole('button',{name:'解释本节难点',exact:true}).click();await p.getByRole('button',{name:'保存为私人笔记',exact:true}).waitFor();
+ check(aiRequests.at(-1).body.action==='ask'&&aiRequests.at(-1).body.question.includes('主要概念'));check(await p.getByLabel('向 AI 提问').inputValue()==='保留我的 AI 草稿');
+ await p.getByRole('button',{name:'保存为私人笔记',exact:true}).click();await p.getByRole('button',{name:'已保存至笔记',exact:true}).waitFor();check(row('SELECT user_id FROM learning_notes WHERE title LIKE ?',['AI 整理%']).user_id===paid.id);
+ check(await p.locator('.ls-ai-sources summary').isVisible());
+ const before=aiRequests.length;await p.getByLabel('向 AI 提问').focus();await p.keyboard.press('Shift+Enter');check(aiRequests.length===before);check((await p.getByLabel('向 AI 提问').inputValue()).includes('\n'));
+ await p.getByLabel('向 AI 提问').evaluate(el=>el.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true,isComposing:true})));check(aiRequests.length===before);
+ await p.getByLabel('向 AI 提问').evaluate(el=>el.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true,repeat:true})));check(aiRequests.length===before);
+ await p.keyboard.press('Enter');await p.getByRole('button',{name:'保存为私人笔记',exact:true}).waitFor();check(aiRequests.length===before+1);
+ await p.locator('video').evaluate(v=>v.dataset.fixtureIdentity='mounted');
+ await p.getByRole('button',{name:'播放视频',exact:true}).click();await p.waitForFunction(()=>document.querySelector('video').currentTime>.5);check(await p.locator('.lp-course-cover').count()===0);
+ await p.getByRole('button',{name:'隐藏课程目录',exact:true}).click();await p.getByRole('button',{name:'隐藏学习助手',exact:true}).click();check(await p.locator('video').getAttribute('data-fixture-identity')==='mounted');check(await p.locator('.cs-layout').getAttribute('data-rail-hidden')==='true');
+ await p.getByRole('button',{name:'显示课程目录',exact:true}).click();await p.getByRole('button',{name:'显示学习助手',exact:true}).click();
+ await aligned(p);await p.getByRole('button',{name:'隐藏课程目录',exact:true}).click();await aligned(p);check(await p.locator('video').getAttribute('data-fixture-identity')==='mounted');await p.getByRole('button',{name:'显示课程目录',exact:true}).click();
+ await p.locator('video').evaluate(v=>v.pause());await p.locator('video').evaluate(v=>{v.currentTime=v.duration;v.dispatchEvent(new Event('ended'));});await p.locator('.lp-course-cover').waitFor();
+ check(await p.getByRole('button',{name:'正式内容待补充',exact:true}).isDisabled());check(!row('SELECT completed_at FROM learning_progress WHERE user_id=? AND placement_id=?',[paid.id,placements[0]])?.completed_at);
+ await p.locator('.cr-next-lesson button').click();await p.waitForURL(base+`/opc/lessons/${placements[1]}`);await ready(p);check((await p.locator('h1').innerText()).includes('1.2'));
+ for(const [width,height] of [[1440,900],[1920,1080],[2560,1440],[1024,768],[768,1024],[390,844],[320,667]]){
+  await p.setViewportSize({width,height});await p.waitForTimeout(80);check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`no overflow ${width}`);
+  check(await p.locator('.learning-player').evaluate(el=>Math.abs(el.clientWidth/el.clientHeight-16/9)<.02));
+  check(await p.locator('.cr-file-actions button').isVisible());check(await p.locator('.cs-quick-actions button').count()===2);
+  if(await p.locator('.cs-rail').evaluate(el=>getComputedStyle(el).display!=='contents'))await aligned(p);
+  else check(await p.locator('.cr-ai-response').evaluate(el=>el.getBoundingClientRect().height<430),'stacked response area resets natural height');
+  if(width===390)await p.screenshot({path:path.join(output,'course-mobile-390.png'),fullPage:true});
+ }
+ await p.setViewportSize({width:1600,height:1150});await p.goto(base+`/opc/lessons/${formal}`);await ready(p);check(await p.locator('.lp-course-cover').count()===0);check(await p.locator('.cr-demo-notice').count()===0);
+ await p.getByRole('button',{name:'完成本节 →',exact:true}).click();await p.waitForURL(base+`/opc/lessons/${placements[3]}`);await ready(p);check(Boolean(row('SELECT completed_at FROM learning_progress WHERE user_id=? AND placement_id=?',[paid.id,formal]).completed_at));
+ check((await p.locator('.cs-directory-progress').innerText()).includes('1 / 40'));
+ const tc=await context(trial),t=await tc.newPage();await t.goto(base+`/opc/lessons/${placements[0]}`);await ready(t);
+ check(await t.getByText('我的隔离草稿，切换面板不能丢失。',{exact:false}).count()===0);check((await t.locator('.ws-offer-price').innerText()).includes('¥499'));
+ await t.goto(base+`/opc/lessons/${formal}`);await t.getByText('本节需要课程权限',{exact:true}).waitFor();check(await t.locator('.cr-resources').count()===0);check(await t.locator('video').count()===0);
+ const restricted=await tc.request.get(base+`/api/learning/placements/${formal}`,{headers:{Authorization:`Bearer ${trial.token}`}});check(restricted.status()===403);
+ const gc=await context(),g=await gc.newPage();await g.goto(base+`/opc/lessons/${placements[0]}`);await ready(g);check(await g.getByRole('button',{name:'解释本节难点',exact:true}).isDisabled());await g.locator('.cs-content-tabs button').nth(1).click();await g.getByText('登录后可保存私人笔记。',{exact:true}).waitFor();checks++;
+ const disabled=await context(paid,{available:false}),d=await disabled.newPage();await d.goto(base+`/opc/lessons/${placements[0]}`);await ready(d);check(await d.getByRole('button',{name:'解释本节难点',exact:true}).isDisabled());check(await d.getByRole('button',{name:'发送问题',exact:true}).isDisabled());
+ const flags=await context(paid,{summary:false}),f=await flags.newPage();await f.goto(base+`/opc/lessons/${placements[0]}`);await ready(f);check(await f.getByRole('button',{name:'整理学习要点',exact:true}).isDisabled());check(!await f.getByRole('button',{name:'解释本节难点',exact:true}).isDisabled());
+ const jc=await context(paid),j=await jc.newPage();await j.goto(base+`/projects/isolated-project/workspace/${projectPlacement}`);await j.locator('.cs-project-page .learning-player').waitFor();
+ check(await j.locator('.cr-lesson-page,.cr-resources,.lp-course-cover,.cr-next-lesson').count()===0);check(await j.locator('.cs-content-tabs button').count()===3);check(await j.locator('.cs-quick-actions>button').count()===4);
+ await j.getByRole('button',{name:'实验',exact:true}).click();check(await j.getByText('隔离实验必需任务（必需）',{exact:true}).isVisible());
+ check(await j.getByRole('button',{name:'完成本节 →',exact:true}).isDisabled());
+ const noteId=row('SELECT id FROM learning_notes WHERE title=?',['隔离私密笔记']).id;
+ const conflictContext=await context(paid),conflictPage=await conflictContext.newPage();await conflictPage.goto(base+`/opc/lessons/${placements[0]}`);await ready(conflictPage);
+ await conflictPage.locator('.cs-content-tabs button').nth(1).click();await conflictPage.locator('.ls-note').filter({has:conflictPage.getByRole('heading',{name:'隔离私密笔记',exact:true})}).getByRole('button',{name:'编辑',exact:true}).click();
+ await conflictPage.route(`**/api/learning/notes/${noteId}`,route=>route.request().method()==='PUT'?route.fulfill({status:409,json:{error:'隔离版本冲突，输入仍保留'}}):route.continue());
+ await conflictPage.getByLabel('笔记内容').fill('冲突草稿必须保留');await conflictPage.getByRole('button',{name:'保存',exact:true}).click();await conflictPage.getByText('隔离版本冲突，输入仍保留',{exact:true}).waitFor();
+ await conflictPage.locator('.cs-content-tabs button').first().click();await conflictPage.locator('.cr-next-lesson button').click();check(conflictPage.url()===base+`/opc/lessons/${placements[0]}`);
+ await conflictPage.locator('.cs-content-tabs button').nth(1).click();check((await conflictPage.getByLabel('笔记内容').innerText()).includes('冲突草稿必须保留'));
+ const longContext=await context(paid,{answer:('### 隔离长回答\n\n这是课程依据示例，长内容只在回答区滚动，不撑开输入框或改变页面高度。\n\n').repeat(100),delay:400}),longPage=await longContext.newPage();
+ await longPage.goto(base+`/opc/lessons/${placements[0]}`);await ready(longPage);await aligned(longPage);
+ const initialHeight=await longPage.locator('.cs-layout').evaluate(el=>el.getBoundingClientRect().height);
+ await longPage.getByLabel('向 AI 提问').fill('长回答测试草稿');await longPage.getByRole('button',{name:'发送问题',exact:true}).click();
+ await longPage.locator('.cr-ai-response').getByText('AI 正在整理回答…',{exact:true}).waitFor();check(await longPage.getByRole('button',{name:'发送问题',exact:true}).isDisabled());
+ await longPage.getByRole('button',{name:'保存为私人笔记',exact:true}).waitFor();await aligned(longPage);
+ check(Math.abs(await longPage.locator('.cs-layout').evaluate(el=>el.getBoundingClientRect().height)-initialHeight)<2,'long answer does not enlarge desktop page');
+ check(await longPage.locator('.cr-ai-response').evaluate(el=>el.scrollHeight>el.clientHeight+100),'long answer internally scrollable');
+ await longPage.locator('.cr-ai-response').focus();await longPage.keyboard.press('PageDown');await longPage.waitForTimeout(120);check(await longPage.locator('.cr-ai-response').evaluate(el=>el.scrollTop>0),'keyboard scroll');
+ check(await longPage.getByLabel('向 AI 提问').inputValue()==='长回答测试草稿');
+ await longPage.getByRole('button',{name:'隐藏学习助手',exact:true}).click();await longPage.getByRole('button',{name:'显示学习助手',exact:true}).click();check((await longPage.locator('.cr-ai-response').innerText()).includes('长内容只在回答区滚动'));check(await longPage.getByLabel('向 AI 提问').inputValue()==='长回答测试草稿');await aligned(longPage);
+ await longPage.locator('.cs-ai-disclosure>summary').click();await aligned(longPage);await longPage.locator('.cs-ai-disclosure>summary').click();
+ await longPage.setViewportSize({width:390,height:844});check(await longPage.locator('.cr-ai-response').evaluate(el=>el.getBoundingClientRect().height<=420 && el.scrollHeight>el.clientHeight));check(await longPage.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+ const failureContext=await context(paid,{failAI:true}),failurePage=await failureContext.newPage();await failurePage.goto(base+`/opc/lessons/${placements[0]}`);await ready(failurePage);
+ await failurePage.getByLabel('向 AI 提问').fill('失败也不丢失的问题');await failurePage.getByRole('button',{name:'发送问题',exact:true}).click();await failurePage.locator('.cr-ai-response [role="alert"]').waitFor();check(await failurePage.getByLabel('向 AI 提问').inputValue()==='失败也不丢失的问题');check(await failurePage.locator('.cr-ai-empty').count()===0);await aligned(failurePage);
+ await failurePage.goto(base+`/opc/lessons/${placements.at(-1)}`);await ready(failurePage);check(await failurePage.locator('.cr-next-lesson').count()===0);await aligned(failurePage);
+ check((await jc.request.get(base+'/api/learning/notes?placement='+placements[0],{headers:{Authorization:`Bearer ${trial.token}`}})).status()===200);
+ assert.deepEqual(errors,[]);assert.deepEqual(externalRequests,[]);console.log(`PASS ${checks} course-study browser checks: permission-backed media/materials, real 16:9 player, preview/download, private notes, AI mock/keyboard/feature guards, demo completion, next lesson, project preservation and 320–2560px; zero script errors/unexpected external requests. ${blockedFonts.length} shared font requests intercepted; no external calls issued.`);
+}finally{await browser.close();await new Promise(r=>server.close(r));db.close();rmSync(dir,{recursive:true,force:true});}

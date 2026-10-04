@@ -47,3 +47,23 @@ Expected prior live entry:
 `b83e20b9318c049c7f91f7d2287d4ef9ca49decd48553496d96028b493632a10`.
 New compiled entry:
 `529109c098ca192a55c1e84b19849fd4bbdd831c95f02df98ac1bfbec680f2df`.
+
+## Published result
+
+- Source commit `18ee132401c74837a50682fba728c0a061c7f929` pushed to
+  `origin/main`. Credentials, databases, media and QA captures excluded.
+- Backup: `/var/backups/oneshowlearn/workbench-BlRSSBlm`;
+  staging: `/tmp/oneshowlearn-workbench-YvJinTtu`.
+  Frontend archive SHA256:
+  `6f9fbac3c091584fcd9609b271d7b621893f97ca3097917ebd1f923c8959627f`.
+- Exact live entry matches the new hash above. Release verification passed:
+  39 HTTPS entry hashes, 50 asset hashes, health/public output and anonymous
+  account/order/conversation privacy guards.
+- Existing private-record/conversation/turn identities, historical order amounts,
+  provider/pricing/catalogue configuration, backend hashes and service processes
+  preserved. Only compiled frontend changed; no restart or production mutation.
+- Read-only live browser checks: tutor 22, project catalogue 12, course composer
+  15, all passed without script errors, mutation attempts or provider calls.
+  Live desktop/mobile captures inspected; authoritative ¥499 offer unchanged.
+- Actual authenticated answering is exercised with the isolated mock model, not
+  a release-time paid model call; existing production provider controls retained.

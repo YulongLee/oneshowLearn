@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import test from 'node:test';
 import {activeWorkspaceNav} from '../src/workspace-navigation.js';
-import {ACCOUNT_SECTIONS,accountSection,accountOrderState,accountOrderPath,accountOrderMatches} from '../src/account-center-model.js';
+import {ACCOUNT_SECTIONS,accountSection,accountOrderState,accountOrderPath,accountOrderMatches,profileNameError,profileSaveLabel} from '../src/account-center-model.js';
 const read=file=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
 test('learner settings keep the persistent shell and management account remains separate',()=>{
   const app=read('src/App.jsx'),shell=read('src/Workspace.jsx');
@@ -88,4 +88,26 @@ test('navigation guard preserves edited profiles/passwords, allows clean navigat
     assert.equal(event.defaultPrevented,scenario.blocked);
     if(scenario.blocked){assert.equal(chosen,scenario.tab);assert.match(error,/未保存/);}
   }
+});
+test('profile feedback distinguishes server sync from explicit save and keeps failure/conflict above dirty',()=>{
+  assert.equal(profileSaveLabel({}), '资料已同步');
+  assert.equal(profileSaveLabel({saved:true}), '修改已保存');
+  assert.match(profileSaveLabel({dirty:true,saved:true}),/未保存/);
+  assert.match(profileSaveLabel({failed:true,dirty:true}),/保存失败.*输入已保留/);
+  assert.match(profileSaveLabel({conflict:true,failed:true,dirty:true}),/资料已更新.*输入已保留/);
+  assert.match(profileSaveLabel({busy:true,conflict:true}),/正在处理/);
+  for(const name of ['', ' ', 'a', ' a ', 'n'.repeat(81)])assert.ok(profileNameError(name));
+  for(const name of ['小李',' yulong ','n'.repeat(80)])assert.equal(profileNameError(name),'');
+});
+test('compact profile and shared help preserve manual avatar saving without unsupported capabilities',()=>{
+  const source=read('src/AccountSettings.jsx'),css=read('src/account-settings.css');
+  assert.doesNotMatch(source,/>ACCOUNT<|所有修改已保存|个人账号资料/);
+  assert.match(source,/aria-describedby=\{nameError/);
+  assert.match(source,/role="status".*profileSaveLabel/);
+  assert.match(source,/头像修改将在保存后生效/);
+  assert.match(source,/className="as-help".*navigate\('\/support'\)/);
+  assert.match(source,/居中裁剪/);
+  assert.match(css,/grid-template-columns:140px minmax\(0,1fr\)/);
+  assert.doesNotMatch(source,/安全评分|登录设备列表|自动退款|开具发票/);
+  assert.doesNotMatch(read('src/ExternalLogin.jsx'),/设置中心 → 登录方式/);
 });

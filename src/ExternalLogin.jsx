@@ -38,7 +38,7 @@ export function ExternalLogin({ channel, capabilities, onComplete, binding=false
     {!enabled?<div className="el-unavailable" role="status"><ShieldCheck size={25}/><strong>{!capabilities?'正在检查登录服务…':capabilities.unavailable?'暂时无法连接登录服务':`${channel==='phone'?'手机号':'微信'}登录暂未开放`}</strong><p>你仍可使用邮箱登录。服务配置完成后，这里即可使用。</p></div>:<>
       {binding&&<p className="el-hint">将新方式绑定到当前账号，已有课程和学习记录保持不变。{!hasPassword&&'请在使用原方式登录后的 10 分钟内操作。'}</p>}
       {binding&&hasPassword&&<label>验证当前账号密码<input type="password" autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} disabled={busy||Boolean(flow)} placeholder="仅用于本次安全验证"/></label>}
-      {!binding&&<div className="el-hint">已有邮箱账号？请先用邮箱登录，在「设置中心 → 登录方式」绑定，继续使用原有课程与笔记。</div>}
+      {!binding&&<div className="el-hint">已有邮箱账号？请先用邮箱登录，在「设置中心 → 登录与安全」绑定，继续使用原有课程与笔记。</div>}
       {channel==='phone'?<form onSubmit={verify}>
         <label>手机号<div className="el-phone"><span>+86</span><input type="tel" inputMode="tel" autoComplete="tel-national" maxLength={11} pattern="1[3-9][0-9]{9}" required value={phone} onChange={e=>{setPhone(e.target.value.replace(/\D/g,''));setChallenge(null);setCode('');}} placeholder="输入中国大陆手机号" disabled={busy}/></div></label>
         <label>验证码<div className="el-code"><input inputMode="numeric" autoComplete="one-time-code" maxLength={6} pattern="[0-9]{6}" required value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,''))} placeholder="6 位验证码" disabled={busy}/><button type="button" onClick={request} disabled={busy||remaining>0||!/^1[3-9]\d{9}$/.test(phone)||(binding&&hasPassword&&!password)}>{remaining?`${remaining}s 后重发`:'获取验证码'}</button></div></label>

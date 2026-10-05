@@ -1,26 +1,27 @@
 import { useEffect, useRef, useState } from 'react';
-import { UserCircle, ShieldCheck, SlidersHorizontal, UploadSimple, CheckCircle, SignOut, LockSimple, Receipt, EnvelopeSimple, ArrowRight } from '@phosphor-icons/react';
+import { UserCircle, ShieldCheck, SlidersHorizontal, UploadSimple, CheckCircle, SignOut, LockSimple, Receipt, EnvelopeSimple, ArrowRight, Lifebuoy } from '@phosphor-icons/react';
 import { api, setToken } from './api.js';
 import { Gate, Modal } from './PersonalShared.jsx';
 import { PLAYBACK_RATES, playbackRate } from './player-model.js';
 import './account-settings.css';
 import { LoginBindings } from './ExternalLogin.jsx';
 import {AccountOrders} from './AccountOrders.jsx';
-import {accountSection} from './account-center-model.js';
+import {accountSection,profileNameError,profileSaveLabel} from './account-center-model.js';
 
 export function AccountSettings({ model, navigate, notify }) {
-  return <div className="account-settings"><header className="as-heading"><span>ACCOUNT</span><h1>设置中心</h1><p>让学习空间更贴合你，安心继续每一步。</p></header><Gate model={model} navigate={navigate}><Settings key={model.user?.id} model={model} navigate={navigate} notify={notify}/></Gate></div>;
+  return <div className="account-settings"><header className="as-heading"><h1>设置中心</h1><p>管理个人资料、账号安全与订单。</p></header><Gate model={model} navigate={navigate}><Settings key={model.user?.id} model={model} navigate={navigate} notify={notify}/></Gate></div>;
 }
 function Settings({ model, navigate, notify }) {
   const [tab,setTab]=useState('profile'),[saved,setSaved]=useState(null),[draft,setDraft]=useState(null);
   const [error,setError]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[conflict,setConflict]=useState(false),[logoutConfirm,setLogoutConfirm]=useState(''),[reloadConfirm,setReloadConfirm]=useState(false);
   const [password,setPassword]=useState({currentPassword:'',newPassword:'',confirm:''});
+  const [nameError,setNameError]=useState(''),[profileFailed,setProfileFailed]=useState(false),[profileSaved,setProfileSaved]=useState(false);
   const [rate,setRate]=useState(()=>{try{return playbackRate(localStorage.getItem('osl-playback-rate'));}catch{return 1;}});
   const bypass=useRef(false),working=useRef(false),alive=useRef(true),fileInput=useRef(null);
   const dirty=Boolean(saved&&draft&&['name','bio','avatar'].some(key=>saved[key]!==draft[key]));
   const passwordDirty=Object.values(password).some(Boolean);
   useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
-  const load=async()=>{setLoading(true);setError('');try{const profile=await api('/auth/profile');if(alive.current){setSaved(profile);setDraft(profile);setConflict(false);}}catch(e){if(alive.current)setError(e.message);}finally{if(alive.current)setLoading(false);}};
+  const load=async()=>{setLoading(true);setError('');try{const profile=await api('/auth/profile');if(alive.current){setSaved(profile);setDraft(profile);setConflict(false);setNameError('');setProfileFailed(false);setProfileSaved(false);}}catch(e){if(alive.current)setError(e.message);}finally{if(alive.current)setLoading(false);}};
   useEffect(()=>{load();},[]);
   useEffect(()=>{
     const prevent=e=>{if(bypass.current)return;if(working.current||dirty||passwordDirty){e.preventDefault();setTab(dirty?'profile':'security');setError(working.current?'正在保存，请稍候再切换页面。':'你有尚未保存的修改。请先保存或撤销修改，再切换页面。');}};
@@ -30,14 +31,15 @@ function Settings({ model, navigate, notify }) {
   },[dirty,passwordDirty]);
   // Keep section editors mounted; switching categories never discards drafts.
   const chooseSection=id=>{if(working.current)return;setTab(accountSection(id));if(!conflict)setError('');};
-  const save=async(e)=>{e.preventDefault();if(working.current||!dirty||conflict)return;working.current=true;setBusy(true);setError('');try{
+  const editProfile=patch=>{setDraft(value=>({...value,...patch}));setProfileFailed(false);setProfileSaved(false);if('name' in patch)setNameError('');};
+  const save=async(e)=>{e.preventDefault();if(working.current||!dirty||conflict)return;const invalid=profileNameError(draft.name);setNameError(invalid);if(invalid){document.getElementById('account-name')?.focus();return;}working.current=true;setBusy(true);setError('');setProfileFailed(false);try{
     const result=await api('/auth/profile',{method:'PUT',headers:{'If-Match':saved.version},body:JSON.stringify({name:draft.name,bio:draft.bio,avatar:draft.avatar})});
-    if(!alive.current)return;setSaved(result);setDraft(result);setConflict(false);notify('个人资料已保存');await model.refresh({preserve:true});
-  }catch(e){if(alive.current){setError(e.message);setConflict(e.status===409);}}finally{working.current=false;if(alive.current)setBusy(false);}};
+    if(!alive.current)return;setSaved(result);setDraft(result);setConflict(false);setProfileSaved(true);notify('个人资料已保存');await model.refresh({preserve:true}).catch(()=>notify('资料已保存，账号菜单暂未同步，请稍后刷新'));
+  }catch(e){if(alive.current){setError(e.message);setConflict(e.status===409);setProfileFailed(e.status!==409);}}finally{working.current=false;if(alive.current)setBusy(false);}};
   const upload=async(e)=>{const file=e.target.files?.[0];e.target.value='';if(!file||working.current)return;
     if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>5*1024*1024){setError('请选择 5 MB 以内的 JPG、PNG 或 WebP 图片');return;}
     setBusy(true);working.current=true;setError('');const url=URL.createObjectURL(file);
-    try{const image=new Image();image.src=url;await image.decode();const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;const context=canvas.getContext('2d');const side=Math.min(image.width,image.height);context.fillStyle='#fff';context.fillRect(0,0,256,256);context.drawImage(image,(image.width-side)/2,(image.height-side)/2,side,side,0,0,256,256);const avatar=canvas.toDataURL('image/jpeg',0.88);if(alive.current)setDraft(value=>({...value,avatar}));}
+    try{const image=new Image();image.src=url;await image.decode();const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;const context=canvas.getContext('2d');const side=Math.min(image.width,image.height);context.fillStyle='#fff';context.fillRect(0,0,256,256);context.drawImage(image,(image.width-side)/2,(image.height-side)/2,side,side,0,0,256,256);const avatar=canvas.toDataURL('image/jpeg',0.88);if(alive.current)editProfile({avatar});}
     catch{if(alive.current)setError('无法读取这张图片，请选择其他图片');}finally{URL.revokeObjectURL(url);working.current=false;if(alive.current)setBusy(false);}
   };
   const changePassword=async(e)=>{e.preventDefault();if(working.current)return;setError('');
@@ -54,13 +56,13 @@ function Settings({ model, navigate, notify }) {
     <div className="as-panel">
       {error&&<div className="as-error" role="alert">{error}{conflict&&<button onClick={()=>setReloadConfirm(true)}>重新载入资料</button>}{!saved&&!loading&&<button onClick={load}>重新加载</button>}</div>}
       <section id="account-profile" aria-label="个人资料" hidden={tab!=='profile'}>
-        <header className="as-panel-heading"><div><h2>个人资料</h2><p>记录你的名字，也记录你想做出的产品。</p></div><span className="as-muted-badge"><LockSimple size={14}/>个人账号资料</span></header>
-        {loading?<p className="as-loading" role="status">正在读取个人资料…</p>:draft&&<form onSubmit={save}><fieldset disabled={busy}>
-          <div className="as-avatar-row"><div className="as-avatar">{draft.avatar?<img src={draft.avatar} alt="头像预览"/>:draft.name.slice(0,1)}</div><div className="as-avatar-copy"><h3>你的头像</h3><p>JPG、PNG 或 WebP，最大 5 MB，居中裁剪。</p></div><div className="as-avatar-actions"><button type="button" onClick={()=>fileInput.current.click()}><UploadSimple size={17}/>更换头像</button>{draft.avatar&&<button type="button" onClick={()=>setDraft({...draft,avatar:''})}>移除</button>}</div><input ref={fileInput} type="file" accept="image/png,image/jpeg,image/webp" hidden aria-label="选择头像" onChange={upload}/></div>
-          <div className="as-form-row"><div><label htmlFor="account-name">昵称</label><p>显示在学习空间和账号菜单。</p></div><div><input id="account-name" required minLength={2} maxLength={80} value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})}/><small>2–80 个字</small></div></div>
-          <div className="as-form-row"><div><label htmlFor="account-bio">个人简介</label><p>一句介绍，或下一个产品想法。</p></div><div><textarea id="account-bio" rows={3} maxLength={300} placeholder="我正在学习 AI，希望做出…" value={draft.bio} onChange={e=>setDraft({...draft,bio:e.target.value})}/><small className="as-counter">{draft.bio.length} / 300</small></div></div>
-          <div className="as-profile-note"><EnvelopeSimple size={18}/><span>邮箱和手机号的登录信息，在「登录与安全」中查看。</span><button type="button" onClick={()=>chooseSection('security')}>查看<ArrowRight size={14}/></button></div>
-        </fieldset><footer className="as-save-footer"><span aria-live="polite">{busy?'正在处理…':conflict?'资料已更新，请先核对最新版本':dirty?'有尚未保存的修改':<><CheckCircle size={17}/>所有修改已保存</>}</span><button type="button" disabled={busy||!dirty} onClick={()=>{setDraft(saved);setError('');setConflict(false);}}>撤销修改</button><button className="as-primary" disabled={busy||!dirty||conflict}>保存修改</button></footer></form>}
+        <header className="as-panel-heading"><div><h2>个人资料</h2><p>设置你的头像与昵称，让学习空间更有辨识度。</p></div></header>
+        {loading?<p className="as-loading" role="status">正在读取个人资料…</p>:draft&&<form onSubmit={save} noValidate><fieldset disabled={busy}>
+          <div className="as-avatar-row"><div className="as-avatar">{draft.avatar?<img src={draft.avatar} alt="头像预览"/>:saved.name.slice(0,1)}</div><div className="as-avatar-copy"><h3>{saved.name}</h3><p>学习账号</p><small>JPG、PNG 或 WebP · 最大 5 MB · 居中裁剪</small>{saved.avatar!==draft.avatar&&<small className="as-avatar-pending">头像修改将在保存后生效</small>}</div><div className="as-avatar-actions"><button type="button" onClick={()=>fileInput.current.click()}><UploadSimple size={17}/>更换头像</button>{draft.avatar&&<button type="button" onClick={()=>editProfile({avatar:''})}>移除</button>}</div><input ref={fileInput} type="file" accept="image/png,image/jpeg,image/webp" hidden aria-label="选择头像" onChange={upload}/></div>
+          <div className="as-form-row"><label htmlFor="account-name">昵称</label><div><input id="account-name" required minLength={2} maxLength={80} aria-invalid={Boolean(nameError)} aria-describedby={nameError?'account-name-help account-name-error':'account-name-help'} value={draft.name} onChange={e=>editProfile({name:e.target.value})}/><small id="account-name-help">2–80 个字，显示在学习空间和账号菜单。</small>{nameError&&<small id="account-name-error" className="as-field-error" role="alert">{nameError}</small>}</div></div>
+          <div className="as-form-row"><label htmlFor="account-bio">个人简介</label><div><textarea id="account-bio" rows={3} maxLength={300} aria-describedby="account-bio-count" placeholder="一句话介绍自己，或写下你的下一个产品想法…" value={draft.bio} onChange={e=>editProfile({bio:e.target.value})}/><small id="account-bio-count" className="as-counter">{draft.bio.length} / 300</small></div></div>
+          <div className="as-profile-note"><EnvelopeSimple size={18}/><span>邮箱与手机号在「登录与安全」中管理。</span><button type="button" onClick={()=>chooseSection('security')}>查看<ArrowRight size={14}/></button></div>
+        </fieldset><footer className="as-save-footer"><span role="status">{!busy&&!conflict&&!dirty&&!profileFailed&&<CheckCircle size={17}/>} {profileSaveLabel({busy,conflict,dirty,failed:profileFailed,saved:profileSaved})}</span><button type="button" disabled={busy||!dirty} onClick={()=>{setDraft(saved);setError('');setConflict(false);setNameError('');setProfileFailed(false);setProfileSaved(false);}}>撤销修改</button><button className="as-primary" disabled={busy||!dirty||conflict}>{busy?'正在处理…':'保存修改'}</button></footer></form>}
       </section>
       <section id="account-security" aria-label="登录与安全" hidden={tab!=='security'}>
         <header className="as-panel-heading"><div><h2>登录与安全</h2><p>登录方式属于同一个账号，课程与学习记录不会分开。</p></div><span className="as-muted-badge"><ShieldCheck size={15}/>账号保护</span></header>
@@ -78,7 +80,8 @@ function Settings({ model, navigate, notify }) {
       </section>
       <section id="account-orders" aria-label="我的订单" hidden={tab!=='orders'}>{tab==='orders'&&<AccountOrders navigate={navigate}/>}</section>
     </div>
-    <p className="as-bottom-note"><LockSimple size={14}/>账号设置不会改变你的课程权益与学习记录。</p>
+    <div className="as-help"><Lifebuoy size={21}/><span>账号或购买遇到问题？</span><button disabled={busy} onClick={()=>navigate('/support')}>帮助与售后<ArrowRight size={16}/></button></div>
+    <p className="as-bottom-note"><LockSimple size={14}/>个人资料修改不会影响已购课程与学习记录。</p>
     {reloadConfirm&&<Modal title="重新载入最新资料？" close={()=>setReloadConfirm(false)}><div className="ps-modal-body"><p>当前未保存的表单修改会被替换，已保存的账号资料不受影响。</p><div className="ps-form-actions"><button onClick={()=>setReloadConfirm(false)}>继续编辑</button><button onClick={()=>{setReloadConfirm(false);load();}}>重新载入</button></div></div></Modal>}
     {logoutConfirm&&<Modal title={logoutConfirm==='all'?'退出所有设备？':'退出当前浏览器？'} close={()=>!busy&&setLogoutConfirm('')}><div className="ps-modal-body"><p>{logoutConfirm==='all'?'所有设备将需要重新登录。':'只清除当前浏览器的登录状态，不退出其他设备。'}未保存的输入会被清空，已保存的资料和课程权益不受影响。</p><div className="ps-form-actions"><button disabled={busy} onClick={()=>setLogoutConfirm('')}>取消</button><button className="as-danger" disabled={busy} onClick={logout}>{busy?'正在退出…':logoutConfirm==='all'?'确认退出所有设备':'确认退出当前浏览器'}</button></div></div></Modal>}
   </div>;

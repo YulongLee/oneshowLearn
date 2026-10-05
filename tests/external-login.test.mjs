@@ -171,7 +171,7 @@ test('provider adapters use signed fixed endpoints, validate replies and never r
 
 test('UI retains email login, real configuration and existing account binding',()=>{
   const auth=readFileSync(new URL('../src/Auth.jsx',import.meta.url),'utf8'),external=readFileSync(new URL('../src/ExternalLogin.jsx',import.meta.url),'utf8');
-  assert.match(auth,/邮箱登录/);assert.match(auth,/手机验证码登录/);assert.doesNotMatch(auth,/微信扫码/);assert.match(auth,/mode==='login'&&!isAdmin/);assert.match(external,/设置中心 → 登录方式/);assert.doesNotMatch(external,/绑定微信<\/button>/);assert.match(external,/新用户，未绑定时创建独立学习账号/);assert.match(external,/验证码登录/);
+  assert.match(auth,/邮箱登录/);assert.match(auth,/手机验证码登录/);assert.doesNotMatch(auth,/微信扫码/);assert.match(auth,/mode==='login'&&!isAdmin/);assert.match(external,/设置中心 → 登录与安全/);assert.doesNotMatch(external,/绑定微信<\/button>/);assert.match(external,/新用户，未绑定时创建独立学习账号/);assert.match(external,/验证码登录/);
   const admin=readFileSync(new URL('../src/AdminLoginSettings.jsx',import.meta.url),'utf8');
   assert.match(admin,/邮箱登录/);assert.match(admin,/查看邮件服务/);assert.doesNotMatch(admin,/启用微信扫码|网站应用 AppID/);
   const css=readFileSync(new URL('../src/external-login.css',import.meta.url),'utf8');

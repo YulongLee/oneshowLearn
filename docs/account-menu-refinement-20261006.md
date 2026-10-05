@@ -48,4 +48,18 @@ unchanged pricing/provider/catalogue/protected code/environment and all service
 process identities. No backend/environment/configuration/schema change, service
 restart, real provider or production profile/order write.
 
-Publication results will be recorded after verification.
+## Verified publication
+
+- Implementation commit `dcf8477` uploaded to origin/main.
+- New live entry SHA256:
+  `9f7d296a95986ca7422f262b8d530ac7f25274a467977fd66188b493551a8ad7`.
+- Previous entry:
+  `301dba19901fc5a2d284c7ed5ef0df4ea88c2b842ac55b22ba6f6ad2b9161dee`.
+- Recoverable backup:
+  `/var/backups/oneshowlearn/settings-refinement-1jxzXT7S`.
+- Verified 41 HTTPS page/query entry hashes, 45 exact asset hashes, anonymous
+  guards, owner-only profile/masked identities/bounded online orders and all 64
+  protected-table/schema/private-identity/historical-amount/configuration checks.
+- Protected backend/environment/dependency/site hashes and four service process
+  snapshots unchanged. Price, provider configuration, catalogue and private
+  records preserved; no production fixture/write/provider operation or restart.

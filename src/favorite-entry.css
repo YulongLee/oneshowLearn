@@ -1,0 +1,17 @@
+.favorite-entry{display:inline-flex;flex-direction:column;align-items:flex-start;flex-shrink:0;max-width:100%}
+button.favorite-entry-button{display:inline-flex!important;align-items:center;justify-content:center;gap:6px;min-width:44px!important;min-height:44px!important;padding:8px 10px!important;white-space:nowrap;background:transparent!important;border:1px solid transparent!important;border-radius:8px;color:#66617b!important;font-size:13px;line-height:20px;width:auto!important;flex-shrink:0}
+button.favorite-entry-button[aria-pressed=true]{color:#7742ff!important;background:#f4efff!important}
+button.favorite-entry-button:hover{color:#7742ff!important;background:#f4efff!important}
+button.favorite-entry-button:focus-visible{outline:2px solid #926bff;outline-offset:2px}
+.favorite-entry small{color:#a84150;font-size:12px;max-width:160px;white-space:normal}
+.favorite-actions-row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.favorite-material-row{display:flex;gap:8px;align-items:center;min-width:0}
+.cs-resource-list .favorite-material-row>button{flex:1;min-width:0}
+.cs-resource-list .favorite-material-row{background:linear-gradient(110deg,#fff,#fdfdff);border:1px solid #e9edf8;border-radius:10px;padding:0 8px 0 0}
+.cs-resource-list .favorite-material-row>button{display:flex;align-items:center;gap:12px;padding:12px;border:0;border-radius:10px;background:transparent;text-align:left;color:#36436d;min-height:60px;font:inherit}
+.cs-resource-list .favorite-material-row>button>span:nth-child(2){flex:1;min-width:0}
+.favorite-actions-row>h2,.favorite-actions-row>h3{flex:1;min-width:0;overflow-wrap:anywhere}
+.cs-course-page .cs-breadcrumb{align-items:center}
+.rd-table td[data-label=操作]>.favorite-actions-row{flex-wrap:nowrap}
+@container workspace (max-width:620px){.rd-table td[data-label=操作]>.favorite-actions-row{flex-wrap:wrap}.favorite-actions-row{gap:6px}}
+@container courseStudy (max-width:620px){.cs-course-page .cl-lesson-heading>.ls-actions{flex-wrap:wrap;max-width:100%;gap:6px}}

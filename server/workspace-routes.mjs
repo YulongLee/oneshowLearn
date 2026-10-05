@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireAuth } from "./auth.mjs";
 import { db, row, rows, run } from "./db.mjs";
 import {courseLessonStats} from './learning-model.mjs';
+import {contentFavoriteSchema,contentFavoriteKey,resolveContentFavorite} from './workspace-favorites.mjs';
 
 const emptyState = () => ({ tasks: [], notes: [], favorites: [], checkIns: [] });
 const MAX_STATE_BYTES = 1024 * 1024;
@@ -50,6 +51,7 @@ const stateSchema = z.object({
   favorites: z.array(z.number().int().positive()).max(200, "收藏最多保存 200 项"),
   checkIns: z.array(dateSchema).max(3660, "打卡记录最多保存 3660 天"),
   resourceFavorites: z.array(z.object({id:z.number().int().positive(),savedAt:isoSchema}).strict()).max(200).optional(),
+  contentFavorites:z.array(contentFavoriteSchema).max(200,'关联内容收藏最多保存 200 项').optional(),
   achievements: z.array(z.object({
     id:idSchema,title:z.string().trim().min(1).max(120),description:z.string().max(5000),
     type:z.enum(['product','work','document','code']),stage:z.enum(['idea','building','launched']),
@@ -67,6 +69,8 @@ const stateSchema = z.object({
   if (state.checkIns.some((date) => date > shanghaiDay())) {
     context.addIssue({ code: "custom", path: ["checkIns"], message: "不能提前记录未来日期的打卡" });
   }
+  const refs=(state.contentFavorites||[]).map(contentFavoriteKey);
+  if(new Set(refs).size!==refs.length)context.addIssue({code:'custom',path:['contentFavorites'],message:'同一内容不能重复收藏'});
 });
 
 export function streakDays(checkIns, today = shanghaiDay()) {
@@ -136,6 +140,10 @@ function userLibrary(user, packs = publishedPacks(user.id)) {
 
 export function workspaceRouter() {
   const router = Router();
+  router.get('/me/favorites/contents',requireAuth,(req,res)=>{
+    res.set('Cache-Control','private, no-store');
+    res.json({items:(readState(req.user.id).state.contentFavorites||[]).map(ref=>({reference:ref,content:resolveContentFavorite(req.user,ref)}))});
+  });
   router.get("/catalog/workspace", (_req, res) => res.json({ items: publishedPacks().map(metadata) }));
 
   router.get("/me/workspace", requireAuth, (req, res) => {
@@ -180,21 +188,33 @@ export function workspaceRouter() {
     try {
       const current = readState(req.user.id);
       const suppliedVersion = req.get("If-Match");
+      if(parsed.data.contentFavorites!==undefined&&suppliedVersion===undefined){db.exec('ROLLBACK');return res.status(428).json({error:'请同步最新工作空间后再修改关联收藏'});}
       const expectedVersion = suppliedVersion?.replace(/^"(.*)"$/, "$1");
       if (suppliedVersion !== undefined && expectedVersion !== current.version) {
         db.exec("ROLLBACK");
         res.set("Cache-Control", "private, no-store");
         return res.status(409).json({ error: "工作空间已在其他页面更新，请刷新最新内容后重试，当前修改尚未保存", version: current.version });
       }
+      // Older clients must not erase new references while editing unrelated notes.
+      if(state.contentFavorites===undefined&&current.state.contentFavorites!==undefined)state.contentFavorites=current.state.contentFavorites;
+      const previous=new Set((current.state.contentFavorites||[]).map(contentFavoriteKey));
+      for(const ref of state.contentFavorites||[]){
+        const content=resolveContentFavorite(req.user,ref);
+        if(!previous.has(contentFavoriteKey(ref))&&(!content||ref.kind==='material'&&content.locked)){
+          db.exec('ROLLBACK');return res.status(400).json({error:'这项内容暂不可收藏，请核对访问权限或最新发布状态'});
+        }
+      }
+      const finalSerialized=JSON.stringify(state);
+      if(Buffer.byteLength(finalSerialized,'utf8')>MAX_STATE_BYTES){db.exec('ROLLBACK');return res.status(400).json({error:'工作空间内容超过 1 MB，请精简后保存'});}
       run(`INSERT INTO workspace_state (user_id,state_json,updated_at) VALUES (?,?,CURRENT_TIMESTAMP)
-        ON CONFLICT(user_id) DO UPDATE SET state_json=excluded.state_json,updated_at=CURRENT_TIMESTAMP`, [req.user.id, serialized]);
+        ON CONFLICT(user_id) DO UPDATE SET state_json=excluded.state_json,updated_at=CURRENT_TIMESTAMP`, [req.user.id, finalSerialized]);
       db.exec("COMMIT");
     } catch (error) {
       db.exec("ROLLBACK");
       throw error;
     }
     res.set("Cache-Control", "private, no-store");
-    res.json({ ok: true, state, version: stateVersion(serialized), stats: workspaceStats(userLibrary(req.user, packs), state) });
+    res.json({ ok: true, state, version: stateVersion(JSON.stringify(state)), stats: workspaceStats(userLibrary(req.user, packs), state) });
   });
   return router;
 }

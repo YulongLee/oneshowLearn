@@ -4,6 +4,7 @@ import {safeResourceUrl} from './opc-model.js';
 import {currentProject, projectDuration, projectLearningSummary, projectDifficulty, projectAccessLabel} from './project-discovery-model.js';
 import {workbenchProjectVisual, workbenchProjectSummary} from './workbench-visual-model.js';
 import {Dialog} from './AdminDialog.jsx';
+import {FavoriteButton} from './FavoriteButton.jsx';
 import hero from './assets/projects-hero-v1.webp';
 import webCover from './assets/project-web-cover-v1.webp';
 import mobileCover from './assets/project-mobile-cover-v1.webp';
@@ -38,14 +39,14 @@ function OpenProject({project,onOpen,className='pd-dark',children}) {
   }
   return <div className="pd-open"><button className={className} disabled={opening} onClick={open} aria-label={children+'：'+project.title}>{opening?'正在打开…':children}<ArrowRight size={17}/></button>{error&&<p className="pd-open-error" role="alert">{error}</p>}</div>;
 }
-function ProjectCard({project,categories,onOpen,onDetails}) {
+function ProjectCard({project,categories,onOpen,onDetails,model,navigate}) {
   const visual=workbenchProjectVisual(project);
   const tags=[...new Set([...(project.settings?.tech_stack||[]),...(project.tags||[])])].slice(0,4);
   return <article className={`pd-card${project.settings?.is_recommended?' pd-card-recommended':''}`}>
     <ProjectArt project={project} categories={categories}/>
     <div className="pd-card-body">
       <div className="pd-card-labels"><span className="pd-category">{categoryLabel(project,categories)}</span>{visual.demo&&<span className="pd-demo-status">演示</span>}{Boolean(project.settings?.is_recommended)&&<span className="pd-recommend">推荐</span>}<span className="pd-access">{projectAccessLabel(project)}</span></div>
-      <h2 title={project.title}>{visual.title}</h2>
+      <div className="favorite-actions-row"><h2 title={project.title}>{visual.title}</h2><FavoriteButton model={model} navigate={navigate} reference={{kind:'project',id:project.id}} title={project.title} compact/></div>
       <p className="pd-description">{workbenchProjectSummary(project)}</p>
       <p className="pd-audience">适合：{project.settings?.audience||'查看详情了解前置要求与适合人群。'}</p>
       <div className="pd-tags">{tags.map(tag=><span key={tag}>{tag}</span>)}</div>
@@ -79,7 +80,7 @@ export function ProjectDiscovery({data,categories,mine,mineStatus,error,query,ca
     </section>
     <section className="pd-catalog" ref={catalog} tabIndex={-1} aria-labelledby="pd-catalog-title"><header className="pd-section-heading"><div><h2 id="pd-catalog-title">探索项目</h2><p>看清成果方向，找到适合自己的实战起点。</p></div><div className="pd-search-tools"><label><MagnifyingGlass size={18}/><input aria-label="搜索项目" placeholder="搜索项目、技术栈…" maxLength={200} value={query} onChange={e=>setQuery(e.target.value)}/>{query&&<button aria-label="清空搜索" onClick={()=>setQuery('')}><X size={16}/></button>}</label><select aria-label="项目排序" value={sort} onChange={e=>setSort(e.target.value)}><option value="recommended">推荐排序</option><option value="newest">最新发布</option><option value="popular">学习人数</option><option value="difficulty">难度由低到高</option></select></div></header>
       <div className="pd-toolbar"><div className="pd-categories" role="group" aria-label="项目分类"><button aria-pressed={!category} onClick={()=>setCategory(0)}>全部</button>{categories.slice(0,6).map(c=><button key={c.id} aria-pressed={category===c.id} onClick={()=>setCategory(c.id)}>{c.name}</button>)}{categories.length>6&&<select aria-label="更多项目分类" value={categories.slice(6).some(c=>c.id===category)?category:''} onChange={e=>setCategory(Number(e.target.value))}><option value="">更多</option>{categories.slice(6).map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select>}</div></div>
-      {error?<div className="pd-empty" role="alert"><h2>项目目录暂时无法读取</h2><p>{error}</p><button className="pd-outline" onClick={retry}>重新加载</button></div>:!data?<div className="pd-empty" role="status">正在读取项目课程…</div>:<><div className="pd-grid pd-equal-grid">{data.items.map(project=><ProjectCard key={project.id} project={project} onOpen={onOpen} onDetails={onDetails} categories={categories}/>)}</div>{!data.items.length&&<div className="pd-empty"><Cube size={36}/><h2>{query||category?'没有找到匹配的项目':'项目课程正在准备中'}</h2><p>{query||category?'试试其他分类或关键词。':'发布后的项目课程、课件和实践资料会显示在这里。'}</p>{query||category?<button className="pd-outline" onClick={()=>{setQuery('');setCategory(0);}}>重置筛选</button>:canManage?<button className="pd-outline" onClick={()=>navigate('/admin/projects')}>前往后台管理项目<ArrowRight/></button>:null}</div>}{data.total>12&&<nav className="pd-pagination" aria-label="项目分页"><button disabled={!offset} onClick={()=>setOffset(Math.max(0,offset-12))}>上一页</button><span>{Math.floor(offset/12)+1} / {Math.ceil(data.total/12)} 页 · {data.total} 个项目</span><button disabled={offset+12>=data.total} onClick={()=>setOffset(offset+12)}>下一页</button></nav>}</>}
+      {error?<div className="pd-empty" role="alert"><h2>项目目录暂时无法读取</h2><p>{error}</p><button className="pd-outline" onClick={retry}>重新加载</button></div>:!data?<div className="pd-empty" role="status">正在读取项目课程…</div>:<><div className="pd-grid pd-equal-grid">{data.items.map(project=><ProjectCard key={project.id} project={project} onOpen={onOpen} onDetails={onDetails} categories={categories} model={model} navigate={navigate}/>)}</div>{!data.items.length&&<div className="pd-empty"><Cube size={36}/><h2>{query||category?'没有找到匹配的项目':'项目课程正在准备中'}</h2><p>{query||category?'试试其他分类或关键词。':'发布后的项目课程、课件和实践资料会显示在这里。'}</p>{query||category?<button className="pd-outline" onClick={()=>{setQuery('');setCategory(0);}}>重置筛选</button>:canManage?<button className="pd-outline" onClick={()=>navigate('/admin/projects')}>前往后台管理项目<ArrowRight/></button>:null}</div>}{data.total>12&&<nav className="pd-pagination" aria-label="项目分页"><button disabled={!offset} onClick={()=>setOffset(Math.max(0,offset-12))}>上一页</button><span>{Math.floor(offset/12)+1} / {Math.ceil(data.total/12)} 页 · {data.total} 个项目</span><button disabled={offset+12>=data.total} onClick={()=>setOffset(offset+12)}>下一页</button></nav>}</>}
     </section><p className="pd-catalog-note">{data?.items.some(p=>workbenchProjectVisual(p).demo)&&'当前包含演示项目。'}实际内容与学习权限以项目详情为准，示意封面不代表正式交付。</p><footer className="pd-footer">“ Learn by doing. Build a bigger you. ”<span>— OneShowLearn</span></footer>
     </div>{showMine&&<Dialog title="我的实战项目" close={()=>setShowMine(false)}><div className="pd-my-list">{mine.map(project=>{const s=projectLearningSummary(project);return <article key={project.id}><div><h3>{project.title}</h3><p>已学 {s.completed} / {s.total} 节课</p></div><OpenProject className="pd-outline" project={project} onOpen={onOpen}>进入项目</OpenProject></article>;})}</div></Dialog>}</section>;
 }

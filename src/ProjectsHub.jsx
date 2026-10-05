@@ -4,6 +4,7 @@ import { safeResourceUrl } from "./opc-model.js";
 import { LessonWorkspace, lessonLink } from "./LessonWorkspace.jsx";
 import { Dialog } from "./AdminDialog.jsx";
 import { ProjectDiscovery } from "./ProjectDiscovery.jsx";
+import {FavoriteButton} from './FavoriteButton.jsx';
 import { projectStudyEntry } from "./project-study-model.js";
 import "./learning-system.css";
 
@@ -400,6 +401,7 @@ function ProjectDetail({ slug, workspace, placementId, model, navigate }) {
           ))}
         </div>
         <div className="ls-actions">
+          <FavoriteButton model={model} navigate={navigate} reference={{kind:'project',id:project.id}} title={project.title}/>
           <button
             className="ls-primary"
             disabled={busy || !lessons.length || !project.entitled}

@@ -1,0 +1,90 @@
+/* Approved notes mock, content-only: no shared shell or purchase changes. */
+.nl-page{font-size:15px}
+.nl-page .ns-heading{align-items:flex-end;margin:0 0 20px;gap:20px}
+.nl-page .ns-heading h1{font-size:32px;font-weight:700;color:#171b32}
+.nl-page .ns-heading p{font-size:15px;color:#727b95}
+.nl-heading-actions{display:flex;align-items:flex-end;gap:18px;flex-direction:column}
+.nl-page .ns-private{font-size:13px;color:#747d96}
+.nl-page .ns-button,.nl-page .nt-save,.nl-page .ns-icon{min-height:44px;font-size:14px}
+.nl-page .ns-icon{height:44px;width:44px;min-width:44px}
+.nl-starters{padding:18px 20px;background:linear-gradient(115deg,#f6f2ff,#f9f8ff);border:1px solid #e4d9ff;border-radius:12px;margin-bottom:14px}
+.nl-starters h2{font-size:17px;color:#6637e0;margin:0 0 5px}
+.nl-starters p{font-size:13px;color:#747b96;line-height:1.7;margin:0 0 14px}
+.nl-starters>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.nl-starters button{display:flex;align-items:center;gap:14px;text-align:left;padding:15px 14px;min-height:76px;border:1px solid #e9e3f8;border-radius:8px;background:#fff;color:#7545ee;min-width:0}
+.nl-starters button>svg:first-child{flex-shrink:0}
+.nl-starters button>svg:last-child{margin-left:auto;flex-shrink:0}
+.nl-starters button span{min-width:0}
+.nl-starters button strong{display:block;font-size:15px;font-weight:600;color:#252b46;margin-bottom:5px}
+.nl-starters button small{display:block;font-size:13px;color:#75809a;line-height:1.6}
+.nl-starters button:hover{border-color:#b99af8;background:#fdfbff}
+.nl-page .ns-sources{gap:26px;margin-bottom:10px}
+.nl-page .ns-sources button{font-size:15px;padding:0 16px 9px;min-height:44px}
+.nl-page .ns-workspace{grid-template-columns:340px minmax(0,1fr);min-height:640px;border-radius:12px}
+.nl-page .ns-index{background:#fcfcff;padding:14px 10px 0}
+.nl-page .ns-search{margin:0 4px 8px;min-height:44px}
+.nl-page .ns-search input{font-size:14px;min-height:44px;padding:10px 0}
+.nl-tools{display:flex;align-items:center;justify-content:space-between;gap:4px;margin:0 4px 12px}
+.nl-tools>button{display:inline-flex;align-items:center;justify-content:center;gap:5px;border:0;background:transparent;color:#76809c;border-radius:6px;min-height:44px;padding:7px;font-size:13px}
+.nl-tools>button[aria-pressed=true]{background:#eee7ff;color:#7040e5}
+.nl-tools select,.nl-scope select{min-width:0;font:inherit;font-size:13px;border:1px solid #e2e7f2;border-radius:6px;color:#56617c;background:#fff;min-height:44px;padding:7px;max-width:100%}
+.nl-scope{display:flex;align-items:center;gap:7px;color:#8b6dd3;margin:0 4px 12px;min-width:0}
+.nl-scope select{width:100%;flex:1}
+.nl-page .ns-tags{margin:0 4px 5px}.nl-page .ns-tags summary{min-height:44px;font-size:13px;color:#707b96}
+.nl-page .ns-list-label{font-size:13px;margin-bottom:0;color:#737e98}
+.nl-page .ns-note-list{max-height:650px}
+.nl-page .ns-note{padding:14px 12px;border-bottom:1px solid #edf0f7;border-radius:0;margin:0;min-height:115px}
+.nl-page .ns-note[aria-pressed=true]{background:#f1ebff;border-radius:8px;border-color:#e5dbfc;box-shadow:inset 3px 0 0 #8757ff}
+.nl-page .ns-note-title strong{font-size:15px;color:#202842}
+.nl-page .ns-note-title>svg{color:#895af6;background:#f1edfe;flex-shrink:0}
+.nl-note-source{display:block;font-size:13px;color:#76809b;line-height:1.6;margin:3px 0 0 29px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nl-page .ns-note p{font-size:13px;color:#7b859d;margin:6px 0 10px 29px;-webkit-line-clamp:1}
+.nl-page .ns-note-meta{font-size:12px;color:#7d869d;margin-left:29px}
+.nl-page .ns-index-footer{font-size:13px;color:#76819b;min-height:50px}
+.nl-page .ns-editor-toolbar{padding:10px 20px;position:static;min-height:64px;align-items:flex-start;flex-wrap:wrap}
+.nl-page .ns-save-status{font-size:13px;color:#66748b;line-height:1.7;white-space:normal;min-height:44px;max-width:100%}
+.nl-page .ns-save-status.is-dirty{color:#987140}
+.nl-page .ns-save-status>span{flex-shrink:0}
+.nl-source-context{margin:14px 20px 0;padding:12px 14px;background:#f7f4ff;border:1px solid #eeebfc;border-radius:8px;display:flex;align-items:center;gap:10px;color:#8c69ea;flex-wrap:wrap;min-width:0}
+.nl-source-context>svg{flex-shrink:0}
+.nl-source-context>div{flex:1;min-width:150px;color:#697793;font-size:13px;line-height:1.6}
+.nl-source-context strong{font-weight:500}.nl-source-context span{display:block;overflow-wrap:anywhere}
+.nl-source-context small{display:inline-flex;align-items:center;gap:4px;color:#805ce5;font-size:13px;white-space:nowrap}
+.nl-source-context button{display:inline-flex;align-items:center;gap:6px;font-size:13px;border:0;border-radius:6px;background:#ede7ff;color:#7746e8;min-height:44px;padding:8px}
+.nl-page .ns-document,.nl-page .ns-writing{width:min(100%,960px);padding:28px 32px}
+.nl-page .ns-document-label{display:none}
+.nl-page .ns-document h2,.nl-page .ns-title-input{font-size:28px;color:#151a34;font-weight:650;margin-bottom:14px}
+.nl-page .ns-document-meta{color:#76839d;font-size:13px}
+.nl-page .ns-inline-tags{margin-bottom:20px}
+.nl-page .ns-inline-tags button{font-size:13px;min-height:36px}
+.nl-page .ps-markdown,.nl-page .ps-markdown p,.nl-page .ls-rich-read,.nl-page .ls-rich-read p{font-size:16px;line-height:1.85;color:#535f7c}
+.nl-page .ps-markdown h3{font-size:19px;color:#1f2945;margin:24px 0 10px}
+.nl-page .ps-markdown blockquote{padding:12px 16px;background:#f3efff;color:#52506c;border-radius:6px;border-left:3px solid #bc9cf8}
+.nl-page .ns-learning-content{min-height:180px;overflow-wrap:anywhere}
+.nl-page .ns-learning-content img{max-width:100%;height:auto}
+.nl-page .ls-rich-read .tiptap{overflow-wrap:anywhere}.nl-page .ls-rich-read pre{overflow:auto;max-width:100%}
+.nl-page .ns-document-footer{margin-top:28px}.nl-page .ns-document-footer .ps-text{font-size:14px;min-height:44px}
+.nl-page .ns-formatting{flex-wrap:wrap}.nl-page .ns-inline-tags button,.nl-page .ps-tag-cloud button,.nl-page .ls-note-toolbar button{min-height:44px}
+.nl-page .ns-error{margin:12px 20px;overflow-wrap:anywhere}
+.nl-load-status,.nl-library-error{font-size:13px;line-height:1.7;margin:8px;padding:10px;color:#77728b;background:#f5f2fc;border-radius:8px}
+.nl-library-error{color:#96556a;background:#fff5f7}.nl-library-error p{margin:0 0 8px}
+.nl-recovery{display:flex;align-items:center;gap:10px;padding:14px 18px;margin-bottom:14px;border:1px solid #eedfbf;border-radius:10px;background:#fffaf0;color:#796047;flex-wrap:wrap}
+.nl-recovery>div{flex:1;min-width:180px;font-size:14px}.nl-recovery p{font-size:13px;margin:5px 0 0}
+.nl-page .ns-blank{min-height:420px;padding:40px 20px}.nl-page .ns-blank p{color:#78829a;font-size:15px}.nl-page .ns-blank .ns-button{margin:5px}
+.nl-page .ns-workspace.is-focused{grid-template-columns:minmax(0,1fr)}
+.nl-more{margin:12px auto;display:flex;justify-content:center}
+.nl-resume-draft{display:flex;gap:8px;align-items:center;margin:12px 0;color:#7640df;background:#f5efff}
+@container learner (max-width:1200px){.nl-page .ns-workspace{grid-template-columns:300px minmax(0,1fr)}.nl-starters button{gap:10px;padding:12px}.nl-page .ns-document,.nl-page .ns-writing{padding:25px}.nl-page .ns-editor-toolbar{padding:10px 15px}}
+@container learner (max-width:950px){.nl-starters>div{gap:8px}.nl-starters button small{display:none}.nl-page .ns-workspace{grid-template-columns:270px minmax(0,1fr)}.nl-page .ns-document,.nl-page .ns-writing{padding:22px}.nl-heading-actions{gap:10px}}
+@container learner (max-width:800px){
+ .nl-page:has(.ns-workspace.is-reading) .nl-starters{display:none}
+ .nl-page .ns-heading{align-items:flex-start;flex-wrap:wrap}.nl-heading-actions{flex-direction:row;align-items:center;flex-wrap:wrap;width:100%;justify-content:space-between}.nl-page .ns-private{display:flex}
+ .nl-page .ns-heading h1{font-size:28px}.nl-starters{padding:15px}.nl-starters>div{grid-template-columns:minmax(0,1fr)}.nl-starters button{min-height:60px}.nl-starters button small{display:block}.nl-starters>p{font-size:13px}
+ .nl-page .ns-sources{gap:4px;justify-content:space-between}.nl-page .ns-sources button{font-size:14px;padding:0 8px 9px;white-space:nowrap}
+ .nl-page .ns-workspace,.nl-page .ns-workspace.is-focused{grid-template-columns:minmax(0,1fr);min-height:420px}.nl-page .ns-note-list{max-height:none}
+ .nl-page .ns-editor-toolbar{position:static;gap:4px}.nl-page .ns-editor-toolbar .ns-actions{gap:4px}.nl-page .ns-save-status{min-height:34px}
+ .nl-source-context{margin:12px 12px 0;padding:10px}.nl-source-context>div{min-width:160px}.nl-page .ns-document,.nl-page .ns-writing{padding:22px 18px}.nl-page .ns-document h2,.nl-page .ns-title-input{font-size:24px}
+ .nl-page .ns-writing-footer{flex-wrap:wrap;font-size:13px}.nl-page .ns-error{margin:12px}.nl-page .ns-blank{min-height:340px}
+ .nl-page .ns-workspace.is-reading .ns-editor{display:block}.nl-page .ns-workspace.is-reading .ns-index{display:none}
+}
+@container learner (max-width:380px){.nl-page .ns-heading p{font-size:14px}.nl-page .ns-sources button{font-size:13px;padding-inline:4px}.nl-heading-actions .ns-actions{width:100%;justify-content:flex-end}.nl-starters button small{font-size:12px}.nl-tools button{padding:6px;font-size:13px}.nl-page .ns-document h2{font-size:22px}}

@@ -1,8 +1,9 @@
 import { FileText, DownloadSimple, Eye, ArrowRight } from '@phosphor-icons/react';
 import { safeResourceUrl } from './opc-model.js';
+import {FavoriteButton} from './FavoriteButton.jsx';
 
 // Only descriptors returned for the current, authorized lesson are displayed.
-export function CourseLessonResources({ lesson, config, onPreview, onMaterial }) {
+export function CourseLessonResources({ lesson, config, onPreview, onMaterial, model, navigate }) {
   const firstPage = config.slides.find(page => safeResourceUrl(page.asset?.url));
   const download = safeResourceUrl(config.ppt?.url);
   const canPreview = config.slides.length > 0;
@@ -17,13 +18,14 @@ export function CourseLessonResources({ lesson, config, onPreview, onMaterial })
         {config.isDemoMedia && <small>演示素材，正式课件后续更新。</small>}
       </div>
       <div className="cr-file-actions"><button disabled={!canPreview} onClick={onPreview}><Eye size={17}/>预览</button>
+        <FavoriteButton model={model} navigate={navigate} reference={{kind:'courseware',id:lesson.id}} title={lesson.title+' · 课件'} compact/>
         {download && <a href={download} target="_blank" rel="noreferrer" title={config.ppt.original_name}><DownloadSimple size={17}/>下载</a>}
       </div>
     </div> : <p className="ls-muted">本节课件待补充，可先阅读配套资料。</p>}
     <div className="cr-materials"><h2>配套资料</h2><div className="cs-resource-list">
-      {lesson.materials.map(material => <button key={material.library_id} onClick={()=>onMaterial(material.library_id)}>
+      {lesson.materials.map(material => <div className="favorite-material-row" key={material.library_id}><button onClick={()=>onMaterial(material.library_id)}>
         <span className="cs-resource-icon is-material"><FileText size={23}/></span><span><strong>{material.title}</strong><small>{material.role==='prompt' ? 'Codex 提示词' : material.asset ? `${Math.ceil(material.asset.size_bytes/1024)} KB` : '课程配套资料'}</small></span><b>查看<ArrowRight size={15}/></b>
-      </button>)}
+      </button><FavoriteButton model={model} navigate={navigate} reference={{kind:'material',id:material.library_id,placementId:lesson.id}} title={material.title} compact/></div>)}
       {!lesson.materials.length && <p className="ls-muted">本节配套资料待补充。</p>}
     </div></div>
   </div>;

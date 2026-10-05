@@ -1,9 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync,rmSync} from 'node:fs';
+import {mkdtempSync,rmSync,readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {COMMUNITY_SETTINGS,EMPTY_ARTICLE} from '../server/community-definition.mjs';
+import {communityArticles,communityFeatured,safeCommunityImage,safeCommunityLink,groupAudience,groupMessage} from '../src/community-editorial-model.js';
+test('editorial sorting, combined filters and feature choice use only actual records',()=>{
+ const items=[{id:1,title:'验证需求',category:'idea',topic:'入门',summary:'产品机会',publishedAt:'2026-01-01',pinned:true},{id:2,title:'开发 MVP',category:'development',topic:'入门',summary:'拆解产品',publishedAt:'2026-02-01',recommended:true},{id:3,title:'上线',category:'launch',publishedAt:'2026-03-01'}],before=structuredClone(items);
+ assert.equal(communityFeatured(items).id,1);assert.equal(communityFeatured(items.slice(1)).id,2);assert.equal(communityFeatured([]),null);
+ assert.deepEqual(communityArticles(items,{category:'development',topic:'入门',query:'产品 MVP'}).map(i=>i.id),[2]);assert.deepEqual(communityArticles(items,{category:'idea',query:'无匹配'}),[]);assert.deepEqual(items,before);
+});
+test('safe article images do not broaden private material permissions',()=>{
+ assert.equal(safeCommunityLink('/courses'),'/courses');assert.equal(safeCommunityLink('javascript:alert(1)'),'');assert.equal(safeCommunityLink('//example.invalid'),'');assert.equal(safeCommunityLink('/\\example.invalid'),'');
+ for(const src of ['javascript:alert(1)','data:image/svg+xml,x','http://example.invalid/a.png','//example.invalid/a','/uploads/secret.png','/api/materials/1','/assets/../private.png','https://user:secret@example.invalid/a'])assert.equal(safeCommunityImage(src),'');
+ assert.equal(safeCommunityImage('/assets/public.png'),'/assets/public.png');assert.equal(safeCommunityImage('/api/materials/1?ticket=signed.issued'),'/api/materials/1?ticket=signed.issued');assert.equal(safeCommunityImage('https://example.invalid/a.png'),'https://example.invalid/a.png');
+});
+test('group copy follows the configured audience and actual readiness',()=>{
+ assert.match(groupAudience({groupAudience:'signed-in'}),/已登录/);assert.match(groupAudience({groupAudience:'entitled'}),/课程权益/);
+ assert.match(groupMessage({groupExpired:true}),/到期/);assert.match(groupMessage({groupReady:false}),/准备/);assert.match(groupMessage({groupReady:true,groupAccessible:false}),/有效课程权益/);assert.match(groupMessage({groupReady:true,groupAccessible:true}),/不代表/);
+});
+test('community design omits mock article imports and preserves publishing/reader and fresh QR checks',()=>{
+ const page=readFileSync(new URL('../src/CommunityWorkspace.jsx',import.meta.url),'utf8');assert.match(page,/communityFeatured\(items\)/);assert.match(page,/groupData\.groupAccessible&&groupData\.qrUrl/);assert.match(page,/setGroupData\(null\)/);assert.match(page,/ready&&topics\.length>0/);assert.match(page,/ready&&resources\.length>0/);assert.match(page,/ResourceReader key=/);assert.doesNotMatch(page,/本月发布文章|官方内容收录|从一个想法，到你的第一个 AI 产品|免费课程|成功入群/);
+});
 
 test('official community publishing and membership boundaries',async t=>{
   const dir=mkdtempSync(path.join(tmpdir(),'oneshowlearn-community-'));

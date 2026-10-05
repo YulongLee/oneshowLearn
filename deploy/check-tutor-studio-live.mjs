@@ -22,7 +22,7 @@ try{
  check(await p.getByRole('button',{name:'发送给 AI 导师',exact:true}).isDisabled(),'guest send guard');
  check(await p.locator('.tc-recent-row').count()===0,'no fabricated guest histories');
  check(await p.locator('.tc-suggestions button').count()===4,'four draft shortcuts');
- await p.getByRole('button',{name:'排查开发问题',exact:false}).click();check((await p.locator('.tc-scope-copy').innerText()).includes('通用建议'),'general clearly distinct');
+ await p.getByRole('button',{name:'排查开发问题',exact:false}).click();await p.waitForFunction(()=>document.querySelector('.tc-scope-copy')?.textContent.includes('通用建议'));check((await p.locator('.tc-scope-copy').innerText()).includes('通用建议'),'general clearly distinct');
  check(await p.getByText('联网回答暂不可用',{exact:true}).count()===0,'general not blocked by web mode');
  await p.locator('.ws-offer-price').waitFor();check((await p.locator('.ws-offer-price').innerText()).includes('¥499'),'authoritative price unchanged');
  await p.screenshot({path:path.join(output,'tutor-desktop.png'),fullPage:true});

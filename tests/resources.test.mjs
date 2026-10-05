@@ -4,6 +4,48 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { resourceCategory,resourceTags,resourceArt,filterResources,resourceDate,resourceStages,featuredResources,RESOURCE_CATEGORIES } from '../src/resource-model.js';
+import {RESOURCE_COURSE_PHASES,resourceCoursePhases,resourceLibraryItems,resourceHighlights,resourcePurpose,resourceAction,resourceAccess,resourcePrimaryCategories} from '../src/resource-library-model.js';
+import {readFileSync} from 'node:fs';
+test('resource library keeps five phases with chapter priority and keyword fallback',()=>{
+ assert.equal(RESOURCE_COURSE_PHASES.length,5);
+ assert.deepEqual(resourceCoursePhases({title:'支付上线需求',step_title:'第 4 章 收款与商业化'}),['business']);
+ assert.deepEqual(resourceCoursePhases({title:'PRD 需求验证'}),['opportunity']);
+ assert.deepEqual(resourceCoursePhases({title:'部署与支付清单'}),['launch','business']);
+ assert.deepEqual(resourceCoursePhases({title:'无相关关键词'}),[]);
+});
+test('resource library combines course phase, type and multi-term search without inventing or mutating resources',()=>{
+ const items=[{id:1,type:'document',title:'第 1 章章节大纲',step_title:'第 1 章 产品与机会',pack_title:'课程',summary:'发现需求',created_at:'2026-01-01'},{id:2,type:'prompt',title:'开发指令',step_title:'第 2 章 AI 产品开发',pack_title:'课程',created_at:'2026-02-01'},{id:3,type:'template',title:'验证模板',step_title:'第 1 章 产品与机会',pack_title:'课程'}];
+ const before=structuredClone(items);
+ assert.deepEqual(resourceLibraryItems(items,{phase:'build',category:'prompt',query:'开发 课程'}).map(i=>i.id),[2]);
+ assert.deepEqual(resourceLibraryItems(items,{phase:'opportunity',category:'prompt'}),[]);
+ assert.deepEqual(resourceLibraryItems(items,{query:'AI 产品开发'}).map(i=>i.id),[2]);
+ assert.deepEqual(items,before);
+});
+test('resource highlights contain at most three actual records and chapter order is natural',()=>{
+ const items=[5,3,1,2,4].map((n,i)=>({id:n,title:`第 ${n} 章章节大纲`,step_title:`第 ${n} 章`,pack_title:'课程',created_at:'2026-01-01',locked:n===1,is_featured:n===4?1:0}));
+ assert.deepEqual(resourceLibraryItems(items).map(i=>i.id),[1,2,3,4,5]);
+ assert.deepEqual(resourceHighlights(items).map(i=>i.id),[4,2,3]);
+ assert.deepEqual(resourceHighlights([]),[]);
+ assert.deepEqual(resourcePrimaryCategories([{title:'大纲',type:'document'}]),['all','learning']);
+});
+test('resource purpose/action labels do not promise phantom downloads, unlocked access or editable templates',()=>{
+ assert.equal(resourcePurpose({summary:'发现市场机会 核心问题：做什么？ 阶段成果：产品定位'}),'发现市场机会');
+ assert.ok(resourcePurpose({summary:'内容'.repeat(100)}).length<=64);
+ assert.equal(resourceAction({title:'章节大纲'}),'阅读大纲');
+ assert.equal(resourceAction({title:'章节大纲',locked:true}),'查看学习权益');
+ assert.equal(resourceAction({type:'prompt'}),'查看 Prompt');
+ assert.equal(resourceAccess({locked:true,is_preview:1}),'课程专享');
+ assert.equal(resourceAccess({is_preview:1}),'免费预览');
+ assert.equal(resourceAccess({}),'可访问');
+});
+test('resource design keeps actual reader and safe scoped styles without importing mock catalogue examples',()=>{
+ const page=readFileSync(new URL('../src/ResourceCenter.jsx',import.meta.url),'utf8'),css=readFileSync(new URL('../src/resource-library-refinement.css',import.meta.url),'utf8');
+ assert.match(page,/api\('\/resources'\)/);assert.match(page,/resourceHighlights\(items\)/);assert.match(page,/resourcePurpose\(resource\)/);
+ assert.match(page,/navigate\('\/favorites'\)/);assert.match(page,/aria-label="课程阶段"/);assert.match(page,/resource.locked\?/);
+ assert.doesNotMatch(page,/PRD 产品需求模板|MVP 开发 Prompt|Stripe|rd-card-art/);
+ assert.match(page,/分类示意/);assert.match(page,/ResourceReader key=\{modal.id\}/);assert.match(css,/max-width:500px/);
+ assert.doesNotMatch(css,/\.ws-sidebar|\.ws-topbar|\.ls-/);
+});
 test('resource discovery adds Skill/video categories and keyword-based stage filtering',()=>{
  assert.equal(RESOURCE_CATEGORIES.length,10);
  assert.equal(resourceCategory({title:'Claude Code Skill 最佳实践',type:'document'}),'skill');

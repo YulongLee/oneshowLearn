@@ -19,6 +19,7 @@ import { CourseStudyFrame } from './CourseStudyFrame.jsx';
 import { CourseLessonResources } from './CourseLessonResources.jsx';
 import { CourseLessonCover } from './CourseLessonCover.jsx';
 import './course-lesson-refinement.css';
+import {FavoriteButton} from './FavoriteButton.jsx';
 
 export const lessonLink = (p) =>
   p.kind === "project"
@@ -147,7 +148,7 @@ function useLessonProgress(lesson, enabled, onChange, video) {
   return { value, change, save, state, blocked: blocked.current };
 }
 
-function LessonNotes({ lesson, video, slide, time, onJump, user, notesOnly = false, revision = 0 }) {
+function LessonNotes({ lesson, video, slide, time, onJump, user, model, navigate, notesOnly = false, revision = 0 }) {
   const [items, setItems] = useState([]),
     [draft, setDraft] = useState(null),
     [nextNotes, setNextNotes] = useState(null),
@@ -459,6 +460,7 @@ function LessonNotes({ lesson, video, slide, time, onJump, user, notesOnly = fal
               <h4>{note.title}</h4>
               <RichNoteRead body={note.body} />
               <div className="ls-actions">
+                <FavoriteButton model={model} navigate={navigate} reference={{kind:'learning-note',id:note.id}} title={note.title}/>
                 <button onClick={() => start(note)}>编辑</button>
                 <button onClick={() => archive(note)}>移入回收站</button>
               </div>
@@ -674,6 +676,13 @@ function LessonSurface({
   const [contentTab, setContentTab] = useState('courseware');
   const [notesRevision, setNotesRevision] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false), [selectedMaterial, setSelectedMaterial] = useState(null);
+  // Bookmark destinations open the existing reader, never fetch private assets
+  // directly or change a note/progress record just to select a content panel.
+  useEffect(()=>{
+    const params=new URLSearchParams(location.search),materialId=Number(params.get('material'));
+    if(materialId&&lesson.materials.some(m=>m.library_id===materialId)){setContentTab('courseware');setSelectedMaterial(materialId);setTab('file');setMaterialFilter('all');}
+    else if(params.get('courseware')==='1'){setContentTab('courseware');setTab('slides');setPreviewOpen(true);}
+  },[lesson.id]);
   const slidePreview = useRef(null);
   const progress = useLessonProgress(lesson, Boolean(model.user), onProgress, video),
     p = progress.value;
@@ -794,7 +803,7 @@ function LessonSurface({
           />
         </DirectorySlot>
         <main className="ls-reading">
-          <nav className="cs-breadcrumb" aria-label="学习位置"><span>{isCourse ? '学习课程' : '实战项目'}</span><span>›</span><span>{lesson.owner_title}</span><span>›</span><span>{lesson.chapter}</span></nav>
+          <nav className="cs-breadcrumb" aria-label="学习位置"><span>{isCourse ? '学习课程' : '实战项目'}</span><span>›</span><span>{lesson.owner_title}</span><FavoriteButton model={model} navigate={navigate} reference={{kind:isCourse?'course':'project',id:lesson.owner_id}} title={lesson.owner_title} compact/><span>›</span><span>{lesson.chapter}</span></nav>
           <header className="ls-heading cl-lesson-heading">
             <span className="cs-chapter-number" aria-hidden="true">{String(chapterNumber).padStart(2,'0')}</span>
             <div>
@@ -806,6 +815,7 @@ function LessonSurface({
               {!isCourse && config.isDemoMedia && <p className="ls-demo-notice" role="note">演示素材 · 视频与 PPT 为占位内容，本节知识点请查看“资料”。</p>}
             </div>
             <div className="ls-actions">
+              <FavoriteButton model={model} navigate={navigate} reference={{kind:'lesson',id:lesson.id}} title={lesson.title} compact/>
               <button
                 disabled={index <= 0}
                 onClick={() => go(lessons[index - 1])}
@@ -850,21 +860,22 @@ function LessonSurface({
                 </button>
               ))}
             </div>}
-            {isCourse && tab==='file' && <button className="cr-back-materials" onClick={()=>{setTab('slides');setSelectedMaterial(null);}}><ArrowLeft size={17}/>返回课件与资料</button>}
+            {(isCourse||selectedMaterial!==null) && tab==='file' && <button className="cr-back-materials" onClick={()=>{setTab('slides');setSelectedMaterial(null);}}><ArrowLeft size={17}/>返回课件与资料</button>}
             {!isCourse && ["tasks", "operations"].includes(tab) && <div className="ls-study-subtabs" role="group" aria-label="实验内容">
               <button aria-pressed={tab === "tasks"} onClick={() => setTab("tasks")}>实验清单</button>
               <button aria-pressed={tab === "operations"} onClick={() => setTab("operations")}>操作步骤与成果</button>
             </div>}
             {tab === "slides" ? (
               <>
-                {isCourse ? <CourseLessonResources lesson={lesson} config={config} onPreview={()=>{setPreviewOpen(true);requestAnimationFrame(()=>slidePreview.current?.scrollIntoView({block:'nearest',behavior:'smooth'}));}} onMaterial={id=>{setSelectedMaterial(id);setTab('file');setMaterialFilter('all');}}/> : <div className="cs-resource-list">
+                {isCourse ? <CourseLessonResources model={model} navigate={navigate} lesson={lesson} config={config} onPreview={()=>{setPreviewOpen(true);requestAnimationFrame(()=>slidePreview.current?.scrollIntoView({block:'nearest',behavior:'smooth'}));}} onMaterial={id=>{setSelectedMaterial(id);setTab('file');setMaterialFilter('all');}}/> : <div className="cs-resource-list">
                   {config.ppt && <a href={config.ppt.url} target="_blank" rel="noreferrer"><span className="cs-resource-icon"><FileText size={24}/></span><span><strong>{config.ppt.original_name}</strong><small>{config.isDemoMedia ? '演示课件 · ' : ''}{Math.ceil(config.ppt.size_bytes / 1024)} KB</small></span><b><DownloadSimple size={16}/>下载</b></a>}
-                  {lesson.materials.map(m => <button key={m.library_id} onClick={()=>{setTab('file');setMaterialFilter('all');}}><span className="cs-resource-icon is-material"><FileText size={24}/></span><span><strong>{m.title}</strong><small>{m.role==='prompt' ? 'Codex 提示词' : m.asset ? `${Math.ceil(m.asset.size_bytes/1024)} KB` : '课程配套资料'}</small></span><b>查看 →</b></button>)}
+                  {lesson.materials.map(m => <div className="favorite-material-row" key={m.library_id}><button onClick={()=>{setSelectedMaterial(m.library_id);setTab('file');setMaterialFilter('all');}}><span className="cs-resource-icon is-material"><FileText size={24}/></span><span><strong>{m.title}</strong><small>{m.role==='prompt' ? 'Codex 提示词' : m.asset ? `${Math.ceil(m.asset.size_bytes/1024)} KB` : '课程配套资料'}</small></span><b>查看 →</b></button><FavoriteButton model={model} navigate={navigate} reference={{kind:'material',id:m.library_id,placementId:lesson.id}} title={m.title} compact/></div>)}
                   {!config.ppt && !lesson.materials.length && <p className="ls-muted">本节下载资料待补充。</p>}
                 </div>}
-                <details ref={slidePreview} className="cs-slide-preview" open={isCourse ? previewOpen : undefined} onToggle={isCourse ? e=>setPreviewOpen(e.currentTarget.open) : undefined}>
+                <details ref={slidePreview} className="cs-slide-preview" open={previewOpen} onToggle={e=>setPreviewOpen(e.currentTarget.open)}>
                 <summary>{`在线预览课件 · ${config.slides.length} 页`}</summary>
                 <div className="ls-actions">
+                  {!isCourse&&(config.ppt||config.slides.length>0)&&<FavoriteButton model={model} navigate={navigate} reference={{kind:'courseware',id:lesson.id}} title={lesson.title+' · 课件'}/>}
                   <button
                     onClick={() =>
                       p.follow_video
@@ -1026,7 +1037,7 @@ function LessonSurface({
                   {[["all","全部资料"],["article","图文"],["code","代码"],["prompt","Codex 提示词"],["files","附件"]].map(([key,label])=><button key={key} aria-pressed={materialFilter===key} onClick={()=>{setMaterialFilter(key);setSelectedMaterial(null);}}>{label}</button>)}
                 </div>}
                 {studyMaterials(lesson.materials,tab,true,materialFilter)
-                  .filter(m=>!isCourse || selectedMaterial===null || m.library_id===selectedMaterial)
+                  .filter(m=>selectedMaterial===null || m.library_id===selectedMaterial)
                   .map((m) => (
                     <article className="ls-material" key={m.library_id}>
                       {m.role === "prompt" && <small className="ls-prompt-label">Codex 提示词</small>}
@@ -1034,6 +1045,7 @@ function LessonSurface({
                         {m.title}
                         {m.promptVersion ? ` · v${m.promptVersion}` : ""}
                       </h3>
+                      <FavoriteButton model={model} navigate={navigate} reference={{kind:'material',id:m.library_id,placementId:lesson.id}} title={m.title}/>
                       {m.asset && (
                         <small className="ls-muted">
                           {m.asset.original_name} · {m.asset.mime_type} ·{" "}
@@ -1088,7 +1100,7 @@ function LessonSurface({
               </>
             )}
           </section>
-          <div className="cs-private-notes" hidden={contentTab!=='notes'}><LessonNotes lesson={lesson} video={video} slide={slide} time={time} onJump={jump} user={model.user} notesOnly revision={notesRevision}/></div>
+          <div className="cs-private-notes" hidden={contentTab!=='notes'}><LessonNotes lesson={lesson} video={video} slide={slide} time={time} onJump={jump} user={model.user} model={model} navigate={navigate} notesOnly revision={notesRevision}/></div>
           {(contentTab === 'courseware' && tab === 'file') && lesson.relatedLessons?.length > 0 && (
             <section className="ls-panel">
               <h3>关联课程与实战</h3>

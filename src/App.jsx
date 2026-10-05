@@ -72,6 +72,7 @@ import { Workbench } from "./Workbench.jsx";
 import { WorkspaceShell, WorkspaceHome } from "./Workspace.jsx";
 import { CourseLearningSpace } from "./CourseLearningSpace.jsx";
 import { ProjectsCatalog } from "./ProjectsCatalog.jsx";
+import {FavoriteButton} from './FavoriteButton.jsx';
 import { AiTutor } from "./AiTutor.jsx";
 import { ResourceCenter } from "./ResourceCenter.jsx";
 import {
@@ -380,7 +381,7 @@ function PathsPage({ navigate }) {
   );
 }
 
-function ProductPackPage({ slug, navigate, notify }) {
+function ProductPackPage({ slug, navigate, notify, model }) {
   const [pack, setPack] = useState(null);
   const [error, setError] = useState("");
   const [authOpen, setAuthOpen] = useState(false);
@@ -438,7 +439,7 @@ function ProductPackPage({ slug, navigate, notify }) {
       <div className="pack-sales">
         <section>
           <span className="page-kicker">{pack.path_title} · 项目包</span>
-          <h2>{pack.title}</h2>
+          <div className="favorite-actions-row"><h2>{pack.title}</h2>{model&&<FavoriteButton model={model} navigate={navigate} reference={{kind:'course',id:pack.id}} title={pack.title}/>}</div>
           <p className="pack-subtitle">{pack.subtitle}</p>
           <p>{pack.description}</p>
           <div className="project-content-mix">
@@ -1015,6 +1016,7 @@ function LearnerWorkspace({ route: rawRoute, navigate, notify }) {
           return (
             <ProductPackPage
               key={route}
+              model={model}
               slug={route.split("/")[2]}
               navigate={go}
               notify={notify}

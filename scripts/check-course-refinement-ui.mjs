@@ -131,7 +131,7 @@ try{
  check(aiRequests.length===untouchedRequests,'focus and text resizing never send automatically');
  await input.blur();
  await p.screenshot({path:path.join(output,'course-desktop-1600.png'),fullPage:true});
- await p.locator('.cr-file-actions button').click();check(await p.locator('.cs-slide-preview').getAttribute('open')!==null);
+ await p.locator('.cr-file-actions>button').click();check(await p.locator('.cs-slide-preview').getAttribute('open')!==null);
  await p.getByRole('button',{name:'第 2 页',exact:true}).click();check((await p.locator('.ls-slide-canvas img').getAttribute('alt')).includes('第二页'));
  await p.locator('.cr-file-actions a').evaluate(el=>el.dataset.expected=el.href);
  const downloadHref=await p.locator('.cr-file-actions a').getAttribute('href');
@@ -166,7 +166,7 @@ try{
  for(const [width,height] of [[1440,900],[1920,1080],[2560,1440],[1024,768],[768,1024],[390,844],[320,667]]){
   await p.setViewportSize({width,height});await p.waitForTimeout(80);check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`no overflow ${width}`);
   check(await p.locator('.learning-player').evaluate(el=>Math.abs(el.clientWidth/el.clientHeight-16/9)<.02));
-  check(await p.locator('.cr-file-actions button').isVisible());check(await p.locator('.cs-quick-actions button').count()===2);
+  check(await p.locator('.cr-file-actions>button').isVisible());check(await p.locator('.cs-quick-actions button').count()===2);
   if(await p.locator('.cs-rail').evaluate(el=>getComputedStyle(el).display!=='contents'))await aligned(p);
   else check(await p.locator('.cr-ai-response').evaluate(el=>el.getBoundingClientRect().height<430),'stacked response area resets natural height');
   if(width===390){

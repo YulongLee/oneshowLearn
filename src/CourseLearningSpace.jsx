@@ -20,6 +20,7 @@ import { LessonWorkspace } from "./LessonWorkspace.jsx";
 import { LearningRoutes } from "./LearningRoutes.jsx";
 import "./learning-system.css";
 import { CourseStudyFrame } from './CourseStudyFrame.jsx';
+import {FavoriteButton} from './FavoriteButton.jsx';
 
 function PendingLesson({
   selection,
@@ -30,6 +31,7 @@ function PendingLesson({
   context,
   lessons,
   chapters,
+  model,
 }) {
   useLearningFocus(false);
   const [tab, setTab] = useState("课件");
@@ -69,6 +71,7 @@ function PendingLesson({
               </span>
             </nav>
             <h1>{lesson?.title || course?.title || "学习课程"}</h1>
+            {course&&<FavoriteButton model={model} navigate={navigate} reference={{kind:'course',id:course.id}} title={course.title}/>}
             <p>
               {lesson?.subtitle ||
                 course?.subtitle ||

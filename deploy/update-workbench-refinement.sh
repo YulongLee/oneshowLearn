@@ -5,8 +5,8 @@ umask 077
 staging="${1:?Verified staging directory required}"
 app=/var/www/oneshowlearn
 node=/opt/node-v22/bin/node
-live_entry=b83e20b9318c049c7f91f7d2287d4ef9ca49decd48553496d96028b493632a10
-new_entry=529109c098ca192a55c1e84b19849fd4bbdd831c95f02df98ac1bfbec680f2df
+live_entry=a5fb331318c2dc925d4b52ae0a64adb7303f0920c4850ab62055270e2a6d9067
+new_entry=7c979f30cc71dfc4e2dfe28882a93bf76526aa8f258bf6bbf5aa275dc3bb0684
 [[ "$EUID" -eq 0 && "$staging" == /tmp/oneshowlearn-workbench-* && -d "$staging" && ! -L "$staging" ]] || exit 1
 test -f "$staging/client/index.html"
 test -d "$staging/client/assets"
@@ -73,9 +73,9 @@ for(const [name,route] of [['offer','/api/commerce/offer'],['status','/api/auth/
  const response=await fetch('https://oneshowlearn.com'+route,{signal:AbortSignal.timeout(20000)});
  assert.equal(response.status,200);assert.deepEqual(await response.json(),JSON.parse(readFileSync(backup+'/'+name+'.before.json')));
 }
-for(const route of ['/api/auth/profile','/api/auth/identities','/api/commerce/orders','/api/learning/me/projects','/api/learning/ai/conversations'])assert.equal((await fetch('https://oneshowlearn.com'+route,{signal:AbortSignal.timeout(20000)})).status,401,route);
+for(const route of ['/api/auth/profile','/api/auth/identities','/api/commerce/orders','/api/learning/me/projects','/api/learning/notes','/api/learning/ai/conversations','/api/community','/api/community/articles/1'])assert.equal((await fetch('https://oneshowlearn.com'+route,{signal:AbortSignal.timeout(20000)})).status,401,route);
 const before=new DatabaseSync(backup+'/before.db',{readOnly:true}),live=new DatabaseSync('/var/www/oneshowlearn/data/oneshowlearn.db',{readOnly:true});
-for(const table of ['users','orders','entitlements','learning_progress','learning_notes','workspace_state','tutor_conversations','tutor_turns']){
+for(const table of ['users','orders','entitlements','progress','learning_progress','learning_notes','workspace_state','tutor_conversations','tutor_turns']){
  const keys=before.prepare(`PRAGMA table_info("${table}")`).all().filter(c=>c.pk).sort((a,b)=>a.pk-b.pk).map(c=>c.name);
  assert.ok(keys.length,table);
  const query=keys.map(k=>`"${k}"`).join(','),old=before.prepare(`SELECT ${query} FROM "${table}"`).all();
@@ -85,7 +85,7 @@ for(const table of ['users','orders','entitlements','learning_progress','learnin
 // Order identity and historical price are immutable; settlement status may advance
 // normally from real traffic and is deliberately not frozen by this release.
 for(const old of before.prepare('SELECT id,order_no,user_id,amount_cents FROM orders').all())assert.deepEqual(live.prepare('SELECT id,order_no,user_id,amount_cents FROM orders WHERE id=?').get(old.id),old);
-for(const table of ['payment_configuration','login_configuration','ai_configuration','service_settings','learning_entry_settings','products','project_packs','learning_paths','project_steps','learning_lessons','lesson_placements','content_library','content_items','practice_projects','practice_project_settings','practice_project_stages']){
+for(const table of ['payment_configuration','login_configuration','ai_configuration','service_settings','learning_entry_settings','products','project_packs','learning_paths','project_steps','learning_lessons','lesson_placements','content_library','content_items','practice_projects','practice_project_settings','practice_project_stages','community_records','community_history','assets','asset_storage']){
  if(!before.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(table))continue;
  assert.deepEqual(live.prepare(`SELECT * FROM "${table}" ORDER BY rowid`).all(),before.prepare(`SELECT * FROM "${table}" ORDER BY rowid`).all(),`unchanged ${table}`);
 }

@@ -48,3 +48,16 @@ bounded order GETs, anonymous private access, schema/record identities/historica
 amounts and unchanged provider/pricing/catalogue/backend/environment/dependencies
 and all service process identities. No production profile/password/order/config
 writes, fixtures, migrations, gateway/AI/SMS/email requests or service restarts.
+
+## Completed release
+
+- Published source upload: `ee624f1`; settings implementation: `10cf0ba`.
+- Exact live frontend entry: `301dba19901fc5a2d284c7ed5ef0df4ea88c2b842ac55b22ba6f6ad2b9161dee`.
+- Recoverable backup: `/var/backups/oneshowlearn/settings-refinement-JjQs8tT0`.
+- Passed 39 HTTPS route entries, 45 exact asset hashes, 64-table/schema/private
+  identity/configuration and historical order-amount preservation checks.
+- Current-owner profile/version, masked identities and recent-order GETs pass;
+  anonymous private endpoints remain gated. Live browser confirms new heading,
+  guest privacy and authoritative ¥499 offer.
+- Protected backend/environment/dependency/site hashes and all four service
+  process snapshots are unchanged. No production writes/providers or restart.

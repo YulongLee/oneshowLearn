@@ -1,11 +1,12 @@
 import {useEffect,useRef,useState} from 'react';
 import {ArrowRight,BookOpenText,CalendarBlank,ChartBar,Check,CheckCircle,ClipboardText,Code,CreditCard,Cube,FileText,Lightbulb,Play,Plus,Robot,RocketLaunch,SquaresFour,Trophy,X} from '@phosphor-icons/react';
 import {api} from './api.js';
+import {sharedRead} from './shared-reads.js';
 import {useSitePage} from './useSitePage.js';
 import {localDay,courseArt} from './Workspace.jsx';
 import {courseLearningPath} from './course-reader-model.js';
 import {currentProject,currentProductAchievement,recentStudyItems,watchPercent,workbenchSelection,workbenchPhaseState} from './workbench-model.js';
-import {lessonLink} from './LessonWorkspace.jsx';
+import {lessonLink} from './lesson-link.js';
 import {liveAchievements,STAGES} from './personal-model.js';
 import {safeResourceUrl} from './opc-model.js';
 import {prepareTutorQuestion,useAiCapabilities} from './useAiCapabilities.js';
@@ -124,7 +125,7 @@ export function Workbench({model,navigate,notify}) {
   useEffect(()=>{
     let active=true;setStored(blank(accountId));
     const requests={projects:'/learning/projects?limit=12',entry:'/learning/entry',...(accountId?{mine:'/learning/me/projects'}:{})};
-    Promise.all(Object.entries(requests).map(async([key,url])=>{try{return [key,await api(url)];}catch(e){return [key,{error:e.message}];}})).then(results=>{
+    Promise.all(Object.entries(requests).map(async([key,url])=>{try{return [key,await (key==='entry'?sharedRead(url):api(url))];}catch(e){return [key,{error:e.message}];}})).then(results=>{
       if(!active)return;const data=Object.fromEntries(results),errors=Object.fromEntries(results.filter(([,value])=>value.error).map(([key,value])=>[key,value.error]));
       setStored({accountId,loading:false,projects:data.projects?.items||[],mine:data.mine?.items||[],entry:data.entry||{},errors});
     });return()=>{active=false;};

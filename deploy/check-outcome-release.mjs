@@ -6,7 +6,7 @@ import {createRequire} from 'node:module';
 import {parseEnv} from 'node:util';
 import {DatabaseSync} from 'node:sqlite';
 const backup=process.argv[2],app='/var/www/oneshowlearn';
-assert.match(backup,/^\/var\/backups\/oneshowlearn\/(?:outcome-library|settings-refinement)-[a-zA-Z0-9]+$/);
+assert.match(backup,/^\/var\/backups\/oneshowlearn\/(?:outcome-library|settings-refinement|performance)-[a-zA-Z0-9]+$/);
 const hash=v=>createHash('sha256').update(JSON.stringify(v)).digest('hex'),quote=s=>'"'+s.replaceAll('"','""')+'"';
 const db=new DatabaseSync(app+'/data/oneshowlearn.db',{readOnly:true}),before=new DatabaseSync(backup+'/before.db',{readOnly:true});
 const secret=parseEnv(readFileSync('/etc/oneshowlearn/oneshowlearn.env','utf8')).JWT_SECRET;

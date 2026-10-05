@@ -1,5 +1,5 @@
 import {BrandIdentity} from './BrandIdentity.jsx';
-import {ServiceLinks} from './ServiceCenter.jsx';
+import {ServiceLinks} from './ServiceLinks.jsx';
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle, EnvelopeSimple, DeviceMobile, LockKey, Eye, EyeSlash, X } from "@phosphor-icons/react";
 import { api, getToken, setToken } from "./api.js";

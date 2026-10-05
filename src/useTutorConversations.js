@@ -52,9 +52,10 @@ export function useTutorConversations(userId){
   useEffect(()=>{
     if(!id||!userId)return;
     let active=true,inFlight=false;
-    const sync=async()=>{if(inFlight||operation.current)return;inFlight=true;try{const value=await api(root+'/'+id);if(active){accept(value,id);setError(read(prefix+'request:'+id)?uncertainty:'');}}catch(e){if(active)setError('暂时无法同步对话：'+e.message+'。已保存的记录不会删除。');}finally{inFlight=false;}};
+    const sync=async()=>{if(inFlight||operation.current||document.hidden&&!pending)return;inFlight=true;try{const value=await api(root+'/'+id);if(active){accept(value,id);setError(read(prefix+'request:'+id)?uncertainty:'');}}catch(e){if(active)setError('暂时无法同步对话：'+e.message+'。已保存的记录不会删除。');}finally{inFlight=false;}};
     const timer=setInterval(sync,pending?1500:15000);window.addEventListener('focus',sync);
-    return()=>{active=false;clearInterval(timer);window.removeEventListener('focus',sync);};
+    const visible=()=>{if(!document.hidden)sync();};document.addEventListener('visibilitychange',visible);
+    return()=>{active=false;clearInterval(timer);window.removeEventListener('focus',sync);document.removeEventListener('visibilitychange',visible);};
   },[id,pending?.id,userId]);
   const open=async(target)=>{
     if(operation.current||loading)return;const ticket=++epoch.current;

@@ -21,10 +21,8 @@ import { CourseLessonCover } from './CourseLessonCover.jsx';
 import './course-lesson-refinement.css';
 import {FavoriteButton} from './FavoriteButton.jsx';
 
-export const lessonLink = (p) =>
-  p.kind === "project"
-    ? `/projects/${encodeURIComponent(p.owner_slug)}/workspace/${p.id}`
-    : `/learn/${encodeURIComponent(p.owner_slug)}/lessons/${p.id}`;
+import {lessonLink} from './lesson-link.js';
+export {lessonLink} from './lesson-link.js';
 const timestamp = (value) =>
   `${Math.floor((value || 0) / 60)
     .toString()

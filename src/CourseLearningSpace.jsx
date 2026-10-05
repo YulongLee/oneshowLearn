@@ -9,6 +9,7 @@ import {
   LockKey,
 } from "@phosphor-icons/react";
 import { api } from "./api.js";
+import { sharedRead } from "./shared-reads.js";
 import { canManage } from "./platforms.js";
 import { chooseEntry, entryLessonPath } from "./course-entry-model.js";
 import {
@@ -143,7 +144,7 @@ export function CourseLearningSpace({ route = "/opc", model, navigate }) {
     let active = true;
     setState({ loading: true });
     Promise.all([
-      api("/learning/entry"),
+      sharedRead("/learning/entry"),
       api("/opc/curriculum").catch((e) => ({ phases: [], error: e.message })),
     ])
       .then(([data, curriculum]) => {

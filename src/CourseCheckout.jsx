@@ -3,7 +3,7 @@ import QRCode from 'qrcode';
 import {api,money} from './api.js';
 import {Modal} from './PersonalShared.jsx';
 import {officialAlipayUrl} from './payment-navigation.js';
-import {ServiceLinks} from './ServiceCenter.jsx';
+import {ServiceLinks} from './ServiceLinks.jsx';
 export function CourseCheckout({offer,close,onPaid,initialOrderId=null}){
   const [channel,setChannel]=useState(offer.channels.find(c=>c.available)?.id||'wechat'),[order,setOrder]=useState(null),[orders,setOrders]=useState([]),[busy,setBusy]=useState(false),[busyAction,setBusyAction]=useState(''),[error,setError]=useState(''),[qrResult,setQrResult]=useState(null);
   // Never display the previous channel's image while a new QR is being encoded.

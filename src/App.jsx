@@ -1,8 +1,4 @@
-import { CourseReader } from "./CourseReader.jsx";
-import { AccountSettings } from './AccountSettings.jsx';
-import {LegalPage,SupportCenter,AdminService,AdminSupport} from './ServiceCenter.jsx';
 import {createRouteNavigation} from './navigation-save.js';
-import { ProjectsHub } from "./ProjectsHub.jsx";
 import { courseLearningPath, learningSlug } from "./course-reader-model.js";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -55,32 +51,43 @@ import {
   Wrench,
   X,
 } from "@phosphor-icons/react";
-import {
-  AdminLogin,
-  AdminOrders,
-  AdminShell,
-  AdminUsers,
-  AdminEmail,
-  AdminAccountAudit,
-} from "./Admin.jsx";
 import { api, getToken, money, subscribeToSession } from "./api.js";
-import { AuthPage, UserAuthCard, AccountPage } from "./Auth.jsx";
 import { canManage } from "./platforms.js";
 import { PublicHomepage } from "./PublicHomepage.jsx";
-import { CourseOfferPage } from './CourseOffer.jsx';
-import { Workbench } from "./Workbench.jsx";
-import { WorkspaceShell, WorkspaceHome } from "./Workspace.jsx";
-import { CourseLearningSpace } from "./CourseLearningSpace.jsx";
-import { ProjectsCatalog } from "./ProjectsCatalog.jsx";
 import {FavoriteButton} from './FavoriteButton.jsx';
-import { AiTutor } from "./AiTutor.jsx";
-import { ResourceCenter } from "./ResourceCenter.jsx";
 import {
   normalizeWorkspaceRoute,
   workspaceSearchPrompts,
 } from "./workspace-navigation.js";
-import { PersonalWorkspace } from "./PersonalWorkspace.jsx";
-import { WorkspacePages } from "./WorkspacePages.jsx";
+import {RouteLoadBoundary} from './RouteLoadBoundary.jsx';
+
+// Stable module-scope lazy components preserve the mounted workspace and drafts.
+const CourseReader=lazy(()=>import('./CourseReader.jsx').then(m=>({default:m.CourseReader})));
+const AccountSettings=lazy(()=>import('./AccountSettings.jsx').then(m=>({default:m.AccountSettings})));
+const ProjectsHub=lazy(()=>import('./ProjectsHub.jsx').then(m=>({default:m.ProjectsHub})));
+const CourseOfferPage=lazy(()=>import('./CourseOffer.jsx').then(m=>({default:m.CourseOfferPage})));
+const Workbench=lazy(()=>import('./Workbench.jsx').then(m=>({default:m.Workbench})));
+const WorkspaceShell=lazy(()=>import('./Workspace.jsx').then(m=>({default:m.WorkspaceShell})));
+const WorkspaceHome=lazy(()=>import('./Workspace.jsx').then(m=>({default:m.WorkspaceHome})));
+const CourseLearningSpace=lazy(()=>import('./CourseLearningSpace.jsx').then(m=>({default:m.CourseLearningSpace})));
+const ProjectsCatalog=lazy(()=>import('./ProjectsCatalog.jsx').then(m=>({default:m.ProjectsCatalog})));
+const AiTutor=lazy(()=>import('./AiTutor.jsx').then(m=>({default:m.AiTutor})));
+const ResourceCenter=lazy(()=>import('./ResourceCenter.jsx').then(m=>({default:m.ResourceCenter})));
+const PersonalWorkspace=lazy(()=>import('./PersonalWorkspace.jsx').then(m=>({default:m.PersonalWorkspace})));
+const WorkspacePages=lazy(()=>import('./WorkspacePages.jsx').then(m=>({default:m.WorkspacePages})));
+const AuthPage=lazy(()=>import('./Auth.jsx').then(m=>({default:m.AuthPage})));
+const UserAuthCard=lazy(()=>import('./Auth.jsx').then(m=>({default:m.UserAuthCard})));
+const AccountPage=lazy(()=>import('./Auth.jsx').then(m=>({default:m.AccountPage})));
+const LegalPage=lazy(()=>import('./ServiceCenter.jsx').then(m=>({default:m.LegalPage})));
+const SupportCenter=lazy(()=>import('./ServiceCenter.jsx').then(m=>({default:m.SupportCenter})));
+const AdminService=lazy(()=>import('./ServiceCenter.jsx').then(m=>({default:m.AdminService})));
+const AdminSupport=lazy(()=>import('./ServiceCenter.jsx').then(m=>({default:m.AdminSupport})));
+const AdminLogin=lazy(()=>import('./Admin.jsx').then(m=>({default:m.AdminLogin})));
+const AdminShell=lazy(()=>import('./Admin.jsx').then(m=>({default:m.AdminShell})));
+const AdminOrders=lazy(()=>import('./Admin.jsx').then(m=>({default:m.AdminOrders})));
+const AdminUsers=lazy(()=>import('./Admin.jsx').then(m=>({default:m.AdminUsers})));
+const AdminEmail=lazy(()=>import('./Admin.jsx').then(m=>({default:m.AdminEmail})));
+const AdminAccountAudit=lazy(()=>import('./Admin.jsx').then(m=>({default:m.AdminAccountAudit})));
 
 // Management editors are not needed by visitors or learners. Keep the shell
 // mounted while loading the selected editor, instead of loading every CMS first.
@@ -957,6 +964,7 @@ function LearnerWorkspace({ route: rawRoute, navigate, notify }) {
     >
       {(model) => {
         const props = { model, navigate: go, notify };
+        const renderPage=()=>{
         if (route === '/account') return <AccountSettings {...props}/>;
         if (route === '/support') return <SupportCenter {...props}/>;
         if (route === "/app") return <Workbench {...props} />;
@@ -1033,6 +1041,8 @@ function LearnerWorkspace({ route: rawRoute, navigate, notify }) {
         )
           return <WorkspacePages route={route} {...props} />;
         return <WorkspaceHome {...props} />;
+        };
+        return <RouteLoadBoundary resetKey={route}><Suspense fallback={<p role="status">正在加载页面…</p>}>{renderPage()}</Suspense></RouteLoadBoundary>;
       }}
     </WorkspaceShell>
   );
@@ -1146,7 +1156,7 @@ export function App() {
     );
   return (
     <>
-      {content}
+      <RouteLoadBoundary resetKey={route}><Suspense fallback={<p role="status">正在加载页面…</p>}>{content}</Suspense></RouteLoadBoundary>
       {navigationStatus && <div className="navigation-save-status" role="status">{navigationStatus}</div>}
       <Toast text={toast} />
     </>

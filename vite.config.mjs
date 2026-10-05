@@ -6,6 +6,7 @@ const apiPort = process.env.API_PORT || "8787";
 export default defineConfig({
   build: {
     outDir: "dist/client",
+    manifest: true,
   },
   optimizeDeps: {
     include: ["react", "react-dom/client"],

@@ -73,7 +73,7 @@ test('embedded offer responds to usable workspace width without overriding sideb
 import './sidebar-offer.test.mjs';
 test('sidebar purchase and preview entries never create orders or invent prices',()=>{
   const card=readFileSync(new URL('../src/SidebarCourseOffer.jsx',import.meta.url),'utf8');
-  assert.match(card,/api\('\/commerce\/offer'\)/);
+  assert.match(card,/sharedRead\('\/commerce\/offer'\)/);
   assert.match(card,/offer.originalPriceCents>offer.priceCents/);
   assert.match(card,/navigate\('\/membership'\)/);
   assert.doesNotMatch(card,/399|999|799|倒计时|永久|无限|commerce\/orders/);
@@ -91,7 +91,7 @@ test('sidebar revalidation preserves its last successful offer and ignores obsol
   assert.doesNotMatch(card,/setOffer\(null\)/,'Neither route changes nor temporary failures clear displayed prices');
   assert.match(card,/if\(active\)setOffer\(value\)/);
   assert.match(card,/return\(\)=>\{active=false;\}/,'A late response from the previous route cannot overwrite current pricing');
-  assert.match(card,/\},\[route\]\)/,'Navigation still refreshes CMS pricing');
+  assert.match(card,/\},\[route,model\?\.user\?\.id\]\)/,'Navigation and account changes still revalidate CMS pricing');
   assert.match(css,/\.ws-offer-price \{[^}]*min-height:39px/);
   assert.match(css,/\.ws-offer-billing \{ min-height:22px/);
 });
@@ -113,8 +113,8 @@ test('sales reference keeps eight benefit cards without fabricated commerce clai
   const css=readFileSync(new URL('../src/course-offer.css',import.meta.url),'utf8');
   assert.match(css,/\.co-benefits \{[^}]*repeat\(4,minmax\(0,1fr\)\)/);
   assert.match(css,/\.co-curriculum \{[^}]*repeat\(5,minmax\(0,1fr\)\)/);
-  assert.match(page,/course-sales-mascot-v2/);
-  assert.match(page,/course-sales-banner-v1/);
+  assert.match(page,/course-sales-mascot-optimized\.webp/);
+  assert.match(page,/course-sales-banner-optimized\.webp/);
   assert.doesNotMatch(page,/学员评价|1000\+|永久学习|7 天内|30天内/);
   assert.match(page,/originalPrice-price/);
   assert.match(page,/CourseCheckout offer=\{offer\}/);

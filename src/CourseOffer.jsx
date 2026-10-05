@@ -1,5 +1,5 @@
 import {BrandIdentity} from './BrandIdentity.jsx';
-import {useEffect, useRef, useState} from 'react';
+import {lazy,Suspense,useEffect, useRef, useState} from 'react';
 import {ArrowRight, BookOpenText, CheckCircle, Code, FileText, Flame, Heart, Lightning, List, LockKey, MagnifyingGlass, NotePencil, PlayCircle, Robot, ShieldCheck, ShoppingCart, UsersThree, X} from '@phosphor-icons/react';
 import {api} from './api.js';
 import {Modal} from './PersonalShared.jsx';
@@ -7,10 +7,11 @@ import {UserAuthCard} from './Auth.jsx';
 import {useWorkspaceModel} from './Workspace.jsx';
 import {courseLearningPath} from './course-reader-model.js';
 import {offerCurriculum, offerMoney, offerPrice} from './course-offer-model.js';
-import {CourseCheckout} from './CourseCheckout.jsx';
+const CourseCheckout=lazy(()=>import('./CourseCheckout.jsx').then(m=>({default:m.CourseCheckout})));
+import {sharedRead} from './shared-reads.js';
 import {paymentReturnId} from './payment-navigation.js';
-import mascot from './assets/course-sales-mascot-v2.png';
-import mountain from './assets/course-sales-banner-v1.png';
+import mascot from './assets/course-sales-mascot-optimized.webp';
+import mountain from './assets/course-sales-banner-optimized.webp';
 import './course-offer.css';
 import {ServiceSummary,ServiceLinks} from './ServiceCenter.jsx';
 
@@ -54,10 +55,10 @@ export default function CourseOffer({model,navigate,embedded=false}) {
   const returnHandled=useRef(false);
   useEffect(()=>{if(!returnOrderId||!offer||returnHandled.current)return;if(!model.user){setAuthOpen(true);return;}returnHandled.current=true;setConfirm(true);},[returnOrderId,offer,model.user?.id]);
   const purchaseRef=useRef(null);
-  useEffect(()=>{let active=true;api('/commerce/offer').then(d=>{if(active){setOffer(d);setPaymentError('');if(d.slug)setSlug(d.slug);}}).catch(e=>active&&setPaymentError(e.message));return()=>{active=false;};},[retry]);
+  useEffect(()=>{let active=true;sharedRead('/commerce/offer',{force:true}).then(d=>{if(active){setOffer(d);setPaymentError('');if(d.slug)setSlug(d.slug);}}).catch(e=>active&&setPaymentError(e.message));return()=>{active=false;};},[retry]);
   useEffect(()=>{
     let active=true;setError('');
-    Promise.all([api('/catalog/workspace'),api('/learning/entry')]).then(([result,entry])=>{
+    Promise.all([sharedRead('/catalog/workspace',{force:retry>0}),sharedRead('/learning/entry')]).then(([result,entry])=>{
       if(!active)return;setCatalog(result.items||[]);
       setSlug(current=>{
         const requested=current||new URLSearchParams(window.location.search).get('course');
@@ -93,7 +94,7 @@ export default function CourseOffer({model,navigate,embedded=false}) {
     <Content className="co-page">
       {error?<section className="co-state" role="alert"><h1>课程暂时无法加载</h1><p>{error}</p><button onClick={()=>setRetry(n=>n+1)}>重新加载</button></section>:!catalog||(slug&&!data)?<section className="co-state" role="status">正在读取课程与购买信息…</section>:!catalog.length?<section className="co-state"><BookOpenText size={36}/><h1>课程即将开放</h1><p>正式发布后，可在这里查看目录、试听内容与价格。</p><button onClick={()=>navigate('/community')}>浏览官方学习内容<ArrowRight size={16}/></button></section>:null}
       {ready&&<><div className="co-layout"><div className="co-main">
-        <section className="co-hero"><div className="co-hero-art" aria-hidden="true"><img src={mascot} alt=""/><span className="co-handwriting">Build<br/>Your AI Product<br/>Better Together</span><div className="co-art-steps"><strong>一个人<br/>也可以做出<br/>伟大的产品！</strong><span>Idea → Product</span><span>Build → Launch</span><span>Grow → Freedom</span></div></div>
+        <section className="co-hero"><div className="co-hero-art" aria-hidden="true"><img src={mascot} alt="" width="1254" height="1254" decoding="async"/><span className="co-handwriting">Build<br/>Your AI Product<br/>Better Together</span><div className="co-art-steps"><strong>一个人<br/>也可以做出<br/>伟大的产品！</strong><span>Idea → Product</span><span>Build → Launch</span><span>Grow → Freedom</span></div></div>
           <div className="co-hero-copy"><span className="co-kicker"><Flame size={15} weight="fill"/>开启你的 AI 产品之路</span><h1>AI OPC<span>一个人的产品公司</span></h1><p>从 0 到 1，用 AI 做出真正可以上线、收款、获得用户的产品。</p><div className="co-checks"><span><CheckCircle weight="fill"/>系统化的实战方法论</span><span><CheckCircle weight="fill"/>真实项目案例拆解</span><span><CheckCircle weight="fill"/>从想法到上线的学习路径</span></div><div className="co-metrics"><div><strong>{chapters.length}<small>章节</small></strong><span>已发布目录</span></div><div><strong>{items.length}<small>{data.lessons.length?'课时':'内容'}</small></strong><span>当前课程内容</span></div><div><strong>{materialCount}<small>资料</small></strong><span>配套学习资源</span></div><div><strong>{previews.length}<small>免费内容</small></strong><span>先体验，再开始</span></div></div></div>
         </section>
         {data.lessons.some(l=>l.is_demo_media)&&<p className="ls-demo-notice">课程目录已开放；当前视频与 PPT 为演示占位素材，非正式教学内容。真实视频、课件和实操材料将陆续补充，请在购买前确认内容交付情况。</p>}
@@ -108,10 +109,10 @@ export default function CourseOffer({model,navigate,embedded=false}) {
         <ServiceSummary/>
         <section className="co-questions"><header><h3>购买前，你可能想了解</h3></header>{[['如何开始试听？','点击免费试听，进入已开放的课时。完整内容以当前课程目录为准。'],['购买后如何开通？','支付渠道开放后，微信扫码付款，支付宝前往官方收银台付款。服务器核验到账后自动开通；页面未更新时可在我的订单查询。'],['包含所有项目和服务吗？','仅解锁所选课程。独立项目、会员群与 AI 服务范围，以对应说明为准。']].map(([title,copy],i)=><article key={title}><span className="co-question-icon">{String(i+1).padStart(2,'0')}</span><div><h4>{title}</h4><p>{copy}</p></div></article>)}</section>
       </aside></div>
-      <section className="co-closing"><img src={mountain} alt=""/><div className="co-closing-copy"><span className="co-closing-kicker">🎯 你的下一个产品，就从这里开始</span><h2>现在加入 OneShowLearn<br/>用 AI 实现你的想法，做出真正属于自己的产品。</h2><div className="co-closing-points"><span><CheckCircle size={16}/>更低的试错成本</span><span><CheckCircle size={16}/>更高效的开发实践</span><span><CheckCircle size={16}/>持续积累产品经验</span></div></div><div className="co-closing-action"><i>Ideas into<br/>Real Products<br/>Together</i><button onClick={jumpToPurchase}>立即了解课程<ArrowRight size={17}/></button></div><i className="co-closing-quote">一个人<br/>也可以改变世界！</i></section>
+      <section className="co-closing"><img src={mountain} alt="" width="2172" height="724" loading="lazy" decoding="async"/><div className="co-closing-copy"><span className="co-closing-kicker">🎯 你的下一个产品，就从这里开始</span><h2>现在加入 OneShowLearn<br/>用 AI 实现你的想法，做出真正属于自己的产品。</h2><div className="co-closing-points"><span><CheckCircle size={16}/>更低的试错成本</span><span><CheckCircle size={16}/>更高效的开发实践</span><span><CheckCircle size={16}/>持续积累产品经验</span></div></div><div className="co-closing-action"><i>Ideas into<br/>Real Products<br/>Together</i><button onClick={jumpToPurchase}>立即了解课程<ArrowRight size={17}/></button></div><i className="co-closing-quote">一个人<br/>也可以改变世界！</i></section>
       <footer className="co-footer"><span><ShieldCheck size={18}/>课程范围清晰可查</span><span><PlayCircle size={18}/>免费内容先行体验</span><span><LockKey size={18}/>核验到账后自动开通</span><span><NotePencil size={18}/>学习记录，账号保存</span></footer><ServiceLinks/></>}
     </Content>
     {authOpen&&<Modal title="登录学习账号" close={()=>setAuthOpen(false)}><UserAuthCard onSuccess={()=>setAuthOpen(false)}/></Modal>}
-    {confirm&&offer&&<CourseCheckout offer={offer} initialOrderId={returnOrderId} close={()=>{setConfirm(false);setReturnOrderId(null);}} onPaid={()=>{setRetry(n=>n+1);model.refresh({preserve:true});}}/>}
+    {confirm&&offer&&<Suspense fallback={<p role="status">正在打开收银台…</p>}><CourseCheckout offer={offer} initialOrderId={returnOrderId} close={()=>{setConfirm(false);setReturnOrderId(null);}} onPaid={()=>{setRetry(n=>n+1);model.refresh({preserve:true});}}/></Suspense>}
   </div>;
 }

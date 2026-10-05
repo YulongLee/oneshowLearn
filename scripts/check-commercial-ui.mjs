@@ -40,7 +40,7 @@ try{
  assert.equal((await (await fetch(base+'/api/service/public')).json()).settings.operatorName,'');
  await o.getByRole('button',{name:'发布说明',exact:true}).click();await o.getByText('服务说明已发布。').waitFor();await g.goto(base+'/legal/terms');await g.getByText('运营主体：隔离浏览器测试主体').waitFor();checks+=3;
  for(const p of [a,o]){for(const width of [390,768,1440]){await p.setViewportSize({width,height:1000});await overflow(p);}}
- for(const route of ['/admin/learning','/admin/assets','/admin/payments','/admin/login-settings','/admin/ai','/admin/community','/admin/pages']){await o.goto(base+route);await o.waitForTimeout(300);assert.equal(await o.getByText('正在加载管理页面…').count(),0);await overflow(o);}
+ for(const route of ['/admin/learning','/admin/assets','/admin/payments','/admin/login-settings','/admin/ai','/admin/community','/admin/pages']){await o.goto(base+route);await o.locator('.admin-layout').waitFor();await o.getByText('正在加载管理页面…',{exact:true}).waitFor({state:'detached'});await o.locator('.admin-content h1').waitFor();assert.equal(await o.getByText('正在加载管理页面…').count(),0);await overflow(o);}
  assert.equal(row('SELECT status FROM orders WHERE order_no=?',['BROWSER-PAID']).status,'paid');
  assert.deepEqual(errors,[]);console.log(`PASS ${checks} browser checks: private support, manual response, publication, lazy admin loading, guest paths, 390–1920px; zero script errors.`);
 }finally{await browser.close();await new Promise(r=>server.close(r));db.close();rmSync(dir,{recursive:true,force:true});}

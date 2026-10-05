@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, useEffect, useMemo, useState } from "react";
 import {FavoriteButton} from './FavoriteButton.jsx';
 import { ArrowRight, BookOpenText, CalendarCheck, Check, Crown, FileText, FolderOpen, MagnifyingGlass, NotePencil, Plus, Robot, Sparkle, Star, Trash, Trophy, UsersThree, X } from "@phosphor-icons/react";
 import "./workspace-pages.css";
-import CourseOffer from './CourseOffer.jsx';
+const CourseOffer=lazy(()=>import('./CourseOffer.jsx'));
 
 function localDate(value = new Date()) {
   return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;

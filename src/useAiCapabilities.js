@@ -12,9 +12,11 @@ export function useAiCapabilities(accountId) {
         if (!controller.signal.aborted) setCap(current=>current||{ available: false, reason: error.message });
       }).finally(()=>{pending=false;});
     };
-    refresh();const timer=setInterval(refresh,30000);
+    const visibleRefresh=()=>{if(!document.hidden)refresh();};
+    refresh();const timer=setInterval(visibleRefresh,30000);
     window.addEventListener('focus',refresh);window.addEventListener('oneshowlearn:ai-config',refresh);
-    return () => {controller.abort();clearInterval(timer);window.removeEventListener('focus',refresh);window.removeEventListener('oneshowlearn:ai-config',refresh);};
+    document.addEventListener('visibilitychange',visibleRefresh);
+    return () => {controller.abort();clearInterval(timer);window.removeEventListener('focus',refresh);window.removeEventListener('oneshowlearn:ai-config',refresh);document.removeEventListener('visibilitychange',visibleRefresh);};
   }, [accountId]);
   return cap;
 }

@@ -35,7 +35,7 @@ test('missing cases use clearly named learning directions, not fabricated produc
 });
 test('homepage preserves backend configuration and has no fabricated testimonials or totals',()=>{
   const source=readFileSync(new URL('../src/PublicHomepage.jsx',import.meta.url),'utf8');
-  assert.match(source,/api\('\/commerce\/offer'\)/);
+  assert.match(source,/sharedRead\('\/commerce\/offer',\{force:true\}\)/);
   assert.match(source,/useSitePage\('public',configuration\)/);
   assert.match(source,/id="roadmap"/);assert.match(source,/id="hot-courses"/);
   assert.doesNotMatch(source,/10,000|10000|学员真实反馈|STUDENT VOICES|免费试听前2节/);

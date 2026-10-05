@@ -1,6 +1,6 @@
 import {useEffect,useState} from 'react';
 import {ArrowRight,CheckCircle,Play} from '@phosphor-icons/react';
-import {api} from './api.js';
+import {sharedRead} from './shared-reads.js';
 import {offerMoney} from './course-offer-model.js';
 import {courseLearningPath} from './course-reader-model.js';
 import {sidebarCourseAccess} from './workbench-model.js';
@@ -13,13 +13,13 @@ export function SidebarCourseOffer({route,navigate,model}) {
   const [catalogue,setCatalogue]=useState({});
   useEffect(()=>{
     let active=true;
-    api('/commerce/offer').then(value=>{if(active)setOffer(value);}).catch(()=>{
+    sharedRead('/commerce/offer').then(value=>{if(active)setOffer(value);}).catch(()=>{
       // A temporary refresh failure must not collapse the persistent sidebar.
       // With no successful response, retain the honest price-unavailable label.
     });
-    api('/learning/entry').then(value=>{if(active)setCatalogue(sidebarCatalogue(value));}).catch(()=>{});
+    sharedRead('/learning/entry').then(value=>{if(active)setCatalogue(sidebarCatalogue(value));}).catch(()=>{});
     return()=>{active=false;};
-  },[route]);
+  },[route,model?.user?.id]);
   const priced=Number.isInteger(offer?.priceCents)&&offer.priceCents>=0;
   const discounted=priced&&Number.isInteger(offer?.originalPriceCents)&&offer.originalPriceCents>offer.priceCents;
   const access=sidebarCourseAccess(offer,model), learning=access==='unlocked';

@@ -1,0 +1,2 @@
+// Keep public navigation independent of the support editor and Markdown parser.
+export function ServiceLinks({compact=false}){return <nav className={`service-links${compact?' is-compact':''}`} aria-label="协议与服务"><a href="/legal/terms" target="_blank" rel="noopener noreferrer">用户协议</a><a href="/legal/privacy" target="_blank" rel="noopener noreferrer">隐私说明</a><a href="/legal/purchase" target="_blank" rel="noopener noreferrer">购买说明</a><a href="/support" target="_blank" rel="noopener noreferrer">帮助与售后</a></nav>;}

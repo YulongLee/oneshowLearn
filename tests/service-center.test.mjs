@@ -89,7 +89,7 @@ test('service publications and private manual support never mutate payment recor
 });
 
 test('UI exposes truthful service boundaries, safe documents and mobile payment guidance',()=>{
-  const ui=readFileSync(new URL('../src/ServiceCenter.jsx',import.meta.url),'utf8'),checkout=readFileSync(new URL('../src/CourseCheckout.jsx',import.meta.url),'utf8');
+  const ui=readFileSync(new URL('../src/ServiceCenter.jsx',import.meta.url),'utf8')+readFileSync(new URL('../src/ServiceLinks.jsx',import.meta.url),'utf8'),checkout=readFileSync(new URL('../src/CourseCheckout.jsx',import.meta.url),'utf8');
   assert.match(ui,/skipHtml/);assert.match(ui,/img:\(\)=>null/);assert.match(ui,/If-Match/);assert.match(ui,/oneshowlearn:before-navigate/);
   assert.match(ui,/退款申请由管理员人工核实/);assert.match(ui,/未填写的联系信息不会被编造展示/);assert.match(ui,/\/legal\/privacy/);
   assert.match(checkout,/同一部手机/);assert.match(checkout,/另一设备/);assert.match(checkout,/官方页面显示为准/);assert.match(checkout,/ServiceLinks compact/);

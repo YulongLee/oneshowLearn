@@ -1,5 +1,9 @@
 export const ACCOUNT_SECTIONS = ['profile','security','preferences','orders'];
 export function accountSection(value) { return ACCOUNT_SECTIONS.includes(value) ? value : 'profile'; }
+export function accountMenuRequest(search) {
+  const params=new URLSearchParams(search);
+  return {section:accountSection(params.get('section')),logout:params.get('section')==='security'&&params.get('confirmLogout')==='current'?'current':''};
+}
 export function profileNameError(value) {
   const length=String(value??'').trim().length;
   return length<2||length>80?'昵称需为 2–80 个字，不能只填写空格。':'';

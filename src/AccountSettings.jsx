@@ -6,14 +6,14 @@ import { PLAYBACK_RATES, playbackRate } from './player-model.js';
 import './account-settings.css';
 import { LoginBindings } from './ExternalLogin.jsx';
 import {AccountOrders} from './AccountOrders.jsx';
-import {accountSection,profileNameError,profileSaveLabel} from './account-center-model.js';
+import {accountSection,accountMenuRequest,profileNameError,profileSaveLabel} from './account-center-model.js';
 
 export function AccountSettings({ model, navigate, notify }) {
   return <div className="account-settings"><header className="as-heading"><h1>设置中心</h1><p>管理个人资料、账号安全与订单。</p></header><Gate model={model} navigate={navigate}><Settings key={model.user?.id} model={model} navigate={navigate} notify={notify}/></Gate></div>;
 }
 function Settings({ model, navigate, notify }) {
-  const [tab,setTab]=useState('profile'),[saved,setSaved]=useState(null),[draft,setDraft]=useState(null);
-  const [error,setError]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[conflict,setConflict]=useState(false),[logoutConfirm,setLogoutConfirm]=useState(''),[reloadConfirm,setReloadConfirm]=useState(false);
+  const [tab,setTab]=useState(()=>accountMenuRequest(window.location.search).section),[saved,setSaved]=useState(null),[draft,setDraft]=useState(null);
+  const [error,setError]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[conflict,setConflict]=useState(false),[logoutConfirm,setLogoutConfirm]=useState(()=>accountMenuRequest(window.location.search).logout),[reloadConfirm,setReloadConfirm]=useState(false);
   const [password,setPassword]=useState({currentPassword:'',newPassword:'',confirm:''});
   const [nameError,setNameError]=useState(''),[profileFailed,setProfileFailed]=useState(false),[profileSaved,setProfileSaved]=useState(false);
   const [rate,setRate]=useState(()=>{try{return playbackRate(localStorage.getItem('osl-playback-rate'));}catch{return 1;}});
@@ -31,6 +31,11 @@ function Settings({ model, navigate, notify }) {
   },[dirty,passwordDirty]);
   // Keep section editors mounted; switching categories never discards drafts.
   const chooseSection=id=>{if(working.current)return;setTab(accountSection(id));if(!conflict)setError('');};
+  useEffect(()=>{
+    const request=e=>{if(e.detail?.userId!==model.user.id||working.current)return;chooseSection(e.detail.section);if(e.detail.logout==='current')setLogoutConfirm('current');};
+    window.addEventListener('oneshowlearn:account-section',request);
+    return()=>window.removeEventListener('oneshowlearn:account-section',request);
+  },[model.user.id,conflict]);
   const editProfile=patch=>{setDraft(value=>({...value,...patch}));setProfileFailed(false);setProfileSaved(false);if('name' in patch)setNameError('');};
   const save=async(e)=>{e.preventDefault();if(working.current||!dirty||conflict)return;const invalid=profileNameError(draft.name);setNameError(invalid);if(invalid){document.getElementById('account-name')?.focus();return;}working.current=true;setBusy(true);setError('');setProfileFailed(false);try{
     const result=await api('/auth/profile',{method:'PUT',headers:{'If-Match':saved.version},body:JSON.stringify({name:draft.name,bio:draft.bio,avatar:draft.avatar})});

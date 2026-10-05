@@ -13,6 +13,7 @@ const routes = ['/', '/app', '/app/', '/opc', '/opc/phase/2', '/paths', '/projec
 routes.push('/admin/payments');
 routes.push('/membership/', '/course-offer');
 routes.push('/account', '/account/', '/admin/account');
+routes.push('/account?section=orders','/account?section=security&confirmLogout=current');
 routes.push('/admin/login-settings', '/admin/email');
 routes.push('/legal/terms','/legal/privacy','/legal/purchase','/support','/admin/service','/admin/support');
 routes.push('/opc/lessons/1','/projects/preview-project-2/workspace');

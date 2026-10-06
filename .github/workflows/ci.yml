@@ -22,7 +22,23 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run check:engineering
       - run: npm run test:engineering
-      - run: npm test
+      - name: Business regressions with actionable failure diagnostics
+        shell: bash
+        run: |
+          set +e
+          npm test > "$RUNNER_TEMP/oneshowlearn-regressions.log" 2>&1
+          result=$?
+          cat "$RUNNER_TEMP/oneshowlearn-regressions.log"
+          if [ "$result" -ne 0 ]; then
+            node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const lines=readFileSync(process.env.RUNNER_TEMP+'/oneshowlearn-regressions.log','utf8').split('\n');
+          const index=lines.findIndex(s=>/not ok|✖|ENOENT|AssertionError|Error:/.test(s));
+          const message=lines.slice(Math.max(0,index),Math.max(0,index)+36).join('\n').slice(0,5000).replace(/[A-Za-z0-9+/=]{80,}/g,'[long fixture value omitted]');
+          console.log('::error title=Business regression failure::'+message.replaceAll('%','%25').replaceAll('\r','%0D').replaceAll('\n','%0A'));
+          NODE
+          fi
+          exit "$result"
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser

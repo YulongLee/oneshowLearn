@@ -5,6 +5,7 @@ import {db,row,rows,run} from './db.mjs';
 import {requireAuth,requireOwner} from './auth.mjs';
 import {rateLimit} from './account-security.mjs';
 import {SERVICE_DEFAULTS,SUPPORT_CATEGORIES,SUPPORT_STATES} from './service-definition.mjs';
+import {listPage} from './list-page.mjs';
 
 const text=n=>z.string().trim().max(n);
 const settingsSchema=z.object(Object.fromEntries(Object.keys(SERVICE_DEFAULTS).map(key=>[key,key==='contactEmail'?text(200).refine(v=>!v||z.string().email().safeParse(v).success):text(key.endsWith('Body')?30000:key==='refundPolicy'?4000:1000)]))).strict();
@@ -33,8 +34,8 @@ export function serviceRouter(){
     if(!result)return fail(res,409,'草稿不存在或版本已更新，请重新载入');res.json({version:String(result.version),public:publicService()});
   });
   router.get('/admin/service/history/:id',requireOwner,(req,res)=>{const h=row('SELECT payload FROM service_history WHERE id=?',[Number(req.params.id)]);if(!h)return fail(res,404,'历史说明不存在');res.json({draft:JSON.parse(h.payload)});});
-  router.get('/support/orders',requireAuth,(req,res)=>res.json({items:rows("SELECT o.id,o.order_no AS orderNo,o.status,o.amount_cents AS amountCents,GROUP_CONCAT(oi.title,'、') AS title FROM orders o LEFT JOIN order_items oi ON oi.order_id=o.id WHERE o.user_id=? GROUP BY o.id ORDER BY o.id DESC LIMIT 100",[req.user.id])}));
-  router.get('/support/requests',requireAuth,(req,res)=>res.json({items:rows('SELECT id FROM support_requests WHERE user_id=? ORDER BY id DESC LIMIT 100',[req.user.id]).map(x=>view(x.id))}));
+  router.get('/support/orders',requireAuth,(req,res)=>{const p=listPage(req.query,{size:20}),total=row('SELECT COUNT(*) n FROM orders WHERE user_id=? AND instr(lower(order_no),lower(?))>0',[req.user.id,p.q]).n;res.json({items:rows("SELECT o.id,o.order_no AS orderNo,o.status,o.amount_cents AS amountCents,GROUP_CONCAT(oi.title,'、') AS title FROM orders o LEFT JOIN order_items oi ON oi.order_id=o.id WHERE o.user_id=? AND instr(lower(o.order_no),lower(?))>0 GROUP BY o.id ORDER BY o.id DESC LIMIT ? OFFSET ?",[req.user.id,p.q,p.limit,p.offset]),total,...p,nextOffset:p.offset+p.limit<total?p.offset+p.limit:null});});
+  router.get('/support/requests',requireAuth,(req,res)=>{const p=listPage(req.query),total=row('SELECT COUNT(*) n FROM support_requests WHERE user_id=?',[req.user.id]).n;res.json({items:rows('SELECT id FROM support_requests WHERE user_id=? ORDER BY id DESC LIMIT ? OFFSET ?',[req.user.id,p.limit,p.offset]).map(x=>view(x.id)),total,...p,nextOffset:p.offset+p.limit<total?p.offset+p.limit:null});});
   router.get('/support/requests/:id',requireAuth,(req,res)=>{const s=row('SELECT id FROM support_requests WHERE id=? AND user_id=?',[Number(req.params.id),req.user.id]);if(!s)return fail(res,404,'申请不存在');res.json({item:view(s.id)});});
   router.post('/support/requests',requireAuth,(req,res)=>{
     const parsed=requestSchema.safeParse(req.body);if(!parsed.success)return fail(res,400,'请填写类别、标题及至少 10 个字的问题说明');
@@ -48,7 +49,7 @@ export function serviceRouter(){
     const id=transaction(()=>{const id=Number(run('INSERT INTO support_requests(user_id,order_id,category,title,request_key,payload_hash) VALUES(?,?,?,?,?,?)',[req.user.id,d.orderId,d.category,d.title,d.requestKey,hash]).lastInsertRowid);run("INSERT INTO support_messages(request_id,author_id,author_type,message,request_key,payload_hash) VALUES(?,?,'user',?,?,?)",[id,req.user.id,d.message,d.requestKey,hash]);return id;});
     res.status(201).json({item:view(id)});
   });
-  router.get('/admin/support',requireOwner,(req,res)=>{const state=SUPPORT_STATES.some(x=>x[0]===req.query.status)?req.query.status:'';res.json({items:rows('SELECT id,user_id FROM support_requests WHERE (?=\'\' OR status=?) ORDER BY id DESC LIMIT 100',[state,state]).map(s=>({...view(s.id),accountId:s.user_id}))});});
+  router.get('/admin/support',requireOwner,(req,res)=>{const state=SUPPORT_STATES.some(x=>x[0]===req.query.status)?req.query.status:'',p=listPage(req.query),total=row("SELECT COUNT(*) n FROM support_requests WHERE (?='' OR status=?)",[state,state]).n;res.json({items:rows("SELECT id,user_id FROM support_requests WHERE (?='' OR status=?) ORDER BY id DESC LIMIT ? OFFSET ?",[state,state,p.limit,p.offset]).map(s=>({...view(s.id),accountId:s.user_id})),total,...p,nextOffset:p.offset+p.limit<total?p.offset+p.limit:null});});
   const reply=(admin)=>(req,res)=>{
     const parsed=replySchema.safeParse(req.body);if(!parsed.success||!admin&&parsed.data.status!==undefined)return fail(res,400,'回复内容或状态格式不正确');
     if(!/^\d+$/.test(req.headers['if-match']||''))return fail(res,428,'请重新读取申请后回复');

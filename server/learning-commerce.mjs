@@ -2,8 +2,13 @@ import {db,row,rows,run} from './db.mjs';
 export function publishedProduct(id){return row(`SELECT p.* FROM products p LEFT JOIN project_packs pp ON pp.id=p.pack_id LEFT JOIN learning_paths lp ON lp.id=pp.path_id LEFT JOIN practice_projects pr ON pr.id=p.project_id LEFT JOIN practice_project_settings s ON s.project_id=pr.id WHERE p.id=? AND p.status='active' AND ((p.pack_id IS NOT NULL AND pp.status='published' AND lp.status='published') OR (p.project_id IS NOT NULL AND pr.status='published' AND s.access_type='paid'))`,[id]);}
 export function grantOrderEntitlements(order){
   for(const item of rows('SELECT p.pack_id,p.project_id FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE oi.order_id=?',[order.id])){
-    if(item.project_id)run(`INSERT INTO project_entitlements(user_id,project_id,source,status) VALUES(?,?,'purchase','active') ON CONFLICT(user_id,project_id) DO UPDATE SET status='active',source='purchase',starts_at=CURRENT_TIMESTAMP,expires_at=NULL`,[order.user_id,item.project_id]);
-    else run(`INSERT INTO entitlements(user_id,pack_id,source,status) VALUES(?,?,'purchase','active') ON CONFLICT(user_id,pack_id) DO UPDATE SET status='active',source='purchase',starts_at=CURRENT_TIMESTAMP,expires_at=NULL`,[order.user_id,item.pack_id]);
+    const table=item.project_id?'project_entitlements':'entitlements',field=item.project_id?'project_id':'pack_id',target=item.project_id||item.pack_id,kind=item.project_id?'project':'course';
+    const previous=row(`SELECT * FROM ${table} WHERE user_id=? AND ${field}=?`,[order.user_id,target]);
+    run('INSERT OR IGNORE INTO order_entitlement_grants(order_id,user_id,kind,target_id,previous_json) VALUES(?,?,?,?,?)',[order.id,order.user_id,kind,target,previous?JSON.stringify(previous):null]);
+    // The purchase projection stays usable after an earlier time-limited grant
+    // expires. Its original independent grant is retained in the ledger and is
+    // restored on a verified full refund; later manual grants are not touched.
+    run(`INSERT INTO ${table}(user_id,${field},source,status,purchase_order_id) VALUES(?,?,'purchase','active',?) ON CONFLICT(user_id,${field}) DO UPDATE SET status='active',source='purchase',starts_at=CURRENT_TIMESTAMP,expires_at=NULL,purchase_order_id=excluded.purchase_order_id`,[order.user_id,target,order.id]);
   }
 }
 export function markOrderPaid(req,res){

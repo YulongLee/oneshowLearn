@@ -24,6 +24,12 @@ import {publishedProduct,markOrderPaid} from './learning-commerce.mjs';
 import {paymentRouter,paymentNotificationRouter} from './payment-routes.mjs';
 import {startPaymentReconciliation} from './payment-lifecycle.mjs';
 import {serviceRouter} from './service-routes.mjs';
+import {workspaceSearchRouter} from './workspace-search.mjs';
+import {manualRefundRouter} from './manual-refunds.mjs';
+import {listPage} from './list-page.mjs';
+import {notificationsRouter} from './notifications.mjs';
+import {workspaceCapacityRouter} from './workspace-capacity.mjs';
+import {operationalReadinessRouter} from './operational-readiness.mjs';
 
 mkdirSync(config.uploadDir, { recursive: true });
 
@@ -89,6 +95,11 @@ export function createApp({loginProviders,assetStorage} = {}) {
   app.use('/api',aiAdminRouter());
   app.use('/api',paymentRouter());
   app.use('/api',serviceRouter());
+  app.use('/api',workspaceSearchRouter());
+  app.use('/api',manualRefundRouter());
+  app.use('/api',notificationsRouter());
+  app.use('/api',workspaceCapacityRouter());
+  app.use('/api',operationalReadinessRouter());
   app.use('/api',platformContentRouter());
   app.use('/api',communityRouter());
   app.use('/api/admin/cms',cmsRouter());
@@ -168,7 +179,7 @@ export function createApp({loginProviders,assetStorage} = {}) {
   app.post("/api/admin/content", validated(contentSchema,(req,res)=>{const d=req.validated;const result=run(`INSERT INTO content_items (step_id,type,title,body,resource_url,duration_seconds,is_preview,status,sort_order) VALUES (?,?,?,?,?,?,?,?,?)`,[d.stepId,d.type,d.title,d.body,d.resourceUrl,d.durationSeconds,d.isPreview?1:0,d.status,d.sortOrder]);res.status(201).json({id:Number(result.lastInsertRowid)});}));
   app.put("/api/admin/content/:id", validated(contentSchema,(req,res)=>{if(row('SELECT library_id FROM content_items WHERE id=?',[Number(req.params.id)])?.library_id)return res.status(409).json({error:'这份资料由统一资料库维护，请通过新版课程资料编辑引用设置，或前往统一资料库编辑正文。'});const d=req.validated;run(`UPDATE content_items SET step_id=?,type=?,title=?,body=?,resource_url=?,duration_seconds=?,is_preview=?,status=?,sort_order=?,updated_at=CURRENT_TIMESTAMP WHERE id=?`,[d.stepId,d.type,d.title,d.body,d.resourceUrl,d.durationSeconds,d.isPreview?1:0,d.status,d.sortOrder,Number(req.params.id)]);res.json({ok:true});}));
   app.delete("/api/admin/content/:id", (req,res)=>{run("DELETE FROM content_items WHERE id=?",[Number(req.params.id)]);res.status(204).end();});
-  app.get("/api/admin/orders", (_req,res)=>res.json({items:rows(`SELECT o.*,u.email,u.name,pc.provider online_provider,GROUP_CONCAT(oi.title,'、') item_titles FROM orders o JOIN users u ON u.id=o.user_id LEFT JOIN order_items oi ON oi.order_id=o.id LEFT JOIN payment_checkouts pc ON pc.order_id=o.id GROUP BY o.id ORDER BY o.created_at DESC`)}));
+  app.get("/api/admin/orders", (req,res)=>{const page=listPage(req.query);res.set('Cache-Control','private, no-store').json({items:rows(`SELECT o.*,u.email,u.name,pc.provider online_provider,GROUP_CONCAT(oi.title,'、') item_titles FROM orders o JOIN users u ON u.id=o.user_id LEFT JOIN order_items oi ON oi.order_id=o.id LEFT JOIN payment_checkouts pc ON pc.order_id=o.id WHERE instr(lower(o.order_no),lower(?))>0 GROUP BY o.id ORDER BY o.id DESC LIMIT ? OFFSET ?`,[page.q,page.limit,page.offset]),total:row('SELECT COUNT(*) n FROM orders WHERE instr(lower(order_no),lower(?))>0',[page.q]).n,...page});});
   app.post("/api/admin/orders/:id/mark-paid", markOrderPaid);
 
   app.use((error, _req, res, _next) => {

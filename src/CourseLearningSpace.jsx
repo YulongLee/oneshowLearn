@@ -96,7 +96,7 @@ function PendingLesson({
             </p>
             {error && <button onClick={retry}>重新加载</button>}
             {lesson?.locked && (
-              <button onClick={() => navigate(`/packs/${course.slug}`)}>
+              <button onClick={() => navigate(`/course-offer?course=${encodeURIComponent(course.slug)}`)}>
                 查看学习权限
               </button>
             )}

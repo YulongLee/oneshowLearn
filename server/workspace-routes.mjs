@@ -116,11 +116,6 @@ function publishedPacks(userId = 0) {
 
 function metadata({ last_progress_at: _lastProgress, ...pack }) { return pack; }
 
-function cleanFavorites(state, packs) {
-  const publishedIds = new Set(packs.map((pack) => pack.id));
-  return { ...state, favorites: state.favorites.filter((id) => publishedIds.has(id)) };
-}
-
 function workspaceStats(library, state) {
   return {
     completedItems: library.reduce((total, pack) => total + pack.completedCount, 0),
@@ -152,7 +147,9 @@ export function workspaceRouter() {
     const recent = library.filter((pack) => pack.last_progress_at).sort((a, b) =>
       b.last_progress_at - a.last_progress_at)[0];
     const snapshot = readState(req.user.id);
-    const state = cleanFavorites(snapshot.state, packs);
+    // References are private records, not a projection of the current catalogue.
+    // Missing publication metadata must not erase a learner's saved reference.
+    const state = snapshot.state;
     res.set("Cache-Control", "private, no-store");
     res.json({
       library: library.map(metadata),
@@ -172,9 +169,7 @@ export function workspaceRouter() {
       return res.status(400).json({ error: chineseMessage });
     }
     const packs = publishedPacks(req.user.id);
-    // A course may be removed after it was saved. Drop stale references without
-    // blocking unrelated task or note edits, or revealing unpublished metadata.
-    const state = cleanFavorites(parsed.data, packs);
+    const state = {...parsed.data};
     for(const item of state.achievements||[]){
       if(item.sourceProjectId&&!row('SELECT 1 FROM project_runs WHERE user_id=? AND project_id=?',[req.user.id,item.sourceProjectId]))return res.status(400).json({error:'成果只能关联自己已开始的项目'});
     }
@@ -195,6 +190,17 @@ export function workspaceRouter() {
         res.set("Cache-Control", "private, no-store");
         return res.status(409).json({ error: "工作空间已在其他页面更新，请刷新最新内容后重试，当前修改尚未保存", version: current.version });
       }
+      const publishedIds=new Set(packs.map(pack=>pack.id)),previousCourses=new Set(current.state.favorites);
+      // Preserve unavailable references for older clients which used to receive
+      // a filtered list. Only a versioned, explicit removal may discard them.
+      let removed=[];
+      try {removed=JSON.parse(req.get('X-Removed-Course-Favorites')||'[]');}catch{db.exec('ROLLBACK');return res.status(400).json({error:'取消收藏标识无效'});}
+      if(!Array.isArray(removed)||removed.some(id=>!Number.isSafeInteger(id)||id<=0)||removed.length>200){db.exec('ROLLBACK');return res.status(400).json({error:'取消收藏标识无效'});}
+      if(removed.length&&suppliedVersion===undefined){db.exec('ROLLBACK');return res.status(428).json({error:'请同步最新收藏后再取消'});}
+      if(removed.some(id=>!previousCourses.has(id)||state.favorites.includes(id))){db.exec('ROLLBACK');return res.status(400).json({error:'请核对要取消的收藏'});}
+      state.favorites=state.favorites.filter(id=>publishedIds.has(id)||previousCourses.has(id));
+      for(const id of previousCourses)if(!publishedIds.has(id)&&!removed.includes(id)&&!state.favorites.includes(id))state.favorites.push(id);
+      if(state.favorites.length>200){db.exec('ROLLBACK');return res.status(400).json({error:'收藏最多保存 200 项，请先明确取消部分收藏'});}
       // Older clients must not erase new references while editing unrelated notes.
       if(state.contentFavorites===undefined&&current.state.contentFavorites!==undefined)state.contentFavorites=current.state.contentFavorites;
       const previous=new Set((current.state.contentFavorites||[]).map(contentFavoriteKey));

@@ -23,6 +23,7 @@ export function accountOrderState(order) {
   return {label:'状态待确认',tone:'quiet'};
 }
 export function accountOrderPath(order) {
+  if(order.provider==='manual')return Number.isSafeInteger(order.id)&&order.id>0?'/support':null;
   return Number.isSafeInteger(order.id) && order.id > 0 ? `/membership?paymentReturn=${order.id}` : null;
 }
 export function accountOrderMatches(order,filter) {

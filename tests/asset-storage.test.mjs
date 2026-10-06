@@ -23,6 +23,16 @@ test('media byte ranges normalize suffix and open-ended seeks',()=>{
   for(const value of ['bytes=100-','bytes=8-5','bytes=-0','bytes=-','bytes=0-1,5-6','items=0-2','bytes=99999999999999999999-'])assert.equal(materialRange(value,100),false);
 });
 
+test('large OSS upload retains private multipart checkpoints and only recovers an exact completed manifest',async t=>{
+ const temp=await mkdtemp(path.join(tmpdir(),'osl-multipart-test-'));t.after(()=>rm(temp,{recursive:true,force:true}));const file=path.join(temp,'header.mp4');await writeFile(file,'isolated header');
+ let checkpoint,options,key,aborted,headMatch=true;
+ const client={async multipartUpload(k,_f,o){key=k;options=o;await o.progress(.5,{name:k,uploadId:'isolated-upload',doneParts:[{number:1,etag:'test'}]});throw Object.assign(Error('lost completion'),{code:'NoSuchUpload'});},async head(){return {res:{headers:{'x-oss-meta-manifest':headMatch?'manifest':'different','content-length':String(52*1024*1024),etag:'isolated'}}};},async abortMultipartUpload(k,id){aborted={k,id};}};
+ const storage=createAssetStorage(env,client),input={filename:'01234567-89ab-cdef.mp4',path:file,size:52*1024*1024,manifestDigest:'manifest',saveCheckpoint:c=>{checkpoint=c;}};
+ const result=await storage.put(input);assert.equal(options.headers['x-oss-object-acl'],'private');assert.equal(options.headers['x-oss-forbid-overwrite'],'true');assert.equal(options.partSize,8*1024*1024);assert.equal(options.parallel,2);assert.equal(result.object_key,key);assert.equal(checkpoint.uploadId,'isolated-upload');
+ await storage.put({...input,checkpoint});assert.deepEqual(options.checkpoint,checkpoint);await storage.abortCheckpoint(checkpoint);assert.deepEqual(aborted,{k:key,id:'isolated-upload'});
+ headMatch=false;await assert.rejects(()=>storage.put({...input,checkpoint}),/lost completion/);await assert.rejects(()=>storage.abortCheckpoint({...checkpoint,name:'other-project/file.mp4'}));
+});
+
 test('OSS CMS integration keeps permissions, media semantics and local compatibility',async t=>{
   const temp=await mkdtemp(path.join(tmpdir(),'oneshowlearn-oss-test-'));
   Object.assign(process.env,{NODE_ENV:'test',DATABASE_PATH:path.join(temp,'test.db'),UPLOAD_DIR:path.join(temp,'uploads'),JWT_SECRET:'asset-storage-tests-only',ASSET_STORAGE:'local'});

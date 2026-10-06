@@ -4,6 +4,7 @@ import {ArrowRight,BookOpenText,FileText,UsersThree,MagnifyingGlass,WechatLogo,C
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {api} from './api.js';
+import {useLocationSearch} from './useLocationSearch.js';
 import {Empty,Modal,Panel} from './PersonalShared.jsx';
 import {COMMUNITY_CATEGORIES,COMMUNITY_SETTINGS} from '../server/community-definition.mjs';
 import {ResourceReader} from './ResourceCenter.jsx';
@@ -36,13 +37,15 @@ function GroupCard({settings,onOpen,onFaq,ready}){
  return <section className="oc-group"><div className="ce-group-head"><WechatLogo size={28}/><small>{ready?groupAudience(settings):'正在核验入群配置'}</small></div><h2>{defaultTitle?(settings.groupAudience==='signed-in'?'学员学习交流群':'课程学员学习群'):settings.groupTitle}</h2><p>{settings.groupDescription}</p><ul><li>交流产品开发经验</li><li>获取课程与资源更新</li><li>分享实践问题与心得</li></ul><button disabled={!ready} onClick={onOpen}>{settings.groupAccessible?'查看入群二维码':'查看入群方式'}<ArrowRight size={16}/></button><small>{ready?(settings.groupExpired?'二维码已到期，等待官方更新':settings.groupReady?'入群入口按官方配置的账号权限开放':'入群方式准备中，开放后在这里更新'):'加载完成后可查看实际入群方式'}</small><button className="ce-group-rules" onClick={onFaq}>入群规则与常见问题<ArrowRight size={14}/></button></section>;
 }
 export function CommunityWorkspace({model,navigate,notify,query='',setQuery}){
+ const {search:locationSearch,revision:locationRevision}=useLocationSearch();
  const [data,setData]=useState(null),[error,setError]=useState(''),[loading,setLoading]=useState(true),[category,setCategory]=useState('all'),[topic,setTopic]=useState(''),[sort,setSort]=useState('latest'),[limit,setLimit]=useState(12),[selected,setSelected]=useState(null),[articleError,setArticleError]=useState(''),[articleLoading,setArticleLoading]=useState(false),[group,setGroup]=useState(false),[groupData,setGroupData]=useState(null),[groupLoading,setGroupLoading]=useState(false),[groupError,setGroupError]=useState('');
  const [resource,setResource]=useState(null);
- const revision=useRef(0),reading=useRef(0),groupRevision=useRef(0),listRef=useRef(null),faqRef=useRef(null);
+ const revision=useRef(0),reading=useRef(0),groupRevision=useRef(0),listRef=useRef(null),faqRef=useRef(null),linkedOpened=useRef('');
  const load=async()=>{const rev=++revision.current;setLoading(true);setError('');try{const d=await api('/community');if(rev===revision.current)setData(d);}catch(e){if(rev===revision.current)setError(e.message);}finally{if(rev===revision.current)setLoading(false);}};
  useEffect(()=>{load();return()=>{revision.current++;reading.current++;groupRevision.current++;};},[]);
  useEffect(()=>setLimit(12),[category,topic,query,sort]);
  const openArticle=async item=>{const rev=++reading.current;setSelected(item);setArticleError('');setArticleLoading(true);try{const result=await api(`/community/articles/${item.id}`);if(rev===reading.current)setSelected(result.item);}catch(e){if(rev===reading.current)setArticleError(e.message);}finally{if(rev===reading.current)setArticleLoading(false);}};
+ useEffect(()=>{const id=Number(new URLSearchParams(locationSearch).get('article'));if(id&&data&&linkedOpened.current!==locationRevision){linkedOpened.current=locationRevision;openArticle(data.items.find(a=>a.id===id)||{id,title:'官方文章'});}},[data,locationSearch,locationRevision]);
  const openGroup=async()=>{const rev=++groupRevision.current;setGroup(true);setGroupData(null);setGroupError('');setGroupLoading(true);try{const d=await api('/community');if(rev===groupRevision.current)setGroupData(d.settings);}catch{if(rev===groupRevision.current)setGroupError('入群配置暂时无法核验，请稍后重试或联系官方。');}finally{if(rev===groupRevision.current)setGroupLoading(false);}};
  const closeGroup=()=>{groupRevision.current++;setGroup(false);setGroupData(null);};
  const settings=data?.settings||COMMUNITY_SETTINGS,items=data?.items||[],resources=data?.resources||[],ready=!loading&&!error&&Boolean(data);

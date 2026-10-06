@@ -286,39 +286,14 @@ export function learningRouter() {
         .slice(0, 200),
       category = Number(req.query.category) || 0,
       sort = String(req.query.sort || "recommended");
-    let items = rows(
-      "SELECT * FROM practice_projects WHERE status='published' ORDER BY sort_order,id",
-    )
-      .map((p) => projectSummary(p, req.user))
-      .filter(
-        (p) =>
-          (!category || p.settings?.category_id === category) &&
-          `${p.title} ${p.description} ${p.tags.join(" ")} ${p.settings?.tech_stack.join(" ") || ""}`
-            .toLowerCase()
-            .includes(q),
-      );
-    if (sort === "difficulty")
-      items.sort(
-        (a, b) =>
-          (a.settings?.difficulty || 99) - (b.settings?.difficulty || 99) ||
-          a.id - b.id,
-      );
-    else if (sort === "popular")
-      items.sort((a, b) => b.learnerCount - a.learnerCount || a.id - b.id);
-    else if (sort === "newest") items.sort((a, b) => b.id - a.id);
-    else
-      items.sort(
-        (a, b) =>
-          (b.settings?.is_recommended || 0) -
-            (a.settings?.is_recommended || 0) ||
-          a.sort_order - b.sort_order ||
-          a.id - b.id,
-      );
-    const offset = Math.max(0, Number(req.query.offset) || 0),
-      limit = Math.min(48, Math.max(1, Number(req.query.limit) || 12));
+    const where="p.status='published' AND (?=0 OR s.category_id=?) AND instr(lower(p.title||' '||p.description||' '||COALESCE((SELECT group_concat(value,' ') FROM json_each(p.tags)),'')||' '||COALESCE((SELECT group_concat(value,' ') FROM json_each(s.tech_stack)),'')),?)>0";
+    const args=[category,category,q];
+    const order=sort==="difficulty"?"COALESCE(NULLIF(s.difficulty,0),99),p.id":sort==="popular"?"(SELECT COUNT(*) FROM project_runs r WHERE r.project_id=p.id) DESC,p.id":sort==="newest"?"p.id DESC":"COALESCE(s.is_recommended,0) DESC,p.sort_order,p.id";
+    const offset=Math.min(1000000,Math.max(0,Math.trunc(Number(req.query.offset)||0))),limit=Math.min(48,Math.max(1,Math.trunc(Number(req.query.limit)||12)));
+    const selected=rows(`SELECT p.* FROM practice_projects p LEFT JOIN practice_project_settings s ON s.project_id=p.id WHERE ${where} ORDER BY ${order} LIMIT ? OFFSET ?`,[...args,limit,offset]);
     res.json({
-      items: items.slice(offset, offset + limit),
-      total: items.length,
+      items:selected.map(p=>projectSummary(p,req.user)),
+      total:row(`SELECT COUNT(*) n FROM practice_projects p LEFT JOIN practice_project_settings s ON s.project_id=p.id WHERE ${where}`,args).n,
       categories: rows(
         "SELECT * FROM project_categories WHERE is_active=1 ORDER BY sort_order,id",
       ),

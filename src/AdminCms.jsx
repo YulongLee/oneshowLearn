@@ -1,6 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {ArrowRight,BookOpenText,CheckCircle,CloudArrowUp,FileText,FolderOpen,MagnifyingGlass,Plus,X} from '@phosphor-icons/react';
 import {api,money} from './api.js';
+import {uploadAsset} from './upload-asset.js';
 import {Markdown} from './PersonalShared.jsx';
 import {safeResourceUrl} from './opc-model.js';
 import './admin-cms.css';
@@ -22,26 +23,29 @@ function AssetStorageStatus(){
 }
 
 function PrivateAssetUpload({onUploaded}) {
-  const [busy,setBusy]=useState(false),[message,setMessage]=useState('');
+  const [busy,setBusy]=useState(false),[message,setMessage]=useState(''),[pending,setPending]=useState([]);
+  const controller=useRef(null);
+  const reload=()=>api('/admin/uploads').then(d=>setPending(d.items)).catch(e=>setMessage(e.message));
+  useEffect(()=>{reload();return()=>controller.current?.abort();},[]);
   const upload=async e=>{
     const input=e.currentTarget,files=Array.from(input.files||[]);
     if(!files.length)return;
-    if(files.some(file=>file.size>50*1024*1024)){setMessage('单个附件不能超过 50MB，请压缩后重试。');input.value='';return;}
-    setBusy(true);let saved=0;
+    if(files.some(file=>file.size>1024*1024*1024)){setMessage('单个附件不能超过 1GB，请压缩后重试。超过 50MB 的正式视频支持分片恢复。');input.value='';return;}
+    if(controller.current)return;controller.current=new AbortController();setBusy(true);let saved=0;
     try{
-      for(const file of files){setMessage(`正在上传 ${saved+1}/${files.length}：${file.name}`);const body=new FormData();body.append('file',file);await api('/admin/cms/assets',{method:'POST',body});saved++;}
+      for(const file of files){setMessage(`正在上传 ${saved+1}/${files.length}：${file.name}`);await uploadAsset(file,{signal:controller.current.signal,onProgress:p=>setMessage(`${file.name} · ${p.phase==='checking'?'校验':p.phase==='finalizing'?'云端整理':'上传'} ${p.percent}%`)});saved++;}
       setMessage(`已上传 ${saved} 个受保护附件，可在课时编排中引用。`);
     }catch(error){setMessage(`已上传 ${saved} 个。${error.message}，未上传的文件可重新选择。`);}
-    finally{setBusy(false);input.value='';await onUploaded();}
+    finally{controller.current=null;setBusy(false);input.value='';await reload();await onUploaded();}
   };
   useEffect(()=>{if(!busy)return;const guard=e=>{if(e.type==='beforeunload'){e.preventDefault();e.returnValue='';}else if(!window.confirm('附件正在上传，确定离开？'))e.preventDefault();};window.addEventListener('beforeunload',guard);window.addEventListener('oneshowlearn:before-navigate',guard);return()=>{window.removeEventListener('beforeunload',guard);window.removeEventListener('oneshowlearn:before-navigate',guard);};},[busy]);
-  return <section className="admin-panel cms-upload"><label><CloudArrowUp size={22}/>上传课程 / 项目附件<input type="file" multiple disabled={busy} accept=".pdf,.txt,.md,.csv,.json,.zip,.pptx,.docx,.xlsx,.mp4,.webm,.mp3,.png,.jpg,.jpeg,.webp,.vtt" onChange={upload}/><small>支持多选课件图片、视频、原件、VTT 字幕。单文件最大 50MB；不会自动发布为课程。</small></label><p role="status">{message}</p></section>;
+  return <section className="admin-panel cms-upload"><label><CloudArrowUp size={22}/>上传课程 / 项目附件<input type="file" multiple disabled={busy} accept=".pdf,.txt,.md,.csv,.json,.zip,.pptx,.docx,.xlsx,.mp4,.webm,.mp3,.png,.jpg,.jpeg,.webp,.vtt" onChange={upload}/><small>支持多选课件图片、视频、原件、VTT 字幕。单文件最大 1GB，分片校验上传；中断后 24 小时内重新选择同一文件可恢复。不会自动发布为课程。</small></label><p role="status">{message}</p>{busy&&<button type="button" onClick={()=>controller.current?.abort()}>暂停上传，保留已传分片</button>}{pending.length>0&&<div><h3>本人未完成的上传</h3>{pending.map(s=><p key={s.id}>{s.name} · {Math.round(s.received/s.size*100)}% <button type="button" disabled={busy||s.state!=='uploading'} onClick={async()=>{if(!window.confirm('取消此未完成上传并移除暂存分片？不会删除已发布附件。'))return;setBusy(true);try{await api('/admin/uploads/'+s.id,{method:'DELETE'});await reload();}catch(e){setMessage(e.message);}finally{setBusy(false);}}}>取消暂存</button></p>)}<small>恢复请重新选择同一原文件；云端整理中不能取消。</small><button type="button" disabled={busy} onClick={reload}>刷新状态</button></div>}</section>;
 }
 
 export function ContentEditor({entity,initial,paths=[],onClose,onSaved}) {
   const [form,setForm]=useState(()=>({...initial,is_preview:Boolean(initial.is_preview),is_featured:Boolean(initial.is_featured)}));
   const initialJson=useRef(JSON.stringify({...initial,is_preview:Boolean(initial.is_preview),is_featured:Boolean(initial.is_featured)}));
-  const [busy,setBusy]=useState(false),[uploading,setUploading]=useState(false),[error,setError]=useState(''),[preview,setPreview]=useState(false),[assets,setAssets]=useState(null);
+  const [busy,setBusy]=useState(false),[uploading,setUploading]=useState(false),[error,setError]=useState(''),[preview,setPreview]=useState(false),[assets,setAssets]=useState(null),[uploadStatus,setUploadStatus]=useState('');
   const dialog=useRef(null),dirty=JSON.stringify(form)!==initialJson.current;
   const confirmClose=()=>!busy&&!uploading&&(!dirty||window.confirm('有尚未保存的修改，确定放弃这些修改吗？'));
   useEffect(()=>{dialog.current?.showModal();return()=>dialog.current?.close();},[]);
@@ -56,9 +60,9 @@ export function ContentEditor({entity,initial,paths=[],onClose,onSaved}) {
   const area=(key,title,rows=3)=><label>{title}<textarea rows={rows} maxLength={key==='body'?200000:20000} value={form[key]||''} onChange={e=>set(key,e.target.value)}/></label>;
   const upload=async e=>{
     const file=e.target.files?.[0];if(!file)return;
-    if(file.size>50*1024*1024){setError('附件不能超过 50MB。');e.target.value='';return;}
+    if(file.size>1024*1024*1024){setError('附件不能超过 1GB。');e.target.value='';return;}
     setUploading(true);setError('');
-    try{const data=new FormData();data.append('file',file);const result=await api('/admin/cms/assets',{method:'POST',body:data});set('resource_url',result.url);}catch(e){setError(e.message);}finally{setUploading(false);e.target.value='';}
+    try{const result=await uploadAsset(file,{onProgress:p=>setUploadStatus(`正在${p.phase==='checking'?'校验':p.phase==='finalizing'?'云端整理':'上传'} ${p.percent}%`)});set('resource_url',result.url);}catch(e){setError(e.message);}finally{setUploading(false);setUploadStatus('');e.target.value='';}
   };
   const save=async e=>{
     e.preventDefault();if(uploading||busy)return;setBusy(true);setError('');
@@ -88,14 +92,14 @@ export function ContentEditor({entity,initial,paths=[],onClose,onSaved}) {
         <div className="cms-tabs"><button type="button" aria-pressed={!preview} onClick={()=>setPreview(false)}>编辑正文</button><button type="button" aria-pressed={preview} onClick={()=>setPreview(true)}>正文预览</button></div>
         {preview?<section className="cms-preview"><h3>{form.title||'未命名资料'}</h3><Markdown body={form.body||'还没有正文内容。'}/></section>:area('body','正文（支持 Markdown / Prompt / 代码 / 任务清单）',12)}
         {input('resource_url','配套附件或视频地址',{max:2000,hint:'上传的附件受学习权限保护；外部链接及旧 /uploads 文件属于公开资源，不受本站下载权限控制。'})}
-        <div className="cms-upload"><label><CloudArrowUp size={22}/>上传受保护附件<input type="file" accept=".pdf,.txt,.md,.csv,.json,.zip,.pptx,.docx,.xlsx,.mp4,.webm,.mp3,.png,.jpg,.jpeg,.webp" onChange={upload}/><small>PDF / Office / ZIP / 文本 / 图片 / 音视频，最大 50MB</small></label><button type="button" onClick={async()=>{try{setAssets((await api('/admin/cms/assets')).items);}catch(e){setError(e.message);}}}>从附件库选择</button></div>
+        <div className="cms-upload"><label><CloudArrowUp size={22}/>上传受保护附件<input type="file" accept=".pdf,.txt,.md,.csv,.json,.zip,.pptx,.docx,.xlsx,.mp4,.webm,.mp3,.png,.jpg,.jpeg,.webp" onChange={upload}/><small>PDF / Office / ZIP / 文本 / 图片 / 音视频，最大 1GB</small></label><button type="button" onClick={async()=>{try{setAssets((await api('/admin/cms/assets')).items);}catch(e){setError(e.message);}}}>从附件库选择</button></div>
         {assets&&<div className="cms-asset-picker"><button type="button" onClick={()=>setAssets(null)}>收起附件库</button>{assets.map(a=><button type="button" key={a.id} onClick={()=>{set('resource_url',a.url);setAssets(null);}}><FileText size={16}/>{a.original_name}<small>{a.private?'受保护':'旧公开附件'}</small></button>)}{!assets.length&&<p>附件库为空，请先上传。</p>}</div>}
       </>}
       {entity==='content'&&<label className="cms-checkbox"><input type="checkbox" checked={form.is_preview} onChange={e=>set('is_preview',e.target.checked)}/>设为免费预览（发布后未购买用户也能读取正文和附件）</label>}
       {entity!=='library'&&input('sort_order','显示顺序',{type:'number',hint:'数字越小越靠前；同顺序按创建先后排列。'})}
       {entity==='content'&&form.id&&!form.library_id&&<button type="button" disabled={dirty} onClick={async()=>{setBusy(true);try{await api(`/admin/platform/library/import/${form.id}`,{method:'POST',headers:{'If-Match':form.version}});onSaved(form);}catch(e){setError(e.message);}finally{setBusy(false);}}}>纳入统一资料库（先保存当前修改）</button>}
     </fieldset></div>
-    <footer>{error&&<p role="alert" className="admin-error">{error}</p>}<span>{uploading?'正在上传，请勿关闭…':dirty?'有未保存的修改':'关闭不会更改已保存内容'}</span><div><button type="button" disabled={busy||uploading} onClick={()=>{if(confirmClose())onClose();}}>取消</button><button className="admin-primary" disabled={busy||uploading}>{busy?'正在保存…':'保存修改'}</button></div></footer>
+    <footer>{error&&<p role="alert" className="admin-error">{error}</p>}<span role="status">{uploading?uploadStatus||'正在上传，请勿关闭…':dirty?'有未保存的修改':'关闭不会更改已保存内容'}</span><div><button type="button" disabled={busy||uploading} onClick={()=>{if(confirmClose())onClose();}}>取消</button><button className="admin-primary" disabled={busy||uploading}>{busy?'正在保存…':'保存修改'}</button></div></footer>
   </form></dialog>;
 }
 

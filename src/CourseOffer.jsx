@@ -10,6 +10,7 @@ import {offerCurriculum, offerMoney, offerPrice} from './course-offer-model.js';
 const CourseCheckout=lazy(()=>import('./CourseCheckout.jsx').then(m=>({default:m.CourseCheckout})));
 import {sharedRead} from './shared-reads.js';
 import {paymentReturnId} from './payment-navigation.js';
+import {useLocationSearch} from './useLocationSearch.js';
 import mascot from './assets/course-sales-mascot-optimized.webp';
 import mountain from './assets/course-sales-banner-optimized.webp';
 import './course-offer.css';
@@ -46,8 +47,10 @@ export function CourseOfferPage({navigate,notify}) {
 }
 
 export default function CourseOffer({model,navigate,embedded=false}) {
+  const {search:locationSearch}=useLocationSearch();
+  useEffect(()=>{const requested=new URLSearchParams(locationSearch).get('course');if(requested)setSlug(requested);},[locationSearch]);
   const Content = embedded ? 'div' : 'main';
-  const [catalog,setCatalog]=useState(null),[slug,setSlug]=useState(''),[data,setData]=useState(null);
+  const [catalog,setCatalog]=useState(null),[slug,setSlug]=useState(()=>new URLSearchParams(window.location.search).get('course')||''),[data,setData]=useState(null);
   const [error,setError]=useState(''),[retry,setRetry]=useState(0),[confirm,setConfirm]=useState(false);
   const [offer,setOffer]=useState(null),[paymentError,setPaymentError]=useState('');
   const [authOpen,setAuthOpen]=useState(false);
@@ -55,14 +58,14 @@ export default function CourseOffer({model,navigate,embedded=false}) {
   const returnHandled=useRef(false);
   useEffect(()=>{if(!returnOrderId||!offer||returnHandled.current)return;if(!model.user){setAuthOpen(true);return;}returnHandled.current=true;setConfirm(true);},[returnOrderId,offer,model.user?.id]);
   const purchaseRef=useRef(null);
-  useEffect(()=>{let active=true;sharedRead('/commerce/offer',{force:true}).then(d=>{if(active){setOffer(d);setPaymentError('');if(d.slug)setSlug(d.slug);}}).catch(e=>active&&setPaymentError(e.message));return()=>{active=false;};},[retry]);
+  useEffect(()=>{let active=true;sharedRead('/commerce/offer',{force:true}).then(d=>{if(active){setOffer(d);setPaymentError('');if(d.slug)setSlug(current=>current||d.slug);}}).catch(e=>active&&setPaymentError(e.message));return()=>{active=false;};},[retry]);
   useEffect(()=>{
     let active=true;setError('');
     Promise.all([sharedRead('/catalog/workspace',{force:retry>0}),sharedRead('/learning/entry')]).then(([result,entry])=>{
       if(!active)return;setCatalog(result.items||[]);
       setSlug(current=>{
         const requested=current||new URLSearchParams(window.location.search).get('course');
-        return result.items?.find(p=>p.slug===requested)?.slug||result.items?.find(p=>p.id===entry.defaultCourseId)?.slug||result.items?.find(p=>p.path_slug==='ai-product')?.slug||result.items?.[0]?.slug||'';
+        return requested||result.items?.find(p=>p.id===entry.defaultCourseId)?.slug||result.items?.find(p=>p.path_slug==='ai-product')?.slug||result.items?.[0]?.slug||'';
       });
     }).catch(e=>active&&setError(e.message));return ()=>{active=false;};
   },[retry]);

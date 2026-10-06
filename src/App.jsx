@@ -60,6 +60,7 @@ import {
   workspaceSearchPrompts,
 } from "./workspace-navigation.js";
 import {RouteLoadBoundary} from './RouteLoadBoundary.jsx';
+import {NotFound} from './NotFound.jsx';
 
 // Stable module-scope lazy components preserve the mounted workspace and drafts.
 const CourseReader=lazy(()=>import('./CourseReader.jsx').then(m=>({default:m.CourseReader})));
@@ -85,6 +86,7 @@ const AdminSupport=lazy(()=>import('./ServiceCenter.jsx').then(m=>({default:m.Ad
 const AdminLogin=lazy(()=>import('./Admin.jsx').then(m=>({default:m.AdminLogin})));
 const AdminShell=lazy(()=>import('./Admin.jsx').then(m=>({default:m.AdminShell})));
 const AdminOrders=lazy(()=>import('./Admin.jsx').then(m=>({default:m.AdminOrders})));
+const AdminReadiness=lazy(()=>import('./AdminReadiness.jsx').then(m=>({default:m.AdminReadiness})));
 const AdminUsers=lazy(()=>import('./Admin.jsx').then(m=>({default:m.AdminUsers})));
 const AdminEmail=lazy(()=>import('./Admin.jsx').then(m=>({default:m.AdminEmail})));
 const AdminAccountAudit=lazy(()=>import('./Admin.jsx').then(m=>({default:m.AdminAccountAudit})));
@@ -388,150 +390,10 @@ function PathsPage({ navigate }) {
   );
 }
 
-function ProductPackPage({ slug, navigate, notify, model }) {
-  const [pack, setPack] = useState(null);
-  const [error, setError] = useState("");
-  const [authOpen, setAuthOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const load = () =>
-    api(`/project-packs/${slug}`)
-      .then(setPack)
-      .catch((e) => setError(e.message));
-  useEffect(() => {
-    load();
-  }, [slug]);
-  const buy = async () => {
-    if (!getToken()) return setAuthOpen(true);
-    if(!window.confirm(`创建 ${money(pack.product_price_cents??pack.price_cents)} 的课程订单？当前采用管理员线下收款确认，不会自动扣款。`))return;
-    setBusy(true);
-    try {
-      const order = await api("/orders", {
-        method: "POST",
-        body: JSON.stringify({ productId: pack.product_id }),
-      });
-      setError(`订单 ${order.orderNo} 已创建，请联系管理员确认实际收款后开通；请勿重复下单。`);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setBusy(false);
-    }
-  };
-  if (error && !pack)
-    return (
-      <div className="empty-state">
-        <h3>{error}</h3>
-        <button className="black-button" onClick={() => navigate("/paths")}>
-          返回学习路径
-        </button>
-      </div>
-    );
-  if (!pack)
-    return (
-      <div className="empty-state">
-        <p>正在加载项目包…</p>
-      </div>
-    );
-  const previewCount = pack.steps.reduce(
-    (sum, step) => sum + step.contents.filter((item) => item.is_preview).length,
-    0,
-  );
-  return (
-    <>
-      <button
-        className="back-link"
-        onClick={() => navigate(`/paths/${pack.path_slug}`)}
-      >
-        <ArrowLeft size={16} /> 返回{pack.path_title}
-      </button>
-      <div className="pack-sales">
-        <section>
-          <span className="page-kicker">{pack.path_title} · 项目包</span>
-          <div className="favorite-actions-row"><h2>{pack.title}</h2>{model&&<FavoriteButton model={model} navigate={navigate} reference={{kind:'course',id:pack.id}} title={pack.title}/>}</div>
-          <p className="pack-subtitle">{pack.subtitle}</p>
-          <p>{pack.description}</p>
-          <div className="project-content-mix">
-            <span>60% 实战文档</span>
-            <span>20% Prompt / 代码 / 模板</span>
-            <span>10% 任务清单</span>
-            <span>10% 短视频</span>
-          </div>
-          <div className="pack-outcome">
-            <Target size={22} />
-            <span>
-              <small>完成后你将得到</small>
-              <strong>{pack.deliverable}</strong>
-            </span>
-          </div>
-          <h3>项目步骤与资料</h3>
-          <div className="pack-steps">
-            {pack.steps.map((step, index) => (
-              <article key={step.id}>
-                <span>{index + 1}</span>
-                <div>
-                  <strong>{step.title}</strong>
-                  <small>{step.summary}</small>
-                  <p>{step.contents.map((item) => item.title).join(" · ")}</p>
-                </div>
-                <em>
-                  {step.contents.some((item) => item.locked)
-                    ? "购买后解锁"
-                    : step.contents.length
-                      ? "可预览"
-                      : "待更新"}
-                </em>
-              </article>
-            ))}
-          </div>
-        </section>
-        <aside className="surface pack-buy">
-          <img
-            src={pack.cover_url || "/assets/cursor-practice-preview.png"}
-            alt="项目成果预览"
-          />
-          <span>
-            {pack.entitled
-              ? "你已拥有此项目包"
-              : `${previewCount} 份资料可免费预览`}
-          </span>
-          <strong>
-            {pack.entitled
-              ? "已解锁"
-              : money(pack.product_price_cents || pack.price_cents)}
-          </strong>
-          <p>一次购买，永久访问当前版本及后续内容更新。</p>
-          <button
-            className="black-button wide"
-            disabled={busy}
-            onClick={() => navigate(courseLearningPath(pack.slug))}
-          >
-            {pack.entitled ? "进入课程学习" : "查看目录与免费预览"}
-            <ArrowRight size={16} />
-          </button>
-          {!pack.entitled&&pack.product_id&&<button className="black-button wide" disabled={busy} onClick={buy}>创建课程订单</button>}
-          {error&&<p role="status">{error}</p>}
-          <small>当前为人工确认收款，在线自动支付尚未接入。</small>
-        </aside>
-      </div>
-      {authOpen && (
-        <div
-          className="modal-backdrop auth-modal-backdrop"
-          onMouseDown={() => setAuthOpen(false)}
-        >
-          <div onMouseDown={(e) => e.stopPropagation()}>
-            <UserAuthCard
-              initialMode="login"
-              onClose={() => setAuthOpen(false)}
-              onSuccess={() => {
-                setAuthOpen(false);
-                load();
-                notify("登录成功，可以继续购买");
-              }}
-            />
-          </div>
-        </div>
-      )}
-    </>
-  );
+function ProductPackPage({ slug, navigate }) {
+  const [error,setError]=useState("");
+  useEffect(()=>{let active=true;api("/project-packs/"+encodeURIComponent(slug)).then(pack=>{if(active)navigate(pack.entitled?courseLearningPath(pack.slug):"/course-offer?course="+encodeURIComponent(pack.slug));}).catch(e=>active&&setError(e.message));return()=>{active=false;};},[slug]);
+  return <section className="empty-state">{error?<><h2>{error}</h2><button onClick={()=>navigate("/courses")}>返回课程列表</button></>:<p role="status">正在打开课程…</p>}</section>;
 }
 
 function PathDetail({ navigate }) {
@@ -1040,7 +902,7 @@ function LearnerWorkspace({ route: rawRoute, navigate, notify }) {
           ].includes(route)
         )
           return <WorkspacePages route={route} {...props} />;
-        return <WorkspaceHome {...props} />;
+        return <NotFound navigate={go}/>;
         };
         return <RouteLoadBoundary resetKey={route}><Suspense fallback={<p role="status">正在加载页面…</p>}>{renderPage()}</Suspense></RouteLoadBoundary>;
       }}
@@ -1127,7 +989,7 @@ export function App() {
           />
         ) : route === "/admin/opc" ? (
           <AdminOpc navigate={navigate} />
-        ) : route === "/admin/orders" ? (
+        ) : route === '/admin/readiness' ? <AdminReadiness/> : route === "/admin/orders" ? (
           <AdminOrders />
         ) : route === "/admin/users" ? (
           <AdminUsers />
@@ -1142,7 +1004,7 @@ export function App() {
         ) : route === "/admin/account-audit" ? (
           <AdminAccountAudit />
         ) : (
-          <AdminCms navigate={navigate} />
+          <NotFound navigate={navigate} admin/>
         );
       content = (
         <AdminShell route={route} navigate={navigate}>

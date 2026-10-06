@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, ArrowSquareOut, BookOpenText, BookmarkSimple, CaretDown, CheckCircle, ClipboardText, Code, Copy, DownloadSimple, FileText, FolderSimple, LockKey, MagnifyingGlass, NotePencil, Package, Sparkle, VideoCamera, Wrench, X } from '@phosphor-icons/react';
 import { api } from './api.js';
 import {FavoriteButton} from './FavoriteButton.jsx';
+import {useLocationSearch} from './useLocationSearch.js';
 import { canManage } from './platforms.js';
 import { safeResourceUrl } from './opc-model.js';
 import { RESOURCE_CATEGORIES, RESOURCE_TYPES, resourceCategory, resourceDate } from './resource-model.js';
@@ -46,12 +47,12 @@ export function ResourceReader({resource,model,navigate,notify,close,onComplete=
     <div className="rc-reader-meta"><span>{RESOURCE_TYPES[resource.type]}</span><span>更新于 {resourceDate(resource.updated_at)}</span></div>
     <p className="rc-reader-source">所属课程：{resource.pack_title}</p>
     {model.user&&<button className="rc-outline" disabled={model.busy} onClick={async()=>{const favorites=model.state.resourceFavorites||[],saved=favorites.some(i=>i.id===resource.id);if(await model.saveState({...model.state,resourceFavorites:saved?favorites.filter(i=>i.id!==resource.id):[...favorites,{id:resource.id,savedAt:new Date().toISOString()}]}))notify(saved?'已取消资源收藏':'已加入我的收藏');}}>{(model.state.resourceFavorites||[]).some(i=>i.id===resource.id)?'已收藏 · 取消':'收藏这项资源'}</button>}
-    {resource.locked?<div className="rc-empty"><LockKey size={34}/><h3>这项资源需要课程权限</h3><p>可先浏览免费预览，或查看所属课程的学习权益。</p><div className="rc-reader-actions"><button className="rc-primary" onClick={()=>navigate(model.user?'/membership':'/login?returnTo=%2Fresources')}>{model.user?'查看学习权益':'登录账号'}<ArrowRight size={15}/></button><button className="rc-outline" onClick={()=>navigate(`/packs/${resource.pack_slug}`)}>查看所属课程</button></div></div>:<>
+    {resource.locked?<div className="rc-empty"><LockKey size={34}/><h3>这项资源需要课程权限</h3><p>可先浏览免费预览，或查看所属课程的学习权益。</p><div className="rc-reader-actions"><button className="rc-primary" onClick={()=>navigate(model.user?'/membership':'/login?returnTo=%2Fresources')}>{model.user?'查看学习权益':'登录账号'}<ArrowRight size={15}/></button><button className="rc-outline" onClick={()=>navigate(`/course-offer?course=${encodeURIComponent(resource.pack_slug)}`)}>查看所属课程</button></div></div>:<>
       {error&&<div className="rc-alert" role="alert">{error}{!item&&<button onClick={load}>重试</button>}</div>}
       {loading?<div className="rc-empty" role="status">正在打开资料…</div>:item&&<>
         <div className={`rc-document ${item.type==='code'?'rc-code-document':''}`}>{item.body || (safeResourceUrl(item.resource_url)?'请打开下方配套附件，查看完整资源。':'该资料暂无正文或附件，内容完善后会在这里更新。')}</div>
         <div className="rc-reader-actions">{item.body&&<><button className="rc-outline" onClick={copy}><Copy size={16}/>复制正文</button>{downloadUrl&&<a className="rc-outline" href={downloadUrl} download={`${item.title.replace(/[\\/:*?"<>|]/g,'-').slice(0,90)}.md`}><DownloadSimple size={16}/>导出文档</a>}</>}{safeResourceUrl(item.resource_url)&&<a className="rc-primary" href={safeResourceUrl(item.resource_url)} target="_blank" rel="noopener noreferrer">打开配套附件<ArrowSquareOut size={16}/></a>}</div>
-        <footer><button className="rc-primary" disabled={busy||done||(!item.body&&!safeResourceUrl(item.resource_url))} onClick={complete}><CheckCircle size={17}/>{done?'已完成学习':model.user?'标记为已学习':'登录后保存学习进度'}</button><button className="rc-text" onClick={()=>navigate(`/packs/${resource.pack_slug}`)}>查看完整课程<ArrowRight size={15}/></button></footer>
+        <footer><button className="rc-primary" disabled={busy||done||(!item.body&&!safeResourceUrl(item.resource_url))} onClick={complete}><CheckCircle size={17}/>{done?'已完成学习':model.user?'标记为已学习':'登录后保存学习进度'}</button><button className="rc-text" onClick={()=>navigate(`/course-offer?course=${encodeURIComponent(resource.pack_slug)}`)}>查看完整课程<ArrowRight size={15}/></button></footer>
       </>}
     </>}
   </div></ResourceDialog>;
@@ -68,10 +69,11 @@ function ResourceSpotlight({resource,open,model,navigate}) {
 }
 
 export function ResourceCenter({model,navigate,notify,query,setQuery,searchRevision}) {
+  const {search:locationSearch,revision:locationRevision}=useLocationSearch();
   const [items,setItems]=useState([]),[loading,setLoading]=useState(true),[error,setError]=useState('');
   const [category,setCategory]=useState('all'),[phase,setPhase]=useState('');
   const [sort,setSort]=useState('chapter'),[limit,setLimit]=useState(5),[modal,setModal]=useState(null);
-  const listRef=useRef(null),requestRef=useRef(0),moreRef=useRef(null);
+  const listRef=useRef(null),requestRef=useRef(0),moreRef=useRef(null),openedLink=useRef('');
   const load=async()=>{
     const request=++requestRef.current;setLoading(true);setError('');
     try{const result=await api('/resources');if(request===requestRef.current)setItems(result.items||[]);}
@@ -79,6 +81,10 @@ export function ResourceCenter({model,navigate,notify,query,setQuery,searchRevis
     finally{if(request===requestRef.current)setLoading(false);}
   };
   useEffect(()=>{load();return()=>{requestRef.current++;};},[]);
+  useEffect(()=>{
+    const link=locationSearch,id=Number(new URLSearchParams(link).get('resource'));
+    if(!loading&&id&&openedLink.current!==locationRevision){const resource=items.find(item=>item.id===id);if(resource){openedLink.current=locationRevision;setModal(resource);}}
+  },[loading,items,searchRevision,locationSearch,locationRevision]);
   useEffect(()=>{setLimit(5);},[category,phase,sort,query]);
   const focusList=()=>{listRef.current?.scrollIntoView({behavior:'smooth',block:'start'});listRef.current?.focus({preventScroll:true});};
   useEffect(()=>{if(searchRevision)focusList();},[searchRevision]);

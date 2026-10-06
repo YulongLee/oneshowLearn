@@ -7,6 +7,31 @@ import {currentTimeAnswer,modelIdentityAnswer} from './ai-web-search.mjs';
 import {rateLimit} from './account-security.mjs';
 import {courseEvidence,verifyCourseAnswer} from './course-ai-grounding.mjs';
 import {retrieveTutorEvidence,tutorDocuments,verifyTutorAnswer,TUTOR_INSUFFICIENT} from './tutor-retrieval.mjs';
+import {placement,canReadPlacement,stageAccessIssue} from './learning-model.mjs';
+
+function authorizedLesson(user,id){
+  const current=row('SELECT id,role,status,email_verified,token_version FROM users WHERE id=?',[user.id]);
+  if(!current||current.status!=='active'||!hasVerifiedLogin(current)||Number(current.token_version)!==Number(user.token_version))throw Object.assign(new Error('登录状态已变化，请重新登录后提问。'),{status:401});
+  const lesson=placement(id);
+  if(!lesson||!canReadPlacement(current,lesson))throw Object.assign(new Error('课时或学习权限已变化，请重新载入后核对。'),{status:403});
+  const issue=stageAccessIssue(current,lesson);
+  if(issue)throw Object.assign(new Error(issue.message),{status:issue.status});
+  return lesson;
+}
+export function publishedLessonEvidence(lesson,slideId=null){
+  const materials=rows(`SELECT m.library_id id,m.role,l.title,l.body,r.title revisionTitle,r.body revisionBody,r.version promptVersion
+    FROM lesson_materials m JOIN content_library l ON l.id=m.library_id
+    LEFT JOIN lesson_prompt_versions v ON v.placement_id=m.placement_id AND v.library_id=m.library_id
+    LEFT JOIN prompt_revisions r ON r.id=v.revision_id
+    WHERE m.placement_id=? AND l.status='published' ORDER BY m.sort_order,m.library_id`,[lesson.id]).map(m=>m.role==='prompt'&&m.promptVersion?{...m,title:m.revisionTitle,body:m.revisionBody}:m);
+  return courseEvidence(lesson,materials,slideId);
+}
+function lessonContext(user,lesson,slideId){
+  const evidence=publishedLessonEvidence(lesson,slideId);
+  let noteBudget=8000;
+  const notes=rows('SELECT title,body,video_time,slide_id FROM learning_notes WHERE user_id=? AND placement_id=? AND deleted_at IS NULL ORDER BY updated_at DESC,id LIMIT 20',[user.id,lesson.id]).map(n=>{const body=plainNote(n.body).slice(0,Math.max(0,Math.min(2000,noteBudget)));noteBudget-=body.length;return {...n,body};}).filter(n=>n.body.trim());
+  return {grounding:'course-only',owner:{kind:lesson.kind,id:lesson.owner_id,title:lesson.owner_title},chapter:lesson.chapter_title,stageId:lesson.stage_id,lesson:{id:lesson.id,title:lesson.title},...evidence,notes};
+}
 // Provider-neutral boundary. A deployment adapter must implement generate({action,
 // question,context,signal}). No model secret or arbitrary context is accepted from clients.
 let adapterOverride;
@@ -76,20 +101,14 @@ export const courseAIService={
   },
   async generate({user,lesson,action,question,slideId=null}){
     if(!connection().provider)throw Object.assign(new Error('AI 服务暂不可用，请联系管理员检查配置。'),{status:503});
-    const materials=rows(`SELECT m.library_id id,m.role,l.title,l.body,r.title revisionTitle,r.body revisionBody,r.version promptVersion
-      FROM lesson_materials m JOIN content_library l ON l.id=m.library_id
-      LEFT JOIN lesson_prompt_versions v ON v.placement_id=m.placement_id AND v.library_id=m.library_id
-      LEFT JOIN prompt_revisions r ON r.id=v.revision_id
-      WHERE m.placement_id=? AND l.status='published' ORDER BY m.sort_order,m.library_id`,[lesson.id]).map(m=>m.role==='prompt'&&m.promptVersion?{...m,title:m.revisionTitle,body:m.revisionBody}:m);
-    const evidence=courseEvidence(lesson,materials,slideId);
-    if(!evidence.sources.length)throw Object.assign(new Error('当前课时没有可读的课件文字或已发布资料正文，暂不能进行 AI 答疑或整理。请管理员在课时编排中补充课件页文字或关联文字稿；仅有视频、图片、PPT/PDF 附件不会被自动解析。'),{status:422});
-    let noteBudget=8000;
-    const notes=rows('SELECT title,body,video_time,slide_id FROM learning_notes WHERE user_id=? AND placement_id=? AND deleted_at IS NULL ORDER BY updated_at DESC LIMIT 20',[user.id,lesson.id]).map(n=>{const body=plainNote(n.body).slice(0,Math.min(2000,noteBudget));noteBudget-=body.length;return {...n,body};}).filter(n=>n.body.trim());
-    if(action==='notes'&&!notes.some(n=>n.body.trim()))throw Object.assign(new Error('本课时还没有已保存的笔记。请先记录并保存笔记，再进行 AI 整理。'),{status:422});
-    const context={grounding:'course-only',owner:{kind:lesson.kind,id:lesson.owner_id,title:lesson.owner_title},chapter:lesson.chapter_title,stageId:lesson.stage_id,lesson:{id:lesson.id,title:lesson.title},...evidence,notes};
+    const context=lessonContext(user,authorizedLesson(user,lesson.id),slideId);
+    if(!context.sources.length)throw Object.assign(new Error('当前课时没有可读的课件文字或已发布资料正文，暂不能进行 AI 答疑或整理。请管理员在课时编排中补充课件页文字或关联文字稿；仅有视频、图片、PPT/PDF 附件不会被自动解析。'),{status:422});
+    if(action==='notes'&&!context.notes.length)throw Object.assign(new Error('本课时还没有已保存的笔记。请先记录并保存笔记，再进行 AI 整理。'),{status:422});
+    const contextSnapshot=JSON.stringify(context);
     const answer=await generateForUser(user,{action,question:action==='ask'?question:'',context});
+    if(JSON.stringify(lessonContext(user,authorizedLesson(user,lesson.id),slideId))!==contextSnapshot)throw Object.assign(new Error('资料或笔记在回答期间发生变化，请核对后重新提问。'),{status:409});
     if(typeof answer!=='string'||!answer.trim()||answer.length>50000)throw Object.assign(new Error('AI 服务返回了无效内容，请稍后重试'),{status:502});
-    return {...verifyCourseAnswer(answer,evidence.sources),coverage:evidence.coverage,contextLessonId:lesson.id};
+    return {...verifyCourseAnswer(answer,context.sources),coverage:context.coverage,contextLessonId:lesson.id};
   }
 };
 export function plainNote(body){try{const d=JSON.parse(body);if(d.type==='doc'){const walk=n=>[n.text||'',...(n.content||[]).map(walk)].join(' ');return walk(d);}}catch{}return body;}

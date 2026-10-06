@@ -10,6 +10,7 @@ import {adminPaymentConfig,paymentConfiguration,paymentError,paymentSaveSchema,p
 import {createProviderPayment,queryProviderPayment,closeProviderPayment,decodeAlipayNotification,decodeWechatNotification,alipayPagePayment,paymentTransport} from './payment-providers.mjs';
 import {diagnosePaymentConnection} from './payment-diagnostics.mjs';
 import {checkoutFailureMessage} from './payment-checkout-errors.mjs';
+import {listPage} from './list-page.mjs';
 import {checkout,publicOrder,settleOnlinePayment,withCheckoutOperation,retireAttempt,confirmAndCloseAttempt,reconcileOrder,recordFailure,scheduleCheck,event,paymentOperations,providerSnapshotChanged,unissuedPage,absenceCanRetire} from './payment-lifecycle.mjs';
 export {settleOnlinePayment} from './payment-lifecycle.mjs';
 
@@ -92,7 +93,7 @@ export function paymentRouter(){
     const parsed=paymentSaveSchema.safeParse(req.body);if(!parsed.success)throw paymentError(400,'支付配置格式无效');
     res.json(savePaymentConfig(req.user,Number(req.headers['if-match']),parsed.data));
   });
-  router.get('/commerce/orders',requireAuth,(req,res)=>res.json({items:rows('SELECT order_id FROM payment_checkouts WHERE user_id=? ORDER BY order_id DESC LIMIT 20',[req.user.id]).map(c=>publicOrder(checkout(c.order_id)))}));
+  router.get('/commerce/orders',requireAuth,(req,res)=>{const page=listPage(req.query);res.set('Cache-Control','private, no-store').json({items:rows('SELECT order_id FROM payment_checkouts WHERE user_id=? ORDER BY order_id DESC LIMIT ? OFFSET ?',[req.user.id,page.limit,page.offset]).map(c=>publicOrder(checkout(c.order_id))),total:row('SELECT COUNT(*) n FROM payment_checkouts WHERE user_id=?',[req.user.id]).n,...page});});
   router.get('/commerce/orders/:id',requireAuth,(req,res)=>res.json(publicOrder(ownedOrder(req))));
   router.post('/commerce/orders/:id/pay',requireAuth,async(req,res)=>withCheckoutOperation(req.user.id,async()=>{
     const order=ownedOrder(req);

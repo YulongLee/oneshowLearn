@@ -11,6 +11,7 @@ import {learningAssetAllowed} from './learning-model.mjs';
 import {communityAssetAllowed} from './community-assets.mjs';
 import {createAssetStorage,materialRange} from './asset-storage.mjs';
 import {pipeline} from 'node:stream/promises';
+import {resumableUploadsRouter} from './resumable-uploads.mjs';
 
 const directory = `${config.uploadDir}-private`;
 const extensions = new Set(['.pdf','.txt','.md','.csv','.json','.zip','.pptx','.docx','.xlsx','.mp4','.webm','.mp3','.png','.jpg','.jpeg','.webp','.vtt']);
@@ -38,6 +39,7 @@ function allowed(asset,user) {
 }
 export function materialsRouter(storage=createAssetStorage()) {
   const router=Router();
+  router.use(resumableUploadsRouter(storage));
   // Keep the old client route compatible without creating another public file.
   router.post(['/admin/cms/assets','/admin/assets'],requireAdmin,(req,res,next)=>upload.single('file')(req,res,async error=>{
     if(error)return res.status(error.code==='LIMIT_FILE_SIZE'?413:400).json({error:error.code==='LIMIT_FILE_SIZE'?'文件超过 50MB，请压缩后重试。':error.message});

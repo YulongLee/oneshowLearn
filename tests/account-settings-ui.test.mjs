@@ -48,10 +48,10 @@ test('current-browser logout never revokes all devices; both scopes require expl
   assert.match(source,/title=\{logoutConfirm==='all'\?'退出所有设备？':'退出当前浏览器？'\}/);
   assert.match(source,/if\(dirty\)\{setTab\('profile'\)/,'Changing password must not silently discard a dirty profile');
 });
-test('online order discovery is private/read-only, bounded and cannot mark expired attempts closed',()=>{
+test('paginated order discovery is private/read-only and cannot mark expired attempts closed',()=>{
   const source=read('src/AccountOrders.jsx');
-  assert.match(source,/api\('\/commerce\/orders'\)/);assert.doesNotMatch(source,/method:|\/sync|\/checkout|\/pay['"`]/);
-  assert.match(source,/最近 20 笔在线支付订单/);assert.match(source,/历史人工确认订单不包含/);
+  assert.match(source,/api\(`\/me\/orders\?offset=/);assert.doesNotMatch(source,/method:|\/sync|\/checkout|\/pay['"`]/);
+  assert.match(source,/订单分页/);assert.match(source,/历史人工确认订单/);
   assert.equal(accountOrderState({status:'pending',expired:true}).label,'待核验');
   assert.equal(accountOrderState({status:'paid'}).label,'已支付');assert.equal(accountOrderState({status:'unknown'}).label,'状态待确认');
   assert.equal(accountOrderPath({id:8}),'/membership?paymentReturn=8');

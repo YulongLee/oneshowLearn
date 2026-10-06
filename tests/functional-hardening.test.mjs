@@ -1,0 +1,43 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtempSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import path from 'node:path';
+
+test('lesson AI revalidates current identity, entitlement, publication and grounded evidence after generation',async t=>{
+  const dir=mkdtempSync(path.join(tmpdir(),'osl-hardening-'));
+  Object.assign(process.env,{NODE_ENV:'test',DATABASE_PATH:path.join(dir,'test.db'),UPLOAD_DIR:path.join(dir,'uploads'),JWT_SECRET:'isolated-hardening-only',AI_ENABLED:'false',ASSET_STORAGE:'local'});
+  const {db,row,run}=await import('../server/db.mjs');
+  const {createApp}=await import('../server/index.mjs');
+  const {signUser}=await import('../server/auth.mjs');
+  const {courseAIService}=await import('../server/course-ai-service.mjs');
+  const add=(sql,args=[])=>Number(run(sql,args).lastInsertRowid);
+  const uid=add("INSERT INTO users(email,password_hash,name,role,email_verified) VALUES('hardening@example.invalid','unused','Isolated','learner',1)");
+  const pid=add("INSERT INTO learning_paths(slug,title,status) VALUES('hardening','Test','published')");
+  const pack=add("INSERT INTO project_packs(path_id,slug,title,status) VALUES(?,'hardening','Test','published')",[pid]);
+  const chapter=add("INSERT INTO project_steps(pack_id,title,status) VALUES(?,'Test','published')",[pack]);
+  const config=JSON.stringify({videoAssetId:null,pptAssetId:null,subtitleAssetId:null,slides:[{id:'s1',assetId:null,text:'ISOLATED_EVIDENCE_ONLY'}],mappings:[],tasks:[],operations:[]});
+  const lesson=add("INSERT INTO learning_lessons(title,config,status) VALUES('Test',?,'published')",[config]);
+  const placement=add("INSERT INTO lesson_placements(lesson_id,chapter_id,status) VALUES(?,?,'published')",[lesson,chapter]);
+  run("INSERT INTO entitlements(user_id,pack_id,status) VALUES(?,?,'active')",[uid,pack]);
+  const server=createApp().listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
+  t.after(async()=>{courseAIService.configure(null);await new Promise(r=>server.close(r));db.close();rmSync(dir,{recursive:true,force:true});});
+  for(const [change,status] of [['normal',200],['account-disabled',401],['session-revoked',401],['entitlement-revoked',403],['lesson-unpublished',403],['source-changed',409]])await t.test(change,async()=>{
+    run("UPDATE users SET status='active',token_version=0 WHERE id=?",[uid]);
+    run("UPDATE entitlements SET status='active' WHERE user_id=? AND pack_id=?",[uid,pack]);
+    run("UPDATE learning_lessons SET status='published',config=? WHERE id=?",[config,lesson]);
+    const token=signUser(row('SELECT * FROM users WHERE id=?',[uid]));
+    let enter,release;const entered=new Promise(r=>enter=r),hold=new Promise(r=>release=r);
+    courseAIService.configure({async generate(){enter();await hold;return 'ISOLATED_EVIDENCE_ONLY [S1]';}});
+    const pending=fetch(`http://127.0.0.1:${server.address().port}/api/learning/placements/${placement}/ai`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({action:'ask',question:'解释资料'})});
+    await entered;
+    if(change==='account-disabled')run("UPDATE users SET status='disabled' WHERE id=?",[uid]);
+    if(change==='session-revoked')run('UPDATE users SET token_version=token_version+1 WHERE id=?',[uid]);
+    if(change==='entitlement-revoked')run("UPDATE entitlements SET status='revoked' WHERE user_id=? AND pack_id=?",[uid,pack]);
+    if(change==='lesson-unpublished')run("UPDATE learning_lessons SET status='draft' WHERE id=?",[lesson]);
+    if(change==='source-changed')run('UPDATE learning_lessons SET config=? WHERE id=?',[config.replace('ISOLATED_EVIDENCE_ONLY','REVISED_EVIDENCE_ONLY'),lesson]);
+    release();const response=await pending,data=await response.json();
+    assert.equal(response.status,status);
+    assert.equal(JSON.stringify(data).includes('ISOLATED_EVIDENCE_ONLY'),change==='normal');
+  });
+});

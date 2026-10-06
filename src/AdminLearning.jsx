@@ -3,6 +3,7 @@ import { api } from "./api.js";
 import { Dialog } from "./AdminDialog.jsx";
 import "./learning-system.css";
 
+import {uploadAsset as uploadFile} from "./upload-asset.js";
 const states = [
   ["draft", "草稿"],
   ["published", "已发布"],
@@ -199,7 +200,7 @@ export function AdminLearning() {
   );
   const uploadAsset=async(file,key,slideIndex)=>{
     if(!file)return;setUploading(true);setError('');
-    try{const form=new FormData();form.append('file',file);const asset=await api('/admin/cms/assets',{method:'POST',body:form});if(key)config(key,asset.id);if(slideIndex!==undefined)setDraft(v=>({...v,config:{...v.config,slides:v.config.slides.map((s,i)=>i===slideIndex?{...s,assetId:asset.id}:s)}}));await load();setNotice(`已上传 ${asset.name}；请保存课时以应用替换。`);}catch(e){setError(e.message);}finally{setUploading(false);}
+    try{const asset=await uploadFile(file,{onProgress:p=>setNotice(`正在${p.phase==='checking'?'校验':p.phase==='finalizing'?'云端整理':'上传'} ${p.percent}%`)});if(key)config(key,asset.id);if(slideIndex!==undefined)setDraft(v=>({...v,config:{...v.config,slides:v.config.slides.map((s,i)=>i===slideIndex?{...s,assetId:asset.id}:s)}}));await load();setNotice(`已上传 ${asset.name}；请保存课时以应用替换。`);}catch(e){setError(e.message);}finally{setUploading(false);}
   };
   const saveEntry=async()=>{setBusy(true);setError('');try{await api('/admin/learning/default-course',{method:'PUT',headers:{'If-Match':String(data.entrySettings?.version||0)},body:JSON.stringify({courseId:entryChoice===''?null:Number(entryChoice??data.entrySettings?.courseId)||null})});await load();setEntryChoice(null);setNotice('默认学习课程已保存。');}catch(e){setError(e.message);}finally{setBusy(false);}};
   const assetSelect = (label, key, filter) => (

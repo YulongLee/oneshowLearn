@@ -8,6 +8,8 @@ import {useSidebarLayout} from './useSidebarLayout.js';
 import {LearningLayoutContext} from './learning-layout-context.js';
 import {SidebarCourseOffer} from './SidebarCourseOffer.jsx';
 import {WorkspaceAccountMenu} from './WorkspaceAccountMenu.jsx';
+import {useWorkspaceSearch} from './useWorkspaceSearch.js';
+import {WorkspaceNotifications} from './WorkspaceNotifications.jsx';
 import "./workspace.css";
 
 const emptyState = () => ({ tasks: [], notes: [], favorites: [], checkIns: [] });
@@ -45,7 +47,8 @@ export function useWorkspaceModel(notify) {
     const request = revision.current;
     saving.current = true; setBusy(true);
     try {
-      const saved = await api("/me/workspace/state", { method: "PUT", headers: data.version ? { "If-Match": data.version } : {}, body: JSON.stringify(next) });
+      const removedCourses=(data.state.favorites||[]).filter(id=>!(next.favorites||[]).includes(id));
+      const saved = await api("/me/workspace/state", { method: "PUT", headers: {...(data.version ? { "If-Match": data.version } : {}),...(removedCourses.length?{'X-Removed-Course-Favorites':JSON.stringify(removedCourses)}:{})}, body: JSON.stringify(next) });
       if (request !== revision.current) return false;
       setData(value => ({ ...value, state: saved.state || next, stats: saved.stats || value.stats, version: saved.version || value.version }));
       return true;
@@ -88,8 +91,8 @@ export function WorkspaceShell({ route, navigate, notify, children, resourceSear
   }, [Boolean(resourceSearch)]);
   const go = (path) => { setMenu(false); setPopover(""); navigate(path); };
   const selected = (path) => activeWorkspaceNav(route) === path;
-  const searchablePacks = [...new Map([...model.recommendations, ...model.library].map(p => [p.id, p])).values()];
-  const searchResults = [...searchablePacks.map(p => ({ title: p.title, kind: "课程 / 项目包", path: `/packs/${p.slug}` })), ...model.state.notes.filter(n=>!n.deletedAt).map(n => ({ title: n.title, kind: "学习笔记", path: "/notes" }))].filter(item => query.trim() && item.title.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 6);
+  const search=useWorkspaceSearch(query,popover==='search'&&!resourceSearch,model.user?.id);
+  const searchResults=search.items;
   const groups = [
     ["学习", [["/opc", "学习课程", BookOpenText], ["/projects", "实战项目", Cube]]],
     ["AI", [["/tutor", "AI 导师", Robot], ["/resources", "资源中心", FolderSimple]]],
@@ -117,8 +120,8 @@ export function WorkspaceShell({ route, navigate, notify, children, resourceSear
         <button className="ws-mobile-menu ws-icon-button" aria-label={menu ? "关闭工作空间导航" : "打开工作空间导航"} aria-expanded={menu} onClick={() => setMenu(!menu)}>{menu ? <X size={22} /> : <List size={22} />}</button>
         <form className="ws-search" onSubmit={e => { e.preventDefault(); resourceSearch ? resourceSearch.onSubmit() : setPopover("search"); }}><MagnifyingGlass size={20} /><input ref={searchRef} value={resourceSearch ? resourceSearch.value : query} onChange={e => { if(resourceSearch) resourceSearch.onChange(e.target.value); else {setQuery(e.target.value); setPopover("search");} }} onFocus={() => !resourceSearch && query.trim() && setPopover("search")} onKeyDown={e => e.key === "Escape" && setPopover("")} placeholder={resourceSearch ? (resourceSearch.placeholder || "搜索资源（例如：PRD 模板、Codex 指令、支付接入…）") : "搜索课程、项目、学习笔记…"} aria-label={resourceSearch ? (resourceSearch.label || "搜索资源") : "搜索课程、项目、学习笔记"} />{(resourceSearch ? resourceSearch.value : query) ? <button type="button" aria-label="清空搜索" onClick={() => { resourceSearch ? resourceSearch.onChange("") : setQuery(""); setPopover(""); searchRef.current?.focus(); }}><X size={16} /></button> : <kbd>⌘ K</kbd>}</form>
         <div className="ws-user-actions"><button className="ws-icon-button" aria-label="查看通知" aria-expanded={popover === "notifications"} onClick={() => setPopover(popover === "notifications" ? "" : "notifications")}><Bell size={22} /></button><WorkspaceAccountMenu model={model} route={route} navigate={go} open={popover==='account'} setOpen={open=>setPopover(open?'account':'')}/></div>
-        {popover === "search" && <section className="ws-popover ws-search-results" aria-label="搜索结果"><div><strong>搜索结果</strong><button className="ws-icon-button" aria-label="关闭搜索结果" onClick={() => setPopover("")}><X size={18} /></button></div>{!query.trim() ? <p>输入关键词，搜索课程与自己的笔记。</p> : searchResults.length ? searchResults.map((r, i) => <button key={`${r.path}-${i}`} onClick={() => go(r.path)}><span>{r.title}<small>{r.kind}</small></span><ArrowRight size={16} /></button>) : <p>没有找到相关内容，试试其他关键词。</p>}</section>}
-        {popover === "notifications" && <section className="ws-popover ws-account-menu" aria-label="通知"><strong>学习通知</strong><p>暂无新通知。学习任务可在学习计划中管理。</p><button onClick={() => go("/plan")}>查看学习计划<ArrowRight size={15} /></button></section>}
+        {popover === "search" && <section className="ws-popover ws-search-results" aria-label="搜索结果"><div><strong>搜索结果</strong><button className="ws-icon-button" aria-label="关闭搜索结果" onClick={() => setPopover("")}><X size={18} /></button></div>{!query.trim() ? <p>搜索课程、项目、资料和自己的笔记。</p> : search.loading ? <p role="status">正在搜索…</p> : search.error ? <p role="alert">{search.error}</p> : searchResults.length ? searchResults.map((r, i) => <button key={`${r.path}-${i}`} onClick={() => go(r.path)}><span>{r.title}<small>{r.kind}</small></span><ArrowRight size={16} /></button>) : <p>没有找到相关内容，试试其他关键词。</p>}</section>}
+        {popover === "notifications" && <WorkspaceNotifications key={model.user?.id||'guest'} identity={model.user?.id} navigate={go}/>}
       </header>
       <main className="ws-content">
         {model.error && <div className="ws-status ws-status-error" role="alert">{model.error}<button onClick={model.refresh}>重试</button><button onClick={() => go("/login")}>登录</button></div>}

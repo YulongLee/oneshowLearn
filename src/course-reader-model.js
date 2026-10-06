@@ -1,4 +1,5 @@
 export const courseLearningPath = slug => `/learn/${encodeURIComponent(slug)}`;
+export const courseOfferPath = slug => `/course-offer?course=${encodeURIComponent(slug)}`;
 export function learningSlug(route) {
   const match = /^\/learn\/([^/]+)(?:\/lessons\/\d+)?\/?$/.exec(route);
   if (!match) return null;

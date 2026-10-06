@@ -30,7 +30,7 @@ export function FavoritesWorkspace({model,navigate,notify,query='',setQuery}){
  const visible=filterFavorites(items,{category,tag,query,sort}),tags=tagCounts(items),filtered=category!=='all'||Boolean(tag||query.trim()),blocked=model.busy||model.loading;
  const reset=()=>{setCategory('all');setTag('');setQuery('');};
  const switchView=value=>{setView(value);try{localStorage.setItem('oneshowlearn:favorites-view',value);}catch{/* Presentation only. */}};
- const open=item=>{if(item.unavailable)return;if(item.reference)navigate(item.source.url);else if(item.kind==='course')navigate(`/packs/${item.source.slug}`);else if(item.kind==='note')navigate(`/notes?note=${encodeURIComponent(item.source.id)}`);else setModal(item);};
+ const open=item=>{if(item.unavailable)return;if(item.reference)navigate(item.source.url);else if(item.kind==='course')navigate(`/learn/${encodeURIComponent(item.source.slug)}`);else if(item.kind==='note')navigate(`/notes?note=${encodeURIComponent(item.source.id)}`);else setModal(item);};
  const remove=async()=>{
   if(!pending||blocked||removing)return;setRemoving(true);setRemoveError('');
   try{if(await model.saveState(withoutFavorite(model.state,pending))){setPending(null);notify('已取消收藏，原内容仍然保留');}else setRemoveError('未能保存本次操作，请核对最新收藏后重试。');}

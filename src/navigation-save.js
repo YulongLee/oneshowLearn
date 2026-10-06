@@ -43,6 +43,7 @@ export function createRouteNavigation(target, onRoute, onStatus) {
         currentUrl = chosen.url;
       }
       onRoute(target.location.pathname || '/');
+      target.dispatchEvent(new CustomEvent('oneshowlearn:route-change'));
       if (!chosen.pop) target.scrollTo({top: 0, behavior: 'smooth'});
       onStatus('');
     } else {

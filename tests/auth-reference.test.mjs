@@ -18,7 +18,8 @@ test('learner login opts into the reference while management and embedded login 
   assert.match(code,/presentation = "default"/);
   assert.match(code,/presentation === 'commercial' && !isAdmin/);
   assert.match(code,/if \(!isAdmin\) return <main className="user-auth-page auth-commercial"/);
-  assert.match(code,/onSuccess, navigate \}\)/);
+  assert.match(code,/onSuccess, navigate,returnTo:new URLSearchParams\(window.location.search\).get\('returnTo'\)/);
+  assert.match(source('platforms.js'),/safeLoginReturn\(returnTo/);
   assert.match(code,/onPlatformSwitch=\{\(\)=>navigate\(getPlatform\('admin'\).login\)\}/);
 });
 

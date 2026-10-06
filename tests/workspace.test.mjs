@@ -182,14 +182,14 @@ test("workspace data is private, persistent and based on published accessible co
     assert.deepEqual((await request("/me/workspace", first.token)).data.state, savedState);
   });
 
-  await t.test("unpublished or deleted favorites are hidden and cannot block note or task saves", async () => {
+  await t.test("unpublished or deleted favorites survive reads and unrelated or older-client saves", async () => {
     const laterDeleted = pack("later-deleted");
     const before = { ...savedState, favorites: [available, unowned, laterDeleted] };
     assert.equal((await request("/me/workspace/state", second.token, before)).status, 200);
     run("UPDATE project_packs SET status='archived' WHERE id=?", [unowned]);
     run("DELETE FROM project_packs WHERE id=?", [laterDeleted]);
     const read = (await request("/me/workspace", second.token)).data;
-    assert.deepEqual(read.state.favorites, [available]);
+    assert.deepEqual(read.state.favorites, before.favorites);
     assert.deepEqual(read.state.notes, before.notes);
     assert.equal(read.recommendations.some((item) => item.id === unowned || item.id === laterDeleted), false);
     const update = { ...before,
@@ -199,8 +199,14 @@ test("workspace data is private, persistent and based on published accessible co
     };
     const saved = await request("/me/workspace/state", second.token, update);
     assert.equal(saved.status, 200);
-    assert.deepEqual(saved.data.state, { ...update, favorites: [available] });
+    assert.deepEqual(saved.data.state, { ...update, favorites: before.favorites });
     assert.deepEqual(JSON.parse(row("SELECT state_json FROM workspace_state WHERE user_id=?", [second.id]).state_json), saved.data.state);
+    const oldClient={...saved.data.state,favorites:[available]};
+    const preserved=await request('/me/workspace/state',second.token,oldClient,{'If-Match':saved.data.version});
+    assert.deepEqual(preserved.data.state.favorites,before.favorites);
+    const stale=await request('/me/workspace/state',second.token,oldClient,{'If-Match':'old','X-Removed-Course-Favorites':JSON.stringify([unowned,laterDeleted])});assert.equal(stale.status,409);
+    const explicit=await request('/me/workspace/state',second.token,oldClient,{'If-Match':preserved.data.version,'X-Removed-Course-Favorites':JSON.stringify([unowned,laterDeleted])});
+    assert.equal(explicit.status,200);assert.deepEqual(explicit.data.state.favorites,[available]);
     assert.deepEqual((await request("/me/workspace", first.token)).data.state, savedState);
   });
 

@@ -25,7 +25,7 @@ export function UserAuthCard({ navigate, onSuccess, onClose, initialMode = "logi
   useEffect(() => { if (!countdown) return; const timer = window.setInterval(() => setCountdown((value) => Math.max(0, value - 1)), 1000); return () => window.clearInterval(timer); }, [countdown]);
   const update = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const switchMode = (next) => { setMode(next); setError(""); setNotice(""); setShowPassword(false); update("code", ""); };
-  const complete = (result) => completeLogin(result, { platform, saveToken: setToken, onSuccess, navigate });
+  const complete = (result) => completeLogin(result, { platform, saveToken: setToken, onSuccess, navigate,returnTo:new URLSearchParams(window.location.search).get('returnTo') });
   const requestCode = async (reset = false) => {
     const data = await api(reset ? "/auth/password/request-code" : "/auth/register/request-code", {
       method: "POST", body: JSON.stringify(reset ? { email: form.email } : { name: form.name, email: form.email, password: form.password }),

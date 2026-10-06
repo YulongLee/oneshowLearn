@@ -9,6 +9,8 @@ import './notes-studio.css';
 import './notes-library.css';
 import {FavoriteButton} from './FavoriteButton.jsx';
 import {hasFavorite} from './favorite-reference.js';
+import {useLocationSearch} from './useLocationSearch.js';
+import {WorkspaceCapacity} from './WorkspaceCapacity.jsx';
 
 const kinds=[['all','全部笔记'],['course','课程笔记'],['project','项目笔记'],['personal','个人笔记']];
 const labels={personal:'个人笔记',course:'课程笔记',project:'项目笔记',learning:'课时笔记'};
@@ -24,23 +26,22 @@ export function NotesWorkspace({model,navigate,notify,query='',setQuery,guard}){
  const visible=filterNoteLibrary(all,{kind,tab,query,tag,scope,sort}),tags=tagCounts(live.filter(n=>n.kind==='personal'));
  const scopes=[...new Map(live.filter(n=>n.kind!=='personal').map(n=>[n.scope,n.sourceTitle])).entries()];
  const editing=Boolean(draft),blocked=busy||model.busy||model.loading;
- const [linkedId]=useState(()=>new URLSearchParams(window.location.search).get('note'));
- const [linkedLearningId]=useState(()=>new URLSearchParams(window.location.search).get('learningNote'));
- const [linkError,setLinkError]=useState('');const linkedOpened=useRef(false);
+ const {search:locationSearch,revision:locationRevision}=useLocationSearch(),linkedId=new URLSearchParams(locationSearch).get('note'),linkedLearningId=new URLSearchParams(locationSearch).get('learningNote');
+ const [linkError,setLinkError]=useState('');const linkedOpened=useRef('');
  // Bookmark links select only this account's live personal record, read-only.
  // Do not restore/overwrite a recoverable draft or synthesize a missing note.
  useEffect(()=>{
-  if(!linkedId||linkedOpened.current||model.loading||!model.user)return;
-  linkedOpened.current=true;const note=live.find(n=>n.kind==='personal'&&n.id===linkedId);
+  if(!linkedId||linkedOpened.current===locationRevision||model.loading||!model.user||draft)return;
+  linkedOpened.current=locationRevision;setLinkError('');const note=live.find(n=>n.kind==='personal'&&n.id===linkedId);
   if(note){setSelected(note.key);setMobileReader(true);setKind('personal');}
   else setLinkError('这篇个人笔记暂不可用，可能已移入回收站或不属于当前账号。');
- },[model.loading,model.user?.id,model.state.notes]);
+ },[model.loading,model.user?.id,model.state.notes,locationSearch,locationRevision]);
  useEffect(()=>{
-  if(!linkedLearningId||linkedOpened.current||model.loading||!model.user||loading||total===null||libraryError)return;
-  linkedOpened.current=true;const note=live.find(n=>n.kind!=='personal'&&n.id===linkedLearningId);
+  if(!linkedLearningId||linkedOpened.current===locationRevision||model.loading||!model.user||loading||total===null||libraryError||draft)return;
+  linkedOpened.current=locationRevision;setLinkError('');const note=live.find(n=>n.kind!=='personal'&&String(n.id)===linkedLearningId);
   if(note){setSelected(note.key);setMobileReader(true);}
   else setLinkError('这篇课时笔记暂不可用，可能已移入回收站或不属于当前账号。');
- },[model.loading,model.user?.id,loading,total,libraryError,learning]);
+ },[model.loading,model.user?.id,loading,total,libraryError,learning,locationSearch,locationRevision]);
  useEffect(()=>setLimit(50),[kind,tab,scope,tag,sort,query]);
  const load=async()=>{
   if(!model.user)return;const rev=++revision.current;setLoading(true);setLibraryError('');let records=[];
@@ -127,6 +128,7 @@ export function NotesWorkspace({model,navigate,notify,query='',setQuery,guard}){
  return <div className="notes-studio nl-page">
   <header className="ns-heading"><div><h1>学习笔记</h1><p>把课程知识，变成自己的实践方法。</p></div><div className="nl-heading-actions"><span className="ns-private"><LockSimple size={15}/>仅自己可见</span><div className="ns-actions"><button className="ns-button" disabled={blocked||!model.user} onClick={()=>importRef.current?.click()}><UploadSimple size={17}/>导入文本</button><button className="ns-button ns-primary" disabled={blocked} onClick={()=>newNote()}><Plus size={18}/>新建笔记</button><input ref={importRef} type="file" hidden accept=".md,.txt,text/plain,text/markdown" onChange={importText}/></div></div></header>
   <Gate model={model} navigate={navigate}>
+   <WorkspaceCapacity identity={model.user?.id}/>
    {linkError&&<div className="nl-library-error" role="alert">{linkError}</div>}
    <section className="nl-starters" aria-label="笔记模板"><h2>快速记录 · 从模板开始</h2><p>选择一个空白模板，记录自己的学习与思考。保存后成为个人笔记。</p><div>{NOTE_TEMPLATES.map((t,i)=>{const TemplateIcon=[BookOpen,Sparkle,Cube][i];return <button key={t.id} disabled={blocked} onClick={()=>newNote(t)}><TemplateIcon size={27} weight="duotone"/><span><strong>{t.title}</strong><small>{t.description}</small></span><ArrowRight size={16}/></button>;})}</div></section>
    {recoverable&&!draft&&<section className="nl-recovery" role="status"><div><strong>当前标签页有一份未保存的草稿</strong><p>仅当前账号可恢复，尚未保存到账号。</p></div><button className="ns-button" onClick={restoreDraft}>恢复草稿</button><button className="ns-button ns-quiet" onClick={clearDraft}>放弃草稿</button></section>}

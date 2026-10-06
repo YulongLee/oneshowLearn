@@ -217,7 +217,9 @@ test('reader progress and next item derive exclusively from published account me
 test('the legacy demo is retired and every course detail reaches the shared reader',()=>{
   const app=source('App.jsx');
   assert.doesNotMatch(app,/function LearningWorkspace|35 \+ completed|阅读功能完善中/);
-  assert.match(app,/navigate\(courseLearningPath\(pack.slug\)\)/);
+  assert.match(app,/navigate\(pack.entitled\?courseLearningPath\(pack.slug\)/);
+  const compatibility=app.slice(app.indexOf('function ProductPackPage'),app.indexOf('function ProductPackPage')+1800);
+  assert.doesNotMatch(compatibility,/method:\s*['"]POST['"]|永久|尚未接入/);
   assert.match(app,/learningSlug\(route\)[\s\S]*?<CourseReader/);
   const reader=source('CourseReader.jsx');
   assert.match(reader,/\/me\/progress\//);

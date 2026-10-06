@@ -28,12 +28,25 @@ export function createAssetStorage(env=process.env,clientOverride) {
     info:{provider:'oss',bucket,prefix,region},
     async put(file){
       if(!/^[a-f0-9-]+\.[a-z0-9]+$/.test(file.filename))throw new Error('Invalid asset filename');
-      const key=`${prefix}${new Date().toISOString().slice(0,7)}/${file.filename}`;
+      const key=file.checkpoint?.name||`${prefix}${new Date().toISOString().slice(0,7)}/${file.filename}`;
+      if(!key.startsWith(prefix)||key.includes('..')||!key.endsWith('/'+file.filename))throw new Error('Invalid resumed asset key');
       const header_hex=await fileHeader(file.path);
-      const result=await client.put(key,file.path,{headers:{'x-oss-object-acl':'private','x-oss-forbid-overwrite':'true','Content-Type':'application/octet-stream'}});
+      const headers={'x-oss-object-acl':'private','x-oss-forbid-overwrite':'true','Content-Type':'application/octet-stream',...(file.manifestDigest?{'x-oss-meta-manifest':file.manifestDigest}:{})};
+      let result;
+      try{result=file.size>50*1024*1024?await client.multipartUpload(key,file.path,{headers,mime:'application/octet-stream',partSize:8*1024*1024,parallel:2,checkpoint:file.checkpoint||undefined,progress:async(_fraction,checkpoint)=>{if(checkpoint)await file.saveCheckpoint?.(checkpoint);}}):await client.put(key,file.path,{headers});}
+      catch(error){
+        // A lost completion response is not permission to overwrite an object.
+        // Recover only this immutable session's exact content manifest and size.
+        if(!file.manifestDigest)throw error;
+        let head;try{head=await client.head(key);}catch{throw error;}
+        const h=head.res?.headers||{};
+        if(h['x-oss-meta-manifest']!==file.manifestDigest||Number(h['content-length'])!==file.size)throw error;
+        result=head;
+      }
       return {provider:'oss',bucket,endpoint,object_key:key,etag:result.res?.headers?.etag||'',header_hex};
     },
     async remove(location){validate(location);await client.delete(location.object_key);},
+    async abortCheckpoint(checkpoint){if(!checkpoint?.uploadId)return;validate({bucket,endpoint,object_key:checkpoint.name||''});try{await client.abortMultipartUpload(checkpoint.name,checkpoint.uploadId);}catch(e){if(e.code!=='NoSuchUpload')throw e;}},
     async open(location,{range,head=false}={}){
       validate(location);
       if(head){await client.head(location.object_key);return null;}

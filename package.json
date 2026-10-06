@@ -15,10 +15,10 @@
     "test:performance": "vite build && node --test tests/performance.test.mjs",
     "test:outcomes": "node --test tests/achievement-library.test.mjs",
     "test:account-menu": "node --test tests/account-menu.test.mjs",
-    "test:commercial": "node --test tests/service-center.test.mjs tests/legacy-upload-security.test.mjs tests/opc-curriculum-import.test.mjs",
+    "test:commercial": "node --test tests/service-center.test.mjs tests/legacy-upload-security.test.mjs tests/opc-curriculum-import.test.mjs tests/functional-hardening.test.mjs tests/commercial-hardening.test.mjs",
     "test:payment-page": "node --test tests/alipay-page-pay.test.mjs",
     "test:payment-diagnostics": "node --test tests/payment-diagnostics.test.mjs",
-    "test:storage": "node --test tests/asset-storage.test.mjs",
+    "test:storage": "node --test tests/asset-storage.test.mjs tests/resumable-uploads.test.mjs",
     "test:platforms": "node --test tests/platforms.test.mjs tests/dashboard.test.mjs tests/workbench.test.mjs tests/learning-routes.test.mjs tests/tutor.test.mjs tests/workspace-navigation.test.mjs tests/commercial-layout.test.mjs tests/ai-provider.test.mjs tests/study-columns.test.mjs tests/navigation-save.test.mjs tests/notes-studio.test.mjs tests/course-offer.test.mjs tests/readability.test.mjs tests/favorites-studio.test.mjs tests/brand-identity.test.mjs tests/account-settings-ui.test.mjs tests/homepage-reference.test.mjs tests/auth-reference.test.mjs",
     "preview": "vite preview",
     "test:sites": "node --test tests/sites-worker.test.mjs"

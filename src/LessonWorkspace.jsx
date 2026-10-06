@@ -545,7 +545,7 @@ export function CourseAiPanel({ lesson, mode, user, onNote, slideId=null, compac
     {busy && <p role="status">AI 正在整理回答…</p>}
     {error && <p className="ai-error" role="alert">{error}</p>}
     {evidence?.coverage && (evidence.coverage.partial || evidence.coverage.imageOnlyPages>0) && <p className="ls-muted">本次仅依据可读文字{evidence.coverage.partial?'的部分片段':''}；{evidence.coverage.imageOnlyPages>0?`${evidence.coverage.imageOnlyPages} 页课件尚无文字，未参与回答。`:'并非完整课件总结。'}</p>}
-    {evidence?.sources?.length>0 && <details className="ls-ai-sources"><summary>本次回答引用的课程资料（{evidence.sources.length}）</summary>{evidence.sources.map(s=><div key={s.id}><strong>[{s.id}] {s.label}</strong><p>{s.excerpt}{s.excerpt.length>=800?'…':''}</p></div>)}<p className="ls-muted">来源标记用于核对，不代表 AI 的解释一定正确。</p></details>}
+    {evidence?.sources?.length>0 && <details className="ls-ai-sources"><summary>本次回答引用的课程资料（{evidence.sources.length}）</summary>{evidence.sources.map(s=><div key={s.id}><strong>[{s.id}] {s.label}</strong><p>{s.excerpt}{s.excerpt.length>=800?'…':''}</p></div>)}<p className="ls-muted">请结合引用资料核对回答，必要时继续追问。</p></details>}
     {response && <><Markdown body={response}/><div className="ai-result-actions"><button disabled={busy || saveBusy || savedAnswer} onClick={saveAnswer}>{savedAnswer ? '已保存至笔记' : saveBusy ? '保存中…' : '保存为私人笔记'}</button><button onClick={async () => { try { await navigator.clipboard.writeText(response); setNotice('已复制'); } catch { setError('复制失败，请手动选择文本。'); } }}>复制结果</button></div></>}
     {notice && <p role="status">{notice}</p>}
   </>;

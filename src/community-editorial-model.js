@@ -16,5 +16,5 @@ export function groupMessage(settings){
  if(settings.groupExpired)return '二维码已到期，官方更新后将重新开放。';
  if(!settings.groupReady)return '官方正在准备入群方式，配置完成后会在这里展示。';
  if(!settings.groupAccessible)return settings.groupAudience==='signed-in'?'请登录学习账号后查看入群方式。':'请使用拥有有效课程权益的账号查看；如有疑问，可联系官方核对权益。';
- return '请按官方入群说明操作；扫码不代表已自动完成入群核验。';
+ return '请按官方入群说明扫码申请，需核验时请联系官方支持。';
 }

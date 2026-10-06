@@ -43,6 +43,6 @@ export function SidebarCourseOffer({route,navigate,model}) {
     <button className="ws-offer-primary" disabled={access==='checking'} aria-current={route==='/membership'?'page':undefined} onClick={()=>learning?navigate(offer?.slug?courseLearningPath(offer.slug):'/opc'):navigate('/membership')}>{access==='checking'?'正在核对课程访问…':learning?'继续学习':'查看完整课程'}<ArrowRight size={17}/></button>
     {!learning&&summary.previewPath&&<button className="ws-offer-preview" disabled={access==='checking'} onClick={()=>navigate(summary.previewPath)}><Play size={14} weight="fill"/><span>免费试看前 {summary.previews} 节</span><ArrowRight size={15}/></button>}
     {!learning&&<small className="ws-offer-payment">{channels.length?`支持${channels.join(' / ')}支付`:'支付方式以收银台为准'}</small>}
-    {(learning||access==='management')&&<small>{learning?'课程与学习服务 · 仅限所购课程':'管理员预览 · 不代表购买记录'}</small>}
+    {(learning||access==='management')&&<small>{learning?'课程与学习服务 · 仅限所购课程':'管理员课程预览'}</small>}
   </section>;
 }

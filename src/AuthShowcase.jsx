@@ -6,7 +6,7 @@ const benefits = [[BookOpenText,'系统课程','从 0 到 1'],[Cube,'实战项�
 
 // Decorative product anatomy, never a claim about an account or actual progress.
 function WorkspaceIllustration() {
-  return <div className="auth-workspace-illustration" role="img" aria-label="学习工作台界面示意，不代表真实账号数据">
+  return <div className="auth-workspace-illustration" role="img" aria-label="学习工作台界面示意">
     <div className="auth-demo-window" aria-hidden="true">
       <div className="auth-demo-top"><div className="auth-demo-brand"><BrandIdentity/></div><span><MagnifyingGlass size={12}/>搜索课程、项目、学习笔记…</span><i/></div>
       <div className="auth-demo-body"><div className="auth-demo-nav">{[[House,'工作台'],[BookOpenText,'学习课程'],[Cube,'实战项目'],[Robot,'AI 导师'],[UsersThree,'学习社区'],[Star,'我的收藏']].map(([Icon,title],i)=><div key={title} className={i===0?'selected':''}><Icon size={16}/>{title}</div>)}</div>

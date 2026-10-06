@@ -102,7 +102,7 @@ function StageAcceptance({ project, stage, reload }) {
     <section className="ls-panel">
       <h3>{stage.title} · 阶段验收</h3>
       <p className="ls-muted">
-        完成课时和必需验收项后，解锁下一阶段。勾选表示你已实际检查，不代表平台自动验证。
+        完成课时和必需验收项后，解锁下一阶段。请根据自己的实际实践情况逐项确认。
       </p>
       {stage.checklist.map((task) => (
         <label className="ls-task" key={task.id}>

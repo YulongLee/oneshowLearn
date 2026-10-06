@@ -37,7 +37,7 @@ test('password visibility is a non-submitting accessible control and does not re
 test('login showcase is clearly illustrative and contains no fictional accounts or provider sign-in',()=>{
   const code=source('AuthShowcase.jsx');
   assert.match(code,/产品界面示意/);
-  assert.match(code,/不代表真实账号数据/);
+  assert.match(code,/学习工作台界面示意/);
   assert.doesNotMatch(code,/10,000|60\+|100\+|42%|GitHub|Google|Apple|onClick|localStorage|fetch\(/);
   const css=source('auth-commercial.css');
   assert.match(css,/@media\(max-width:960px\)/);

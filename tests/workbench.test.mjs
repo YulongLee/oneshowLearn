@@ -68,7 +68,7 @@ test('selected workbench keeps actual lesson, explicit demo status and non-payme
   assert.match(ui,/illustratedOpc=opc&&\(!source\|\|failed\)/);
   assert.match(ui,/src=\{source&&!failed\?source:opc\?coursePreviewArt:courseArt\(course\)\}/);
   assert.match(sidebar,/learning=access==='unlocked'/);
-  assert.match(sidebar,/管理员预览 · 不代表购买记录/);
+  assert.match(sidebar,/管理员课程预览/);
   assert.doesNotMatch(sidebar,/commerce\/orders|priceCents:49900/);
 });
 

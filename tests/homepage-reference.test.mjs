@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {homepageExamples,homepageOffer} from '../src/homepage-model.js';
+import {homepageExamples,homepageOffer,homepagePresentation,homepageCourse,homepagePreviewText} from '../src/homepage-model.js';
 import {currentPublicCopy,SITE_DEFAULTS} from '../server/site-defaults.mjs';
 
 test('homepage price only comes from a valid commerce offer',()=>{
@@ -39,4 +39,36 @@ test('homepage preserves backend configuration and has no fabricated testimonial
   assert.match(source,/useSitePage\('public',configuration\)/);
   assert.match(source,/id="roadmap"/);assert.match(source,/id="hot-courses"/);
   assert.doesNotMatch(source,/10,000|10000|学员真实反馈|STUDENT VOICES|免费试听前2节/);
+});
+
+test('commercial copy only replaces bundled defaults without changing CMS routes or source',()=>{
+  const before=structuredClone(SITE_DEFAULTS.public),after=homepagePresentation(before);
+  assert.match(after.description,/个人创作者/);assert.match(after.footerTitle,/真正的开始/);
+  assert.deepEqual(before,SITE_DEFAULTS.public);
+  const authored={...before,description:'作者介绍',footerTitle:'作者标题',footerDescription:'作者结尾',ctaLabel:'自定义入口',secondaryPath:'/resources'};
+  assert.deepEqual(homepagePresentation(authored),authored);
+});
+test('homepage counts and free preview use only the authoritative offered course',()=>{
+  const entry={courses:[{id:7,slug:'actual-course'},{id:8,slug:'other'}],chapters:[{pack_id:7,id:1},{pack_id:8,id:2}],lessons:[
+    {id:9,kind:'course',owner_id:7,is_preview:true,locked:false},
+    {id:10,kind:'course',owner_id:7,is_preview:true,locked:false},
+    {id:11,kind:'course',owner_id:7,is_preview:false,locked:false},
+    {id:12,kind:'project',owner_id:7,is_preview:true,locked:false},
+    {id:13,kind:'course',owner_id:8,is_preview:true,locked:false},
+  ]};
+  const summary=homepageCourse(entry,{slug:'actual-course'});
+  assert.equal(summary.chapterCount,1);assert.equal(summary.lessonCount,3);assert.equal(summary.previewCount,2);
+  assert.equal(summary.previewPath,'/learn/actual-course/lessons/9');assert.equal(homepagePreviewText(summary),'免费试看前 2 节');
+  assert.equal(homepageCourse(entry,null),null);assert.equal(homepageCourse(entry,{slug:'unpublished'}),null);
+  assert.equal(homepagePreviewText(null),'查看课程与试看');
+  entry.lessons[0].locked=true;assert.equal(homepageCourse(entry,{slug:'actual-course'}).previewCount,1);
+  assert.equal(homepagePreviewText({previewCount:1}),'免费试看1 节');
+});
+test('commercial homepage has native FAQ and expressly illustrative AI and instructor placeholders',()=>{
+  const source=readFileSync(new URL('../src/PublicHomepage.jsx',import.meta.url),'utf8');
+  assert.match(source,/<details key=\{i\}>/);assert.match(source,/交互示意，非实际回答/);
+  assert.match(source,/讲师介绍待补充/);assert.match(source,/人物品牌图不代表讲师本人/);
+  assert.match(source,/分类示意/);assert.match(source,/演示项目/);
+  assert.doesNotMatch(source,/api\([^\n]+method\s*:\s*['"](?:POST|PUT|DELETE)/);
+  assert.doesNotMatch(source,/无限(?:次|量)|保证收入|自动部署|退款保证/);
 });

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {mkdirSync} from 'node:fs';
 import path from 'node:path';
-const {chromium}=createRequire('/Users/liyulong/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/_live.cjs')('playwright');
+const {chromium}=createRequire(import.meta.url)('playwright');
 const base='https://oneshowlearn.com',offer=await(await fetch(base+'/api/commerce/offer')).json();
 assert.equal(offer.priceCents,49900);assert.ok(offer.slug);
 const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},reducedMotion:'reduce'}),errors=[],external=[],writes=[],out=path.resolve('artifacts/functional-hardening/live');mkdirSync(out,{recursive:true});

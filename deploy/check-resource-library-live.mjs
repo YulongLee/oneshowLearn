@@ -5,7 +5,7 @@ import {readFileSync,mkdirSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import path from 'node:path';
 import {resourceLibraryItems,resourceHighlights} from '../src/resource-library-model.js';
-const require=createRequire('/Users/liyulong/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/_audit.cjs');
+const require=createRequire(import.meta.url);
 const {chromium}=require('playwright'),base='https://oneshowlearn.com';
 const hash=data=>createHash('sha256').update(data).digest('hex'),expected=hash(readFileSync('dist/client/index.html'));
 const browser=await chromium.launch({headless:true}),errors=[],writes=[];let checks=0;

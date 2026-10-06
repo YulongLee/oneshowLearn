@@ -4,7 +4,7 @@ import {createRequire} from 'node:module';
 import {readFileSync,mkdirSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import path from 'node:path';
-const require=createRequire('/Users/liyulong/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/_audit.cjs'),{chromium}=require('playwright');
+const require=createRequire(import.meta.url),{chromium}=require('playwright');
 const base='https://oneshowlearn.com',hash=b=>createHash('sha256').update(b).digest('hex'),expected=hash(readFileSync('dist/client/index.html'));
 const browser=await chromium.launch({headless:true}),errors=[],writes=[];let checks=0;
 const check=(ok,label)=>{assert.ok(ok,label);checks++;},out=path.resolve('artifacts/achievement-library/live');mkdirSync(out,{recursive:true});

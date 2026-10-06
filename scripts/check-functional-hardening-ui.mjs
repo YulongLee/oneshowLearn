@@ -6,7 +6,7 @@ import path from 'node:path';
 import {createRequire} from 'node:module';
 import {randomUUID} from 'node:crypto';
 import express from 'express';
-const require=createRequire('/Users/liyulong/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/_audit.cjs'),{chromium}=require('playwright');
+const require=createRequire(import.meta.url),{chromium}=require('playwright');
 const temp=mkdtempSync(path.join(tmpdir(),'osl-functional-ui-'));
 Object.assign(process.env,{NODE_ENV:'test',DATABASE_PATH:path.join(temp,'isolated.db'),UPLOAD_DIR:path.join(temp,'uploads'),JWT_SECRET:'isolated-hardening-browser',ASSET_STORAGE:'local',AI_ENABLED:'false',EMAIL_API_KEY:''});
 const {db,row,run}=await import('../server/db.mjs'),{signUser}=await import('../server/auth.mjs'),{createApp}=await import('../server/index.mjs'),{grantOrderEntitlements}=await import('../server/learning-commerce.mjs');

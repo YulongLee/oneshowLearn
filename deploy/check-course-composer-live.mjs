@@ -4,7 +4,7 @@ import {createRequire} from 'node:module';
 import {readFileSync,mkdirSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import path from 'node:path';
-const require=createRequire('/Users/liyulong/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/_audit.cjs');
+const require=createRequire(import.meta.url);
 const {chromium}=require('playwright');
 const base='https://oneshowlearn.com';
 const expected=createHash('sha256').update(readFileSync('dist/client/index.html')).digest('hex');

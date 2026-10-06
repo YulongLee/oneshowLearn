@@ -1,0 +1,36 @@
+# Allowlist only: no local databases, secrets, uploads, Git or QA captures.
+**
+!package.json
+!package-lock.json
+!index.html
+!vite.config.mjs
+!Dockerfile
+!.dockerignore
+!src/
+!src/**
+!server/
+!server/**
+!scripts/
+!scripts/prepare-sites-build.mjs
+!scripts/prepare-opc-curriculum.mjs
+!worker/
+!worker/index.js
+!.openai/
+!.openai/hosting.json
+!deploy/
+!deploy/portable/
+!deploy/portable/**
+!deploy/import-demo-materials.mjs
+!deploy/publish-demo-projects.mjs
+!deploy/import-opc-curriculum.mjs
+!tests/
+!tests/*.mjs
+!docs/
+!docs/curriculum/
+!docs/curriculum/ai-opc-20261001.json
+!.github/
+!.github/workflows/
+!.github/workflows/ci.yml
+**/.DS_Store
+src/* 2.jsx
+src/* 2.css

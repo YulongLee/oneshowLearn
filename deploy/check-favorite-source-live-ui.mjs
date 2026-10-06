@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {readFileSync,mkdirSync} from 'node:fs';
 import {createHash} from 'node:crypto';
-const require=createRequire('/Users/liyulong/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/_audit.cjs');
+const require=createRequire(import.meta.url);
 const {chromium}=require('playwright'),base='https://oneshowlearn.com';
 const expected=createHash('sha256').update(readFileSync('dist/client/index.html')).digest('hex');
 const browser=await chromium.launch({headless:true}),errors=[],writes=[];let checks=0;

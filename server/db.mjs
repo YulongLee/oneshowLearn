@@ -7,6 +7,7 @@ import {migrateAI} from './ai-schema.mjs';
 import {migratePayments} from './payment-schema.mjs';
 import {migrateLogin} from './login-schema.mjs';
 import {migrateService} from './service-schema.mjs';
+import {migrateUploads} from './upload-schema.mjs';
 
 mkdirSync(path.dirname(config.databasePath), { recursive: true });
 
@@ -350,9 +351,16 @@ export function run(statement, params = {}) {
   return Array.isArray(params) ? prepared.run(...params) : prepared.run(params);
 }
 
-migrate();
-migrateLearning(db);
-migrateAI(db);
-migratePayments(db);
-migrateLogin(db, config.databasePath);
-migrateService(db);
+export function applyMigrations() {
+  migrate();
+  migrateLearning(db);
+  migrateAI(db);
+  migratePayments(db);
+  migrateLogin(db, config.databasePath);
+  migrateService(db);
+  migrateUploads(db);
+}
+
+// Legacy installations retain their existing startup behavior. Portable releases
+// migrate explicitly while stopped, before starting the new application image.
+if (process.env.DATABASE_AUTO_MIGRATE !== 'false') applyMigrations();

@@ -6,6 +6,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 export const config = {
   root,
   port: Number(process.env.API_PORT || 8787),
+  host: process.env.API_HOST || "127.0.0.1",
+  trustProxy: process.env.API_TRUST_PROXY ? process.env.API_TRUST_PROXY.split(',').map(v=>v.trim()) : 'loopback',
   appOrigin: process.env.APP_ORIGIN || "http://127.0.0.1:4173",
   appUrl: (process.env.APP_URL || process.env.APP_ORIGIN || "http://127.0.0.1:4173").replace(/\/$/, ""),
   databasePath: path.resolve(root, process.env.DATABASE_PATH || "data/oneshowlearn.db"),

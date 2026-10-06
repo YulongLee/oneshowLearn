@@ -73,7 +73,7 @@ function packDetails(pack, user) {
 export function createApp({loginProviders,assetStorage} = {}) {
   const app = express();
   app.disable("x-powered-by");
-  app.set("trust proxy", "loopback");
+  app.set("trust proxy", config.trustProxy);
   app.use(cors({ origin: config.appOrigin }));
   app.use(paymentNotificationRouter());
   app.use(express.json({ limit: "2mb" }));
@@ -87,6 +87,11 @@ export function createApp({loginProviders,assetStorage} = {}) {
   },express.static(config.uploadDir,{index:false,dotfiles:'deny'}));
 
   app.get("/api/health", (_req, res) => res.json({ ok: true, service: "oneshowlearn-api" }));
+  app.get('/api/ready', (_req, res) => {
+    res.set('Cache-Control', 'no-store');
+    try { row('SELECT id FROM users LIMIT 1'); res.json({ok:true,service:'oneshowlearn-api'}); }
+    catch { res.status(503).json({ok:false,service:'oneshowlearn-api'}); }
+  });
   app.use("/api/auth", accountRouter());
   app.use('/api/auth', externalLoginRouter(loginProviders));
   app.use('/api/admin/login-settings', loginAdminRouter());
@@ -197,6 +202,6 @@ export function createApp({loginProviders,assetStorage} = {}) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
-  createApp().listen(config.port, "127.0.0.1", () => console.log(`OneShowLearn API running on http://127.0.0.1:${config.port}`));
+  createApp().listen(config.port, config.host, () => console.log(`OneShowLearn API running on http://${config.host}:${config.port}`));
   startPaymentReconciliation();
 }

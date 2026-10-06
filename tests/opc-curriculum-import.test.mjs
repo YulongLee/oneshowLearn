@@ -32,7 +32,11 @@ test('CMS-only curriculum import is repeatable, permission-safe and preserves pr
  t.after(async()=>{await new Promise(r=>server.close(r));db.close();rmSync(temp,{recursive:true,force:true});});
  const base=`http://127.0.0.1:${server.address().port}/api`;
  const videoPath=path.join(temp,'demo.mp4');writeFileSync(videoPath,Buffer.from('isolated media bytes'));
- const media={videoPath,pptPath:new URL('../artifacts/course-template/output/OneShowLearn-录课通用模板.pptx',import.meta.url),slides:Array.from({length:14},(_,i)=>new URL(`../artifacts/course-template/.build/render/${String(i+1).padStart(2,'0')}.png`,import.meta.url))};
+ // API transport/ownership test, not media rendering. Do not depend on ignored
+ // owner-authored courseware artifacts that are absent in a clean Git checkout.
+ const pptPath=path.join(temp,'isolated.pptx');writeFileSync(pptPath,'Isolated PPTX transport fixture, not teaching media');
+ const slides=Array.from({length:14},(_,i)=>{const file=path.join(temp,`isolated-slide-${i+1}.png`);writeFileSync(file,Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1cAAAAASUVORK5CYII=','base64'));return file;});
+ const media={videoPath,pptPath,slides};
  const opts={base,email:'outline@example.com',password,data,journalPath:path.join(temp,'journal.json'),publish:true,media};
  const journal=await importOpcCurriculum(opts);
  assert.equal(journal.published,true);

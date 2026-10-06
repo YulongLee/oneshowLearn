@@ -3,6 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "packageManager": "npm@10.9.9",
+  "engines": { "node": ">=22.14.0 <23" },
   "scripts": {
     "dev": "concurrently -k -n api,web -c magenta,cyan \"npm:dev:api\" \"npm:dev:web\"",
     "dev:web": "vite",
@@ -21,7 +23,12 @@
     "test:storage": "node --test tests/asset-storage.test.mjs tests/resumable-uploads.test.mjs",
     "test:platforms": "node --test tests/platforms.test.mjs tests/dashboard.test.mjs tests/workbench.test.mjs tests/learning-routes.test.mjs tests/tutor.test.mjs tests/workspace-navigation.test.mjs tests/commercial-layout.test.mjs tests/ai-provider.test.mjs tests/study-columns.test.mjs tests/navigation-save.test.mjs tests/notes-studio.test.mjs tests/course-offer.test.mjs tests/readability.test.mjs tests/favorites-studio.test.mjs tests/brand-identity.test.mjs tests/account-settings-ui.test.mjs tests/homepage-reference.test.mjs tests/auth-reference.test.mjs",
     "preview": "vite preview",
-    "test:sites": "node --test tests/sites-worker.test.mjs"
+    "test:sites": "node --test tests/sites-worker.test.mjs",
+    "test:engineering": "node --test tests/engineering.test.mjs",
+    "test:browser": "node scripts/run-browser-checks.mjs",
+    "test:deployment": "node scripts/check-portable-deployment.mjs",
+    "check:engineering": "node scripts/check-engineering.mjs",
+    "ops": "node deploy/portable/manage.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
@@ -45,6 +52,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "playwright": "1.62.1",
     "concurrently": "^10.0.4",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1"

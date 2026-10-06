@@ -1,0 +1,46 @@
+services:
+  api:
+    image: ${API_IMAGE:?Use the deployment manager}
+    pull_policy: never
+    user: "${APP_UID:?}:${APP_GID:?}"
+    init: true
+    restart: unless-stopped
+    read_only: true
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    env_file:
+      - path: ${APP_ENV_FILE:?}
+        format: raw
+    environment:
+      NODE_ENV: production
+      API_HOST: 0.0.0.0
+      API_PORT: "8787"
+      API_TRUST_PROXY: "loopback,uniquelocal"
+      DATABASE_AUTO_MIGRATE: "false"
+      DATABASE_PATH: /app/data/oneshowlearn.db
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - ${STATE_DIR:?}/data:/app/data
+      - ${STATE_DIR:?}/uploads:/app/uploads
+      - ${STATE_DIR:?}/uploads-private:/app/uploads-private
+      - ${STATE_DIR:?}/uploads-staging:/app/uploads-staging
+    tmpfs: [/tmp]
+    stop_grace_period: 90s
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+  web:
+    image: ${WEB_IMAGE:?Use the deployment manager}
+    pull_policy: never
+    restart: unless-stopped
+    read_only: true
+    security_opt: ["no-new-privileges:true"]
+    tmpfs: [/var/cache/nginx, /var/run, /tmp]
+    volumes:
+      - ${STATE_DIR:?}/static-assets:/usr/share/nginx/html/assets:ro
+    ports: ["127.0.0.1:${HTTP_PORT:?}:8080"]
+    depends_on:
+      api: {condition: service_healthy}
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}

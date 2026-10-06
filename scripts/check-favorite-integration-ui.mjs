@@ -6,7 +6,7 @@ import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {createRequire} from 'node:module';
 import express from 'express';
-const require=createRequire('/Users/liyulong/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/_audit.cjs');
+const require=createRequire(import.meta.url);
 const {chromium}=require('playwright'),dir=mkdtempSync(path.join(tmpdir(),'osl-favorite-integration-ui-'));
 Object.assign(process.env,{NODE_ENV:'test',DATABASE_PATH:path.join(dir,'isolated.db'),UPLOAD_DIR:path.join(dir,'uploads'),JWT_SECRET:'isolated-favorite-source-ui',ASSET_STORAGE:'local',AI_ENABLED:'false',EMAIL_API_KEY:''});
 const {db,row,run}=await import('../server/db.mjs'),{signUser}=await import('../server/auth.mjs'),{createApp}=await import('../server/index.mjs'),{lessonSchema}=await import('../server/learning-model.mjs');

@@ -7,13 +7,14 @@ import {config} from './config.mjs';
 import {db,row,rows,run} from './db.mjs';
 import {requireAdmin,hasVerifiedLogin} from './auth.mjs';
 import {rateLimit} from './account-security.mjs';
+import {migrateUploads} from './upload-schema.mjs';
 export const UPLOAD_CHUNK_BYTES=4*1024*1024,UPLOAD_MAX_BYTES=1024*1024*1024;
 const extensions=new Set(['.pdf','.txt','.md','.csv','.json','.zip','.pptx','.docx','.xlsx','.mp4','.webm','.mp3','.png','.jpg','.jpeg','.webp','.vtt']);
 const hash=data=>createHash('sha256').update(data).digest('hex');
 const manifestSchema=z.object({name:z.string().min(1).max(255).refine(n=>!/[\x00-\x1f\\/]/.test(n)),size:z.number().int().positive().max(UPLOAD_MAX_BYTES),mime:z.string().max(120),chunks:z.array(z.string().regex(/^[a-f0-9]{64}$/)).min(1).max(256)}).strict().refine(m=>m.chunks.length===Math.ceil(m.size/UPLOAD_CHUNK_BYTES));
 const fail=(status,message)=>{throw Object.assign(new Error(message),{isPaymentError:true,status});};
 export function resumableUploadsRouter(storage){
- db.exec(`CREATE TABLE IF NOT EXISTS asset_upload_sessions(id TEXT PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES users(id),filename TEXT NOT NULL,name TEXT NOT NULL,mime TEXT NOT NULL,size INTEGER NOT NULL,manifest TEXT NOT NULL,digest TEXT NOT NULL,received INTEGER NOT NULL DEFAULT 0,state TEXT NOT NULL DEFAULT 'uploading',expires_at INTEGER NOT NULL,lease TEXT,lease_until INTEGER NOT NULL DEFAULT 0,storage_checkpoint TEXT,asset_id INTEGER REFERENCES assets(id));CREATE INDEX IF NOT EXISTS asset_upload_owner ON asset_upload_sessions(user_id,digest);`);
+ migrateUploads(db);
  const router=Router(),directory=config.uploadDir+'-staging',privateDirectory=config.uploadDir+'-private';
  const safeDirectory=dir=>{mkdirSync(dir,{recursive:true,mode:0o700});if(lstatSync(dir).isSymbolicLink()||!lstatSync(dir).isDirectory())fail(503,'上传目录不可用');};
  const file=s=>path.join(directory,s.id+'.part');

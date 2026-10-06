@@ -5,6 +5,14 @@ dist/
 .env
 .env.*
 !.env.example
+*.env
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+/deployments/
+/backups/
+/release-images.tar
 .ai-config.key
 .payment-config.key
 .auth-config.key

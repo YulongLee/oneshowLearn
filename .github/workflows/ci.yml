@@ -30,7 +30,8 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: node scripts/run-acceptance-with-diagnostics.mjs test:browser
       - run: npm run ops -- build --release ci-${{ github.sha }}
-      - run: npm run test:deployment -- --release ci-${{ github.sha }}
+      # npm run test:deployment, with bounded failure evidence in check annotations.
+      - run: node scripts/run-acceptance-with-diagnostics.mjs test:deployment --release ci-${{ github.sha }}
       - uses: actions/upload-artifact@v4
         with:
           name: verified-release-${{ github.sha }}

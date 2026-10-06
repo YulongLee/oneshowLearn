@@ -8,8 +8,18 @@ import {spawnSync} from 'node:child_process';
 import {DatabaseSync} from 'node:sqlite';
 import {initialEnvironment,parseEnvironment,validateEnvironment} from '../deploy/portable/environment.mjs';
 import {safeDirectory,validateImagePair,verifyBackup} from '../deploy/portable/manage.mjs';
+import {onlyLoopbackWebBinding} from '../deploy/portable/container-inspection.mjs';
 const temp=t=>{const p=realpathSync(mkdtempSync(path.join(tmpdir(),'osl-engineering-unit-')));t.after(()=>rmSync(p,{recursive:true,force:true}));return p;};
 const env=()=>initialEnvironment('https://engineering.example.invalid','owner@example.invalid');
+test('container inspection accepts unpublished Docker ports but strictly rejects public or unexpected bindings',()=>{
+ const binding={HostIp:'127.0.0.1',HostPort:'4188'};
+ assert.equal(onlyLoopbackWebBinding({'80/tcp':null,'8080/tcp':[binding]},4188),true);
+ assert.equal(onlyLoopbackWebBinding({'8080/tcp':[binding]},4188),true);
+ for(const ports of [null,{},[],{'80/tcp':null},{'8080/tcp':[]},{'8080/tcp':[null]},
+  {'8080/tcp':[{...binding,HostIp:'0.0.0.0'}]}, {'8080/tcp':[{...binding,HostIp:'::'}]},
+  {'8080/tcp':[{...binding,HostPort:'4189'}]}, {'80/tcp':[binding],'8080/tcp':[binding]},
+  {'8080/tcp':binding}])assert.equal(onlyLoopbackWebBinding(ports,4188),false);
+});
 test('portable initialization creates independent server secrets with providers and registration disabled',()=>{
  const a=env(),b=env();assert.equal(a.NODE_ENV,'production');assert.equal(a.REGISTRATION_ENABLED,'false');assert.equal(a.ALLOW_DEV_EMAIL_DELIVERY,'false');assert.equal(a.AI_ENABLED,'false');
  for(const key of ['ADMIN_PASSWORD','JWT_SECRET','AI_CONFIG_ENCRYPTION_KEY','PAYMENT_CONFIG_ENCRYPTION_KEY','AUTH_CONFIG_ENCRYPTION_KEY'])assert.notEqual(a[key],b[key]);

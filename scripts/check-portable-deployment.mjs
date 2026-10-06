@@ -8,6 +8,7 @@ import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {createServer} from 'node:net';
 import {verifyBackup} from '../deploy/portable/manage.mjs';
+import {onlyLoopbackWebBinding} from '../deploy/portable/container-inspection.mjs';
 let checks=0;
 const check=(value,message)=>{assert.ok(value,message);checks++;};
 const releaseIndex=process.argv.indexOf('--release'),release=process.argv[releaseIndex+1];
@@ -42,7 +43,7 @@ try {
  const apiContainer=containers.find(c=>c.Config.Labels['com.docker.compose.service']==='api');
  check(apiContainer.Config.User&&!apiContainer.Config.User.startsWith('0:'),'non-root API');check(!Object.values(apiContainer.NetworkSettings.Ports||{}).some(Boolean),'API port not exposed');
  const webContainer=containers.find(c=>c.Config.Labels['com.docker.compose.service']==='web');
- check(Object.values(webContainer.NetworkSettings.Ports).flat().every(p=>p.HostIp==='127.0.0.1'),'HTTP bound to loopback');
+ check(onlyLoopbackWebBinding(webContainer.NetworkSettings.Ports,state(a).port),'only configured HTTP port bound to loopback');
  check(containers.every(c=>c.HostConfig.LogConfig.Config['max-size']==='10m'),'bounded logs');
  check(query(a,"console.log(db.prepare('SELECT COUNT(*) n FROM users').get().n)").trim()==='1','only owner initialized');
  for(const table of ['products','project_packs','learning_paths','practice_projects','orders'])check(query(a,`console.log(db.prepare('SELECT COUNT(*) n FROM ${table}').get().n)`).trim()==='0','no sample '+table);

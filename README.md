@@ -25,6 +25,8 @@ npm run test:browser
 
 浏览器依赖从项目锁文件安装，不依赖某台电脑上的 Codex 目录。Linux 首次安装可用 `npx playwright install --with-deps chromium`。
 
+打包验收和性能验收各自生成所需构建产物；干净 Git 检出后直接运行 `npm test`，无需先手动生成被忽略的 `dist/` 或准备本机课程课件。
+
 ## 发布与跨服务器迁移
 
 通用容器部署、新站初始化、显式数据库迁移、备份恢复和代码回滚见 [部署手册](deploy/portable/README.md)。发布由不可变镜像 ID 标识；程序、数据、密钥分别管理。

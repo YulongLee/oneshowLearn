@@ -24,6 +24,7 @@ npm run test:browser
 ```
 
 浏览器依赖从项目锁文件安装，不依赖某台电脑上的 Codex 目录。Linux 首次安装可用 `npx playwright install --with-deps chromium`。
+课时浏览器验收还需要 FFmpeg，用于生成隔离的八秒测试视频。通过系统包管理器安装并放入 PATH，或显式设置 `FFMPEG_BIN`；CI 自动安装。线上视频播放和 API 服务不依赖此测试编码器，也不会重新处理真实课程视频。
 
 打包验收和性能验收各自生成所需构建产物；干净 Git 检出后直接运行 `npm test`，无需先手动生成被忽略的 `dist/` 或准备本机课程课件。
 

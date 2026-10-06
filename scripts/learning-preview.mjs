@@ -23,7 +23,7 @@ const asset=(source,name,mime)=>{const dest=path.join(`${directory}/uploads-priv
 const slide1=asset(path.join(root,'src/assets/resources-prd-v1.webp'),'slide1.webp','image/webp');
 const slide2=asset(path.join(root,'src/assets/project-web-cover-v1.webp'),'slide2.webp','image/webp');
 const videoPath=path.join(directory,'fixture.mp4');
-const media=spawnSync('/opt/homebrew/bin/ffmpeg',['-y','-loop','1','-i',path.join(root,'src/assets/projects-hero-v1.webp'),'-t','22','-vf','scale=960:-2','-r','12','-c:v','libx264','-pix_fmt','yuv420p',videoPath],{stdio:'ignore'});
+const media=spawnSync(process.env.FFMPEG_BIN||'ffmpeg',['-y','-loop','1','-i',path.join(root,'src/assets/projects-hero-v1.webp'),'-t','22','-vf','scale=960:-2','-r','12','-c:v','libx264','-pix_fmt','yuv420p',videoPath],{stdio:'ignore'});
 const videoId=media.status===0&&existsSync(videoPath)?asset(videoPath,'fixture.mp4','video/mp4'):null;
 const library=add("INSERT INTO content_library(type,title,body,status) VALUES('prompt','开发测试 · 阅读项目指令','先阅读项目结构，列出需要实现的功能与验证步骤。此内容仅用于开发测试。','published')");
 const revision=add('INSERT INTO prompt_revisions(library_id,version,title,body) SELECT id,1,title,body FROM content_library WHERE id=?',[library]);

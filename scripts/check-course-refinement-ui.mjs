@@ -26,8 +26,8 @@ const product=insert("INSERT INTO products(pack_id,sku,title,price_cents,status)
 savePaymentConfig(owner,0,{settings:{...paymentConfiguration().settings,productId:product,priceCents:49900,originalPriceCents:99900},secrets:{}});
 const privateDir=path.join(dir,'uploads-private');mkdirSync(privateDir,{recursive:true});
 const media=path.join(dir,'fixture.mp4');
-const ffmpeg=spawnSync('/opt/homebrew/bin/ffmpeg',['-y','-f','lavfi','-i','color=c=0x29254f:s=960x540:r=12:d=8','-c:v','libx264','-pix_fmt','yuv420p',media],{stdio:'ignore'});
-assert.equal(ffmpeg.status,0,'isolated video fixture encoder');
+const ffmpeg=spawnSync(process.env.FFMPEG_BIN||'ffmpeg',['-y','-f','lavfi','-i','color=c=0x29254f:s=960x540:r=12:d=8','-c:v','libx264','-pix_fmt','yuv420p',media],{stdio:'ignore'});
+assert.equal(ffmpeg.status,0,'isolated video fixture encoder: install FFmpeg or set FFMPEG_BIN');
 const ppt=path.join(dir,'fixture.pptx');writeFileSync(ppt,Buffer.from('Isolated download route fixture; never upload.'));
 const asset=(file,name,mime)=>{copyFileSync(file,path.join(privateDir,name));const id=insert('INSERT INTO assets(filename,original_name,mime_type,size_bytes,url,uploaded_by) VALUES(?,?,?,?,?,?)',[name,name,mime,statSync(file).size,'',owner.id]);run('UPDATE assets SET url=? WHERE id=?',[`/api/materials/${id}`,id]);return id;};
 const videoId=asset(media,'fixture.mp4','video/mp4'),pptId=asset(ppt,'fixture.pptx','application/vnd.openxmlformats-officedocument.presentationml.presentation');

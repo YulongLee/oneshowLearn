@@ -152,6 +152,7 @@ test('release definitions keep data out of images and production deployment out 
   assert.ok(docker.includes(name));assert.ok(ignore.split('\n').includes('!'+name));assert.ok(readFileSync('deploy/portable/manage.mjs','utf8').includes("'"+name+"'"),'verification input included in immutable source hash');
  }
  assert.match(workflow,/npm run check:dependencies/);assert.match(workflow,/npm run test:auth-proxy/);
+ assert.ok(workflow.includes('AUTH_PROXY_IMAGE: oneshowlearn-web:ci-${{ github.sha }}'),'proxy uses the actual tagged build, not an optional BuildKit base tag');
  assert.match(workflow,/npm run test:deployment/);assert.doesNotMatch(workflow,/secrets\.|ssh |ops -- deploy/);
  assert.match(readFileSync('deploy/portable/compose.yaml','utf8'),/127\.0\.0\.1:/);assert.match(readFileSync('server/config.mjs','utf8'),/host: process.env.API_HOST \|\| "127.0.0.1"/);
 });

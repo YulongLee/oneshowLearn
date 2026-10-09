@@ -39,4 +39,7 @@ try{
  for(const route of ['/api/auth/register','/api/auth/send-code','/api/auth/profile/','/api/auth/unknown']){const r=await request(route.includes('profile/')||route.includes('unknown')?'GET':'POST',route);assert.equal(r.status,429,'unknown reads and critical mutations remain guarded');await r.arrayBuffer();checks++;}
  const read=await request('GET','/api/auth/me');assert.equal(read.status,200,'login burst does not block safe profile refresh');await read.arrayBuffer();checks++;
  console.log(JSON.stringify({checks,mutation429s:limited,isolatedProxy:true,productionChanged:false}));
+}catch(error){
+ if(process.env.GITHUB_ACTIONS==='true')console.log('::error title=Isolated proxy acceptance failure::'+String(error.stack||error).slice(0,3000).replaceAll('%','%25').replaceAll('\r','%0D').replaceAll('\n','%0A'));
+ throw error;
 }finally{if(started)docker(['stop','-t','2',name]);rmSync(directory,{recursive:true,force:true});}

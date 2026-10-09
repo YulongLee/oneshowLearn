@@ -6,7 +6,9 @@ import {randomUUID} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 import {prepareProxy} from '../deploy/check-commercial-refinement.mjs';
 const directory=realpathSync(mkdtempSync(path.join(tmpdir(),'osl-auth-proxy-'))),name='osl-auth-check-'+randomUUID();
-const docker=args=>{const result=spawnSync('docker',args,{encoding:'utf8',timeout:30000});if(result.status!==0)throw Error('Isolated proxy operation failed: '+args[0]);return result.stdout.trim();};
+const nginxImage=process.env.AUTH_PROXY_IMAGE||'public.ecr.aws/docker/library/nginx:stable-alpine';
+if(!nginxImage||nginxImage.startsWith('-')||/[\s]/.test(nginxImage))throw Error('Invalid isolated proxy image');
+const docker=args=>{const result=spawnSync('docker',args,{encoding:'utf8',timeout:30000});if(result.status!==0)throw Error('Isolated proxy operation failed: '+args[0]+'; '+String(result.stderr||result.error?.message||'').slice(0,2000));return result.stdout.trim();};
 let started=false,checks=0;
 try{
  const limits=readFileSync('deploy/nginx-oneshowlearn.conf','utf8').split('\n\nserver {')[0];
@@ -15,7 +17,7 @@ try{
  const oldLimits='limit_req_zone $binary_remote_addr zone=oneshowlearn_auth:10m rate=10r/m;',oldApplication=application.replace('    limit_req zone=oneshowlearn_auth_read burst=30 nodelay;\n','');
  const config=(prefix,app)=>`events {} http { ${prefix}\nserver { listen 8080; ${app} } server { listen 8081; location / { return 200 'isolated upstream'; } } }`;
  writeFileSync(path.join(directory,'nginx.conf'),config(oldLimits,oldApplication));
- docker(['run','--rm','--pull=never','--name',name,'-d','-p','127.0.0.1::8080','-v',directory+'/nginx.conf:/etc/nginx/nginx.conf:ro','public.ecr.aws/docker/library/nginx:stable-alpine']);started=true;
+ docker(['run','--rm','--pull=never','--name',name,'-d','-p','127.0.0.1::8080','-v',directory+'/nginx.conf:/etc/nginx/nginx.conf:ro',nginxImage]);started=true;
  const binding=JSON.parse(docker(['inspect',name]))[0].NetworkSettings.Ports['8080/tcp'][0];assert.equal(binding.HostIp,'127.0.0.1');checks++;
  const origin='http://127.0.0.1:'+binding.HostPort;
  const request=(method,route)=>fetch(origin+route,{method,redirect:'manual',signal:AbortSignal.timeout(5000)});

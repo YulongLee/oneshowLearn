@@ -33,6 +33,9 @@ jobs:
       - run: node scripts/run-acceptance-with-diagnostics.mjs test:browser
       - run: npm run ops -- build --release ci-${{ github.sha }}
       - run: npm run test:auth-proxy
+        env:
+          # Already retained by ops build; never rely on a developer-only image cache.
+          AUTH_PROXY_IMAGE: nginx:stable-alpine
       # npm run test:deployment, with bounded failure evidence in check annotations.
       - run: node scripts/run-acceptance-with-diagnostics.mjs test:deployment --release ci-${{ github.sha }}
       - uses: actions/upload-artifact@v4

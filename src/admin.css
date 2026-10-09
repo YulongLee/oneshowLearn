@@ -23,3 +23,4 @@
 .admin-opc-form > button { justify-self:start; }
 .admin-opc-edit { margin-top:7px; padding:3px 0; border:0; background:transparent; color:#7647ce; font-size:12px; cursor:pointer; }
 @media(max-width:600px) { .admin-opc-mapping { align-items:stretch; flex-direction:column; } }
+.admin-layout>aside>nav{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}.admin-layout>aside>.admin-brand,.admin-layout>aside>.admin-logout{flex-shrink:0}

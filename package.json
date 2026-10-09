@@ -17,7 +17,7 @@
     "test:performance": "vite build && node --test tests/performance.test.mjs",
     "test:outcomes": "node --test tests/achievement-library.test.mjs",
     "test:account-menu": "node --test tests/account-menu.test.mjs",
-    "test:commercial": "node --test tests/service-center.test.mjs tests/legacy-upload-security.test.mjs tests/opc-curriculum-import.test.mjs tests/functional-hardening.test.mjs tests/commercial-hardening.test.mjs",
+    "test:commercial": "node --test tests/service-center.test.mjs tests/legacy-upload-security.test.mjs tests/opc-curriculum-import.test.mjs tests/functional-hardening.test.mjs tests/commercial-hardening.test.mjs tests/commercial-completion.test.mjs",
     "test:payment-page": "node --test tests/alipay-page-pay.test.mjs",
     "test:payment-diagnostics": "node --test tests/payment-diagnostics.test.mjs",
     "test:storage": "node --test tests/asset-storage.test.mjs tests/resumable-uploads.test.mjs",
@@ -28,6 +28,9 @@
     "test:browser": "node scripts/run-browser-checks.mjs",
     "test:deployment": "node scripts/check-portable-deployment.mjs",
     "check:engineering": "node scripts/check-engineering.mjs",
+    "check:dependencies": "npm audit --omit=dev --audit-level=high --registry=https://registry.npmjs.org --fetch-timeout=15000 --fetch-retries=0",
+    "check:operations": "node scripts/check-operations.mjs",
+    "test:auth-proxy": "node scripts/check-auth-proxy.mjs",
     "ops": "node deploy/portable/manage.mjs"
   },
   "dependencies": {

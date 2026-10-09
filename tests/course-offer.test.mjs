@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {offerCurriculum,offerPrice,offerMoney} from '../src/course-offer-model.js';
+import {offerCurriculum,offerPrice,offerMoney,offerScope} from '../src/course-offer-model.js';
 
 test('cashier exposes direct channel switching, hides old QR while switching and ignores stale polling',()=>{
   const source=readFileSync(new URL('../src/CourseCheckout.jsx',import.meta.url),'utf8');
@@ -108,10 +108,20 @@ test('simplified sidebar preserves tutor and preview without competing boxes or 
   assert.match(css,/height:74px; opacity:\.22/);
 });
 
-test('sales reference keeps eight benefit cards without fabricated commerce claims',()=>{
+test('sales reference prioritizes three core benefits and retains eight expanded features without fabricated commerce claims',()=>{
   const page=readFileSync(new URL('../src/CourseOffer.jsx',import.meta.url),'utf8');
   const css=readFileSync(new URL('../src/course-offer.css',import.meta.url),'utf8');
-  assert.match(css,/\.co-benefits \{[^}]*repeat\(4,minmax\(0,1fr\)\)/);
+  assert.match(css,/\.co-benefits \{[^}]*repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(page,/benefitDetails\.map/);
+  assert.match(page,/co-benefit-details/);
+  assert.match(page,/购买前，你可能想了解/);
+  assert.doesNotMatch(page,/独立项目需单独授权/);
+  const projects=readFileSync(new URL('../src/ProjectsHub.jsx',import.meta.url),'utf8');
+  const payments=readFileSync(new URL('../src/AdminPayments.jsx',import.meta.url),'utf8');
+  assert.match(projects,/project\.bundleIncluded[\s\S]*完整课程包含此项目/);
+  assert.doesNotMatch(projects,/项目权益独立于关联课程，请联系管理员确认/);
+  assert.doesNotMatch(payments,/仅绑定所选课程，不包含其他独立项目/);
+  assert.match(payments,/完整课程的配套项目范围按服务器实际授权规则校验/);
   assert.match(css,/\.co-curriculum \{[^}]*repeat\(5,minmax\(0,1fr\)\)/);
   assert.match(page,/course-sales-mascot-optimized\.webp/);
   assert.match(page,/course-sales-banner-optimized\.webp/);
@@ -119,6 +129,12 @@ test('sales reference keeps eight benefit cards without fabricated commerce clai
   assert.match(page,/originalPrice-price/);
   assert.match(page,/CourseCheckout offer=\{offer\}/);
   assert.match(page,/商户配置完成后开放/);
+});
+test('offer scope follows the matching server product instead of inferring bundle rights from title or price',()=>{
+ const pack={product_id:14,title:'完整课程'};
+ for(const offer of [null,{}, {productId:14}, {productId:15,includesPublishedProjects:true},{productId:14,includesPublishedProjects:'true'}])assert.equal(offerScope(pack,offer).includesProjects,false);
+ assert.equal(offerScope({}, {productId:14,includesPublishedProjects:true}).includesProjects,false);
+ const scope=offerScope(pack,{productId:14,includesPublishedProjects:true});assert.equal(scope.includesProjects,true);assert.match(scope.projects,/平台已发布/);assert.doesNotMatch(scope.projects,/未来|全部课程|永久|无限/);
 });
 
 test('sales hero correction keeps transparent art and real four-column metrics',()=>{

@@ -1,4 +1,5 @@
 import {createRouteNavigation} from './navigation-save.js';
+import {recordRoute} from './telemetry.js';
 import { courseLearningPath, learningSlug } from "./course-reader-model.js";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -87,6 +88,9 @@ const AdminLogin=lazy(()=>import('./Admin.jsx').then(m=>({default:m.AdminLogin})
 const AdminShell=lazy(()=>import('./Admin.jsx').then(m=>({default:m.AdminShell})));
 const AdminOrders=lazy(()=>import('./Admin.jsx').then(m=>({default:m.AdminOrders})));
 const AdminReadiness=lazy(()=>import('./AdminReadiness.jsx').then(m=>({default:m.AdminReadiness})));
+const AdminAnalytics=lazy(()=>import('./AdminCommercial.jsx').then(m=>({default:m.AdminAnalytics})));
+const AdminParsing=lazy(()=>import('./AdminCommercial.jsx').then(m=>({default:m.AdminParsing})));
+const AdminCertificates=lazy(()=>import('./AdminCommercial.jsx').then(m=>({default:m.AdminCertificates})));
 const AdminUsers=lazy(()=>import('./Admin.jsx').then(m=>({default:m.AdminUsers})));
 const AdminEmail=lazy(()=>import('./Admin.jsx').then(m=>({default:m.AdminEmail})));
 const AdminAccountAudit=lazy(()=>import('./Admin.jsx').then(m=>({default:m.AdminAccountAudit})));
@@ -250,6 +254,7 @@ function IconBadge({ icon: Icon, color = "violet", size = 22 }) {
 
 function useRoute() {
   const [route, setRoute] = useState(window.location.pathname || "/");
+  useEffect(()=>{recordRoute();},[route]);
   const [navigationStatus, setNavigationStatus] = useState('');
   const navigation = useRef(null);
   useEffect(() => {
@@ -989,7 +994,7 @@ export function App() {
           />
         ) : route === "/admin/opc" ? (
           <AdminOpc navigate={navigate} />
-        ) : route === '/admin/readiness' ? <AdminReadiness/> : route === "/admin/orders" ? (
+        ) : route === '/admin/analytics' ? <AdminAnalytics/> : route === '/admin/parsing' ? <AdminParsing navigate={navigate}/> : route === '/admin/certificates' ? <AdminCertificates/> : route === '/admin/readiness' ? <AdminReadiness navigate={navigate}/> : route === "/admin/orders" ? (
           <AdminOrders />
         ) : route === "/admin/users" ? (
           <AdminUsers />

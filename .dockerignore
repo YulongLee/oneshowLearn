@@ -13,6 +13,7 @@
 !scripts/
 !scripts/prepare-sites-build.mjs
 !scripts/prepare-opc-curriculum.mjs
+!scripts/check-operations.mjs
 !worker/
 !worker/index.js
 !.openai/
@@ -23,6 +24,11 @@
 !deploy/import-demo-materials.mjs
 !deploy/publish-demo-projects.mjs
 !deploy/import-opc-curriculum.mjs
+!deploy/configure-mineru.mjs
+!deploy/update-commercial-completion.sh
+!deploy/nginx-oneshowlearn.conf
+!deploy/nginx-oneshowlearn-https.conf
+!deploy/nginx-oneshowlearn-app.conf
 !tests/
 !tests/*.mjs
 !docs/

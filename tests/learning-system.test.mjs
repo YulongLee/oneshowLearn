@@ -228,6 +228,19 @@ test('shared lessons, project stages, private notes and common commerce',async t
     assert.equal(rankTutorDocuments(docs,'量子纠缠').sources.length,0);
     assert.equal(rankTutorDocuments(docs,'再详细一点',[{role:'user',content:'微信支付'},{role:'assistant',content:'Codex'}]).sources[0].key,'a');
     assert.equal(rankTutorDocuments(docs,'总结课程',[],true).sources.length,2);
+    for(const q of ['这门课程主要学什么？','请介绍一下课程大纲','学完这门课程能做什么']){
+      assert.equal(rankTutorDocuments(docs,q,[],true).sources.length,2);
+      assert.equal(rankTutorDocuments(docs,q,[],true).retrieval.method,'course-overview');
+    }
+    assert.equal(rankTutorDocuments(docs,'这门课程主要学什么？',[],false).sources.length,0);
+    assert.equal(rankTutorDocuments(docs,'介绍课程中的量子纠缠',[],true).sources.length,0);
+    const overviewDocs=Array.from({length:5},(_,i)=>({key:'chapter'+i,label:'章节'+i,text:('不同教学文字'+i).repeat(300)}));
+    const overview=rankTutorDocuments(overviewDocs,'课程主要学什么',[],true);
+    assert.equal(new Set(overview.sources.slice(0,5).map(s=>s.key)).size,5);
+    assert.ok(overview.sources.length<=8&&overview.sources.every(s=>s.text.length<=1000));
+    assert.equal(overview.retrieval.partial,false);
+    const capped=rankTutorDocuments(Array.from({length:10},(_,i)=>({key:'document'+i,label:'章节'+i,text:'不同教学文字'+i})),'课程主要学什么',[],true);
+    assert.equal(capped.sources.length,8);assert.equal(capped.retrieval.partial,true);
     const long=rankTutorDocuments([{key:'long',label:'MVP',text:'MVP abc '.repeat(5000)}],'MVP');
     assert.ok(long.sources.length<=2);assert.ok(long.sources.every(s=>s.text.length<=1000));
     assert.equal(verifyTutorAnswer('无证据',long.sources).grounded,false);

@@ -4,6 +4,7 @@ import {courseLearningPath,courseOfferPath} from './course-reader-model.js';
 import { ArrowRight, BookOpenText, CalendarCheck, Check, Crown, FileText, FolderOpen, MagnifyingGlass, NotePencil, Plus, Robot, Sparkle, Star, Trash, Trophy, UsersThree, X } from "@phosphor-icons/react";
 import "./workspace-pages.css";
 const CourseOffer=lazy(()=>import('./CourseOffer.jsx'));
+const CourseCertificates=lazy(()=>import('./CourseCertificates.jsx').then(m=>({default:m.CourseCertificates})));
 
 function localDate(value = new Date()) {
   return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
@@ -29,7 +30,7 @@ const routeInfo = {
   "/plan": [CalendarCheck, "学习计划", "把大目标拆成今天可以完成的一小步。"],
   "/tools": [Sparkle, "AI 工具箱", "让工具服务于实践，把想法变成具体行动。"],
   "/community": [UsersThree, "学习社区", "与做产品的人交流，从独自学习到共同成长。"],
-  "/certificates": [Trophy, "我的证书", "记录真实的实践成果，而不只是学习时长。"],
+  "/certificates": [Trophy, "我的证书", "查看课程完课要求与个人结业证书。"],
   "/membership": [Crown, "课程与学习权益", "选择适合自己的实战内容，按自己的节奏开始。"],
 };
 
@@ -147,7 +148,7 @@ export function WorkspacePages({ route, model, navigate, notify }) {
   if (route === '/membership') return <CourseOffer model={model} navigate={navigate} embedded/>;
   const [Icon, title, subtitle] = routeInfo[route] || routeInfo["/courses"];
   let content;
-  if (model.loading && ["/courses", "/projects", "/resources", "/favorites", "/notes", "/plan"].includes(route)) content = <div className="wsp-loading" role="status">正在载入你的学习空间…</div>;
+  if (model.loading && ["/courses", "/projects", "/resources", "/favorites", "/notes", "/plan", "/certificates"].includes(route)) content = <div className="wsp-loading" role="status">正在载入你的学习空间…</div>;
   else if (route === "/courses" || route === "/favorites") content = <CourseCollection key={route} model={model} navigate={navigate} favorites={route === "/favorites"} notify={notify} />;
   else if (route === "/projects") content = <ProjectsPage model={model} navigate={navigate} />;
   else if (route === "/resources") content = <ResourcesPage model={model} navigate={navigate} />;
@@ -155,6 +156,6 @@ export function WorkspacePages({ route, model, navigate, notify }) {
   else if (route === "/plan") content = <PlanPage model={model} navigate={navigate} notify={notify} />;
   else if (route === "/tools") content = <ToolsPage navigate={navigate} />;
   else if (route === "/community") content = <CommunityPage navigate={navigate} />;
-  else if (route === "/certificates") content = <EmptyState icon={Trophy} title="暂时还没有学习证书" action="继续实战学习" onAction={() => navigate("/courses")}>证书发放功能尚未开放。未来将在明确课程要求和成果评审规则后提供，不会把示例证书当成你的学习成绩。</EmptyState>;
+  else if (route === "/certificates") content = model.user?<CourseCertificates user={model.user}/>:<EmptyState icon={Trophy} title="查看你的课程结业证书" action="登录学习账号" onAction={() => navigate("/login?next=%2Fcertificates")}>登录后查看正式课程的完课要求与个人结业证书。</EmptyState>;
   return <div className="wsp-page"><header className="wsp-page-header"><span className="wsp-header-icon"><Icon size={26} weight="duotone" /></span><div><h1>{title}</h1><p>{subtitle}</p></div></header>{content}</div>;
 }

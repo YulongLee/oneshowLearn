@@ -4,6 +4,7 @@ import path from 'node:path';
 import {z} from 'zod';
 import {db,row,rows,run} from './db.mjs';
 import {config} from './config.mjs';
+import {bundlePackId} from './bundle-access.mjs';
 export const paymentError=(status,message)=>Object.assign(new Error(message),{status,isPaymentError:true});
 const defaults=()=>({productId:null,priceCents:39900,originalPriceCents:99900,publicOrigin:'https://oneshowlearn.com',
   wechat:{enabled:false,appId:'',mchId:'',serialNo:'',publicKeyId:'',publicKey:''},
@@ -124,7 +125,7 @@ export function savePaymentConfig(user,version,input,section){
 }
 export function publicPaymentOffer(){
   const c=paymentConfiguration(),s=c.settings;
-  const product=s.productId?row(`SELECT p.id,p.price_cents,pp.slug FROM products p JOIN project_packs pp ON pp.id=p.pack_id JOIN learning_paths lp ON lp.id=pp.path_id WHERE p.id=? AND p.status='active' AND p.currency='CNY' AND pp.status='published' AND lp.status='published'`,[s.productId]):null;
+  const product=s.productId?row(`SELECT p.id,p.pack_id,p.price_cents,pp.slug FROM products p JOIN project_packs pp ON pp.id=p.pack_id JOIN learning_paths lp ON lp.id=pp.path_id WHERE p.id=? AND p.status='active' AND p.currency='CNY' AND pp.status='published' AND lp.status='published'`,[s.productId]):null;
   const valid=Boolean(product&&product.price_cents===s.priceCents);
-  return {productId:valid?product.id:null,slug:valid?product.slug:null,priceCents:s.priceCents,originalPriceCents:s.originalPriceCents,channels:['wechat','alipay'].map(id=>({id,label:id==='wechat'?'微信支付':'支付宝',available:valid&&s[id].enabled}))};
+  return {productId:valid?product.id:null,slug:valid?product.slug:null,includesPublishedProjects:Boolean(valid&&bundlePackId()===product.pack_id),priceCents:s.priceCents,originalPriceCents:s.originalPriceCents,channels:['wechat','alipay'].map(id=>({id,label:id==='wechat'?'微信支付':'支付宝',available:valid&&s[id].enabled}))};
 }

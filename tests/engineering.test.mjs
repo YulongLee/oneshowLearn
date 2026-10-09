@@ -6,11 +6,46 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 import {DatabaseSync} from 'node:sqlite';
+import {parseEnv} from 'node:util';
 import {initialEnvironment,parseEnvironment,validateEnvironment} from '../deploy/portable/environment.mjs';
 import {safeDirectory,validateImagePair,verifyBackup} from '../deploy/portable/manage.mjs';
 import {onlyLoopbackWebBinding} from '../deploy/portable/container-inspection.mjs';
+import {mineruEnvironment} from '../deploy/configure-mineru.mjs';
+import {inspectOperations} from '../scripts/check-operations.mjs';
 const temp=t=>{const p=realpathSync(mkdtempSync(path.join(tmpdir(),'osl-engineering-unit-')));t.after(()=>rmSync(p,{recursive:true,force:true}));return p;};
 const env=()=>initialEnvironment('https://engineering.example.invalid','owner@example.invalid');
+test('Nginx preserves mutation guards and separates only a closed set of account GET/HEAD reads',()=>{
+ const http=readFileSync('deploy/nginx-oneshowlearn.conf','utf8'),https=readFileSync('deploy/nginx-oneshowlearn-https.conf','utf8'),app=readFileSync('deploy/nginx-oneshowlearn-app.conf','utf8');
+ assert.equal(http.split('\n\nserver {')[0],https.split('\n\nserver {')[0]);
+ const blocks=[...http.matchAll(/map "\$request_method:\$uri" \$(\w+) \{([\s\S]*?)\n\}/g)];assert.equal(blocks.length,2);
+ const expected=['GET','HEAD'].flatMap(method=>['status','me','profile','identities'].map(endpoint=>method+':/api/auth/'+endpoint)).sort();
+ for(const block of blocks)assert.deepEqual([...block[2].matchAll(/^\s+"([^"\n]+)"/gm)].map(m=>m[1]).sort(),expected);
+ assert.match(blocks[0][2],/default \$binary_remote_addr/);assert.match(blocks[1][2],/default ""/);
+ assert.match(http,/zone=oneshowlearn_auth:10m rate=10r\/m/);assert.match(app,/zone=oneshowlearn_auth burst=10 nodelay/);assert.match(app,/zone=oneshowlearn_auth_read burst=30 nodelay/);assert.match(app,/limit_req_status 429/);
+});
+test('operations checks are read-only, validate selected backup hashes and fail honestly on missing, stale or invalid evidence',async t=>{
+ const directory=temp(t),backup=path.join(directory,'backup');mkdirSync(backup);const files={};
+ for(const [name,body] of Object.entries({'oneshowlearn.db':'isolated','app.env':'isolated-not-a-secret','deployment.json':'{}'})){writeFileSync(path.join(backup,name),body);files[name]=createHash('sha256').update(body).digest('hex');}
+ const createdAt=new Date().toISOString();
+ const writeManifest=createdAt=>writeFileSync(path.join(backup,'manifest.json'),JSON.stringify({format:'oneshowlearn-backup-v1',files,...(createdAt?{createdAt}:{})}));
+ writeManifest(createdAt);
+ const before=readFileSync(path.join(backup,'app.env'),'utf8'),fetcher=async url=>{assert.equal(url.pathname,'/api/ready');return Response.json({ok:true,service:'oneshowlearn-api'});};
+ const args={origin:'http://127.0.0.1:8791',dataDirectory:directory,backupDirectory:backup,fetcher,diskStats:()=>({bavail:20n,blocks:100n})};
+ assert.equal((await inspectOperations(args)).ok,true);assert.equal(readFileSync(path.join(backup,'app.env'),'utf8'),before);
+ assert.equal((await inspectOperations({...args,now:Date.now()+49*3600000})).ok,false);
+ writeManifest();assert.equal((await inspectOperations(args)).ok,false);
+ writeManifest(new Date(Date.now()-49*3600000).toISOString());assert.equal((await inspectOperations(args)).ok,false,'copying an old manifest must not make a stale backup fresh');
+ writeManifest('invalid');assert.equal((await inspectOperations(args)).ok,false);
+ writeManifest(new Date(Date.now()+3600000).toISOString());assert.equal((await inspectOperations(args)).ok,false);
+ writeManifest(createdAt);
+ assert.equal((await inspectOperations({...args,diskStats:()=>({bavail:1n,blocks:100n})})).ok,false);
+ assert.equal((await inspectOperations({origin:args.origin,fetcher})).ok,false);
+ assert.equal((await inspectOperations({...args,fetcher:async()=>Response.json({ok:true,service:'another-api'})})).ok,false);
+ assert.equal((await inspectOperations({...args,fetcher:async()=>new Response('x'.repeat(4097))})).ok,false);
+ assert.equal((await inspectOperations({...args,fetcher:async()=>{throw Error('secret-provider-content');}})).checks.some(c=>c.message.includes('secret')),false);
+ for(const origin of ['http://public.invalid','https://user:pass@oneshowlearn.com','https://oneshowlearn.com/path','https://oneshowlearn.com?token=secret'])await assert.rejects(()=>inspectOperations({...args,origin}));
+ writeFileSync(path.join(backup,'app.env'),'tampered');assert.equal((await inspectOperations(args)).ok,false);
+});
 test('container inspection accepts unpublished Docker ports but strictly rejects public or unexpected bindings',()=>{
  const binding={HostIp:'127.0.0.1',HostPort:'4188'};
  assert.equal(onlyLoopbackWebBinding({'80/tcp':null,'8080/tcp':[binding]},4188),true);
@@ -69,9 +104,26 @@ test('portable initialization never overwrites an existing installation or print
  let result=spawnSync(process.execPath,args,{encoding:'utf8'});assert.equal(result.status,0);const text=readFileSync(path.join(dir,'app.env'),'utf8'),settings=parseEnvironment(text);
  assert.ok(!result.stdout.includes(settings.ADMIN_PASSWORD));result=spawnSync(process.execPath,args,{encoding:'utf8'});assert.notEqual(result.status,0);assert.equal(readFileSync(path.join(dir,'app.env'),'utf8'),text);
 });
+test('MinerU environment installation preserves unrelated settings and rejects silent key replacement',()=>{
+ const key='isolated-mineru-token',text='JWT_SECRET="keep-unchanged"\nAI_ENABLED=false\nMINERU_API_KEY=\n';
+ const next=mineruEnvironment(text,key);assert.equal(parseEnv(next).JWT_SECRET,'keep-unchanged');assert.equal(parseEnv(next).MINERU_API_KEY,key);assert.equal(mineruEnvironment(next,key),next);assert.equal(next.match(/^MINERU_API_KEY=/gm).length,1);
+ assert.throws(()=>mineruEnvironment(next,'different-isolated-token'));assert.throws(()=>mineruEnvironment(text,'bad\nAI_ENABLED=true'));
+ try{mineruEnvironment(text,'invalid-private-token!');assert.fail('Expected token rejection');}catch(e){assert.equal(e.message,'Invalid MinerU token format');assert.ok(!e.stack.includes('invalid-private-token!'));assert.equal(e.actual,false);}
+});
+test('commercial publication checks the deliberately maintained proxy separately before cutover',()=>{
+ const source=readFileSync('deploy/update-commercial-completion.sh','utf8');
+ assert.match(source,/sha256sum "\$snippet" > "\$backup\/maintenance\.sha256"/);
+ assert.match(source,/awk '\$2 != "\/etc\/nginx\/snippets\/oneshowlearn-app\.conf"'/);
+ assert.match(source,/sha256sum --quiet -c "\$backup\/maintenance\.sha256"/);
+ assert.ok(source.indexOf('"$backup/maintenance.sha256"\n',source.indexOf('DATABASE_PATH='))<source.indexOf('systemctl stop oneshowlearn\nsnapshot'));
+});
 test('release definitions keep data out of images and production deployment out of CI',()=>{
  const docker=readFileSync('Dockerfile','utf8'),ignore=readFileSync('.dockerignore','utf8'),workflow=readFileSync('.github/workflows/ci.yml','utf8');
  assert.match(docker,/USER node/);assert.doesNotMatch(docker,/COPY \. /);assert.match(ignore,/^\*\*$/m);assert.doesNotMatch(ignore,/!\.env|!data|!uploads|!\.git\//);
+ for(const name of ['scripts/check-operations.mjs','deploy/configure-mineru.mjs','deploy/update-commercial-completion.sh','deploy/nginx-oneshowlearn.conf','deploy/nginx-oneshowlearn-https.conf','deploy/nginx-oneshowlearn-app.conf']){
+  assert.ok(docker.includes(name));assert.ok(ignore.split('\n').includes('!'+name));assert.ok(readFileSync('deploy/portable/manage.mjs','utf8').includes("'"+name+"'"),'verification input included in immutable source hash');
+ }
+ assert.match(workflow,/npm run check:dependencies/);assert.match(workflow,/npm run test:auth-proxy/);
  assert.match(workflow,/npm run test:deployment/);assert.doesNotMatch(workflow,/secrets\.|ssh |ops -- deploy/);
  assert.match(readFileSync('deploy/portable/compose.yaml','utf8'),/127\.0\.0\.1:/);assert.match(readFileSync('server/config.mjs','utf8'),/host: process.env.API_HOST \|\| "127.0.0.1"/);
 });

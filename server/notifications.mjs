@@ -6,7 +6,8 @@ function notices(user){
  const support=rows("SELECT m.id,m.created_at,r.id request_id,r.title FROM support_messages m JOIN support_requests r ON r.id=m.request_id WHERE r.user_id=? AND m.author_type='admin' ORDER BY m.id DESC LIMIT 20",[user.id]).map(m=>({key:'support:'+m.id,title:'官方回复：'+m.title,createdAt:m.created_at,path:'/support?request='+m.request_id}));
  const updates=rows("SELECT r.id,r.published_json,COALESCE((SELECT MAX(h.created_at) FROM community_history h WHERE h.record_id=r.id),r.published_at) published_at FROM community_records r WHERE r.kind='article' AND r.archived=0 AND r.published_json IS NOT NULL ORDER BY published_at DESC,r.id DESC LIMIT 20").map(r=>({key:`article:${r.id}:${createHash('sha256').update(r.published_json).digest('hex').slice(0,16)}`,title:'官方更新：'+JSON.parse(r.published_json).title,createdAt:r.published_at,path:'/community?article='+r.id}));
  const read=new Set(rows('SELECT notice_key FROM notification_reads WHERE user_id=?',[user.id]).map(r=>r.notice_key));
- return [...support,...updates].sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0,30).map(n=>({...n,read:read.has(n.key)}));
+ const certificates=rows('SELECT id,course_title,issued_at,revoked_at FROM course_certificates WHERE user_id=? ORDER BY issued_at DESC LIMIT 20',[user.id]).map(c=>({key:'certificate:'+c.id+(c.revoked_at?':revoked':''),title:(c.revoked_at?'结业证书状态更新：':'结业证书已颁发：')+c.course_title,createdAt:c.revoked_at||c.issued_at,path:'/achievements'}));
+ return [...support,...updates,...certificates].sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0,30).map(n=>({...n,read:read.has(n.key)}));
 }
 export function notificationsRouter(){
  const router=Router();router.use('/notifications',requireAuth,(_req,res,next)=>{res.set('Cache-Control','private, no-store');next();});

@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import {mkdtempSync,readFileSync,writeFileSync,rmSync,realpathSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import path from 'node:path';
+import {randomUUID} from 'node:crypto';
+import {spawnSync} from 'node:child_process';
+const directory=realpathSync(mkdtempSync(path.join(tmpdir(),'osl-auth-proxy-'))),name='osl-auth-check-'+randomUUID();
+const docker=args=>{const result=spawnSync('docker',args,{encoding:'utf8',timeout:30000});if(result.status!==0)throw Error('Isolated proxy operation failed: '+args[0]);return result.stdout.trim();};
+let started=false,checks=0;
+try{
+ const limits=readFileSync('deploy/nginx-oneshowlearn.conf','utf8').split('\n\nserver {')[0];
+ const application=readFileSync('deploy/nginx-oneshowlearn-app.conf','utf8').replaceAll('http://127.0.0.1:8791','http://127.0.0.1:8081');
+ // Same maps/zones/location limits, with an isolated static upstream only.
+ const conf=`events {} http { ${limits}\nserver { listen 8080; ${application} } server { listen 8081; location / { return 200 'isolated upstream'; } } }`;
+ writeFileSync(path.join(directory,'nginx.conf'),conf);
+ docker(['run','--rm','--pull=never','--name',name,'-d','-p','127.0.0.1::8080','-v',directory+'/nginx.conf:/etc/nginx/nginx.conf:ro','public.ecr.aws/docker/library/nginx:stable-alpine']);started=true;
+ const binding=JSON.parse(docker(['inspect',name]))[0].NetworkSettings.Ports['8080/tcp'][0];assert.equal(binding.HostIp,'127.0.0.1');checks++;
+ const origin='http://127.0.0.1:'+binding.HostPort;
+ const request=(method,route)=>fetch(origin+route,{method,redirect:'manual',signal:AbortSignal.timeout(5000)});
+ docker(['exec',name,'nginx','-t']);
+ let ready=false;
+ for(let attempt=0;attempt<20&&!ready;attempt++){try{const r=await request('GET','/api/health');ready=r.status===200;await r.arrayBuffer();}catch{}if(!ready)await new Promise(r=>setTimeout(r,100));}
+ assert.ok(ready,'isolated proxy started');checks++;
+ for(const method of ['GET','HEAD'])for(const endpoint of ['status','me','profile','identities'])for(let i=0;i<3;i++){
+  const r=await request(method,'/api/auth/'+endpoint+'?refresh='+i);assert.equal(r.status,200,'safe read refresh');await r.arrayBuffer();checks++;
+ }
+ let limited=0;
+ for(let i=0;i<32;i++){const r=await request(i%2?'POST':'PUT',i%2?'/api/auth/login':'/api/auth/profile');assert.ok([200,429].includes(r.status));limited+=r.status===429;await r.arrayBuffer();checks++;}
+ assert.ok(limited>=20,'original strict mutation burst retained');checks++;
+ for(const route of ['/api/auth/register','/api/auth/send-code','/api/auth/profile/','/api/auth/unknown']){const r=await request(route.includes('profile/')||route.includes('unknown')?'GET':'POST',route);assert.equal(r.status,429,'unknown reads and critical mutations remain guarded');await r.arrayBuffer();checks++;}
+ const read=await request('GET','/api/auth/me');assert.equal(read.status,200,'login burst does not block safe profile refresh');await read.arrayBuffer();checks++;
+ console.log(JSON.stringify({checks,mutation429s:limited,isolatedProxy:true,productionChanged:false}));
+}finally{if(started)docker(['stop','-t','2',name]);rmSync(directory,{recursive:true,force:true});}

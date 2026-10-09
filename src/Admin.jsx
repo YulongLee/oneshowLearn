@@ -12,6 +12,7 @@ const nav = [
   ["/admin", "内容运营", ChartBar], ["/admin/readiness", "正式交付检查", Check], ["/admin/catalog", "课程与路径", Package], ["/admin/content", "课程资料", BookOpenText],
   ["/admin/library", "统一资料库", FileText], ["/admin/projects", "实战项目管理", Package], ["/admin/pages", "页面配置", House],
   ["/admin/community", "官方社区内容", Users],
+  ["/admin/analytics", "经营与体验监测", ChartBar], ["/admin/parsing", "资料自动解析", FileText], ["/admin/certificates", "课程结业证书", Check],
   ["/admin/learning", "课时与项目编排", BookOpenText],
   ["/admin/ai", "AI 配置", ChartBar],
   ["/admin/payments", "支付与定价", Package],
@@ -40,7 +41,7 @@ export function AdminShell({ route, navigate, children }) {
   useEffect(() => { let active = true; api("/auth/me").then(({ user }) => { if (!active) return; if (!canManage(user)) { navigate("/app"); return; } setUser(user); }).catch((e) => { if (!active) return; if (e.status === 401) { setToken(""); navigate("/admin/login"); } else setError(e.message); }); return () => { active = false; }; }, []);
   const logout = async () => { try { await api("/auth/logout", { method: "POST" }); } catch (e) { if (e.status !== 401) { setError(e.message); return; } } setToken(""); navigate("/admin/login"); };
   if (!user) return <div className="admin-state">{error || "正在验证管理权限…"}</div>;
-  const visibleNav = nav.filter(([path]) => user.role === "admin" || !["/admin/readiness", "/admin/ai", "/admin/payments", "/admin/service", "/admin/support", "/admin/login-settings", "/admin/users", "/admin/email", "/admin/account-audit"].includes(path));
+  const visibleNav = nav.filter(([path]) => user.role === "admin" || !["/admin/analytics", "/admin/parsing", "/admin/certificates", "/admin/readiness", "/admin/ai", "/admin/payments", "/admin/service", "/admin/support", "/admin/login-settings", "/admin/users", "/admin/email", "/admin/account-audit"].includes(path));
   return <div className="admin-layout"><aside className={open ? "open" : ""}><button className="admin-brand" onClick={() => navigate("/admin")}><BrandIdentity tagline="运营管理后台"/></button><nav>{visibleNav.map(([path,label,Icon])=><button key={path} className={route===path?"active":""} onClick={()=>{navigate(path);setOpen(false);}}><Icon size={19}/>{label}</button>)}</nav><button className="admin-logout" onClick={logout}><SignOut size={19}/>退出登录</button></aside><main><header><button onClick={()=>setOpen(!open)} aria-label="打开管理导航">{open?<X size={22}/>:<List size={22}/>}</button><div><strong>内容与商业化管理</strong><small>所有前台课程资料均由这里配置</small></div><button className="admin-platform-switch" onClick={() => navigate("/app")}>切换到用户平台 <ArrowRight size={15}/></button></header><div className="admin-content">{error && <p className="admin-error" role="alert">{error}</p>}{children}</div></main></div>;
 }
 

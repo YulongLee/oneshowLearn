@@ -29,6 +29,10 @@ import {manualRefundRouter} from './manual-refunds.mjs';
 import {listPage} from './list-page.mjs';
 import {notificationsRouter} from './notifications.mjs';
 import {workspaceCapacityRouter} from './workspace-capacity.mjs';
+import {commercialAnalyticsRouter,pruneTelemetry} from './commercial-analytics.mjs';
+import {certificatesRouter,reconcileCertificates} from './course-certificates.mjs';
+import {documentParsingRouter} from './document-parsing.mjs';
+import {bundlePackId} from './bundle-access.mjs';
 import {operationalReadinessRouter} from './operational-readiness.mjs';
 
 mkdirSync(config.uploadDir, { recursive: true });
@@ -70,7 +74,7 @@ function packDetails(pack, user) {
   return { ...pack, entitled: Boolean(entitled), steps };
 }
 
-export function createApp({loginProviders,assetStorage} = {}) {
+export function createApp({loginProviders,assetStorage,mineruProvider} = {}) {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", config.trustProxy);
@@ -104,7 +108,12 @@ export function createApp({loginProviders,assetStorage} = {}) {
   app.use('/api',manualRefundRouter());
   app.use('/api',notificationsRouter());
   app.use('/api',workspaceCapacityRouter());
-  app.use('/api',operationalReadinessRouter());
+  app.use('/api',operationalReadinessRouter({provider:mineruProvider}));
+  app.use('/api',commercialAnalyticsRouter());
+  app.use('/api',certificatesRouter());
+  const parsing=documentParsingRouter({provider:mineruProvider,storage:assetStorage});
+  app.use('/api',parsing);
+  app.locals.pollDocumentParsing=()=>parsing.pollPending();
   app.use('/api',platformContentRouter());
   app.use('/api',communityRouter());
   app.use('/api/admin/cms',cmsRouter());
@@ -148,6 +157,7 @@ export function createApp({loginProviders,assetStorage} = {}) {
   app.post("/api/orders", requireAuth, validated(z.object({ productId: z.coerce.number().int().positive() }), (req, res) => {
     const product = publishedProduct(req.validated.productId);
     if (!product) return res.status(404).json({ error: "商品不存在或已下架" });
+    if(product.project_id&&bundlePackId())return res.status(409).json({error:'实战项目已包含在完整课程中，请购买完整课程，无需单独创建项目订单'});
     const orderNo = `OSL${Date.now()}${Math.floor(Math.random() * 900 + 100)}`;
     db.exec("BEGIN IMMEDIATE");
     try {
@@ -202,6 +212,9 @@ export function createApp({loginProviders,assetStorage} = {}) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
-  createApp().listen(config.port, config.host, () => console.log(`OneShowLearn API running on http://${config.host}:${config.port}`));
+  const app=createApp();
+  app.listen(config.port, config.host, () => console.log(`OneShowLearn API running on http://${config.host}:${config.port}`));
+  let polling=false;
+  setInterval(async()=>{if(polling)return;polling=true;try{pruneTelemetry();reconcileCertificates();await app.locals.pollDocumentParsing();}catch{console.error('Commercial background check deferred');}finally{polling=false;}},60000).unref();
   startPaymentReconciliation();
 }

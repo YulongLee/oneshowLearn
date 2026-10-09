@@ -6,7 +6,7 @@ import {Modal} from './PersonalShared.jsx';
 import {UserAuthCard} from './Auth.jsx';
 import {useWorkspaceModel} from './Workspace.jsx';
 import {courseLearningPath} from './course-reader-model.js';
-import {offerCurriculum, offerMoney, offerPrice} from './course-offer-model.js';
+import {offerCurriculum, offerMoney, offerPrice, offerScope} from './course-offer-model.js';
 const CourseCheckout=lazy(()=>import('./CourseCheckout.jsx').then(m=>({default:m.CourseCheckout})));
 import {sharedRead} from './shared-reads.js';
 import {paymentReturnId} from './payment-navigation.js';
@@ -16,7 +16,7 @@ import mountain from './assets/course-sales-banner-optimized.webp';
 import './course-offer.css';
 import {ServiceSummary,ServiceLinks} from './ServiceCenter.jsx';
 
-const benefits = [
+const benefitDetails = [
   [PlayCircle,'完整课程学习','视频、课件与文档','循序渐进，动手实践','orange'],
   [Code,'实战项目案例','结合课程案例拆解','把知识用在产品中','violet'],
   [Robot,'AI 导师答疑','围绕课程资料提问','服务以实际配置为准','blue'],
@@ -77,6 +77,12 @@ export default function CourseOffer({model,navigate,embedded=false}) {
     return ()=>{active=false;};
   },[slug,model.user?.id,retry]);
   const pack=data?.pack,chapters=pack?offerCurriculum(pack,data.lessons):[];
+  const scope=offerScope(pack,offer);
+  const benefits=[
+    [PlayCircle,'系统课程',scope.course,'orange'],
+    [Code,'配套实战',scope.projects,'violet'],
+    [Robot,'学习支持',scope.support,'blue'],
+  ];
   const items=chapters.flatMap(c=>c.items),previews=items.filter(i=>i.is_preview);
   const materialCount=(pack?.steps||[]).reduce((total,chapter)=>total+(chapter.contents?.length||0),0);
   const isOfferCourse=Boolean(offer&&(!offer.productId||offer.productId===pack?.product_id));
@@ -101,8 +107,9 @@ export default function CourseOffer({model,navigate,embedded=false}) {
           <div className="co-hero-copy"><span className="co-kicker"><Flame size={15} weight="fill"/>开启你的 AI 产品之路</span><h1>AI OPC<span>一个人的产品公司</span></h1><p>从 0 到 1，用 AI 做出真正可以上线、收款、获得用户的产品。</p><div className="co-checks"><span><CheckCircle weight="fill"/>系统化的实战方法论</span><span><CheckCircle weight="fill"/>真实项目案例拆解</span><span><CheckCircle weight="fill"/>从想法到上线的学习路径</span></div><div className="co-metrics"><div><strong>{chapters.length}<small>章节</small></strong><span>已发布目录</span></div><div><strong>{items.length}<small>{data.lessons.length?'课时':'内容'}</small></strong><span>当前课程内容</span></div><div><strong>{materialCount}<small>资料</small></strong><span>配套学习资源</span></div><div><strong>{previews.length}<small>免费内容</small></strong><span>先体验，再开始</span></div></div></div>
         </section>
         {data.lessons.some(l=>l.is_demo_media)&&<p className="ls-demo-notice">课程目录已开放；当前视频与 PPT 为演示占位素材，非正式教学内容。真实视频、课件和实操材料将陆续补充，请在购买前确认内容交付情况。</p>}
-        <section className="co-section"><h2>你将获得什么</h2><p>不只是学习知识，而是围绕真实产品的实战体系。</p><div className="co-benefits">{benefits.map(([Icon,title,line1,line2,color])=><article key={title}><span className={`co-icon ${color}`}><Icon size={26} weight="fill"/></span><div><h3>{title}</h3><p>{line1}<br/>{line2}</p></div></article>)}</div><small className="co-scope">具体权益以所选课程说明为准；独立项目需单独授权，AI 服务以后台配置为准。</small></section>
+        <section className="co-section"><h2>一次购买，如何开始学习</h2><p>先试听，再选择课程；核验到账后，从课程学习走向项目实践。</p><div className="co-benefits">{benefits.map(([Icon,title,copy,color])=><article key={title}><span className={`co-icon ${color}`}><Icon size={26} weight="fill"/></span><div><h3>{title}</h3><p>{copy}</p></div></article>)}</div><details className="co-benefit-details"><summary>展开查看学习功能与配套服务</summary><div>{benefitDetails.map(([Icon,title,line1,line2])=><article key={title}><Icon size={19}/><div><h3>{title}</h3><p>{line1} · {line2}</p></div></article>)}</div></details></section>
         <section className="co-section co-outline"><header><h2>课程目录（部分）</h2><button className="co-link" onClick={()=>navigate(courseLearningPath(pack.slug))}>查看完整课程大纲<ArrowRight size={15}/></button></header><div className="co-curriculum">{chapters.slice(0,5).map((chapter,index)=><article key={chapter.id}><span className="co-number">{String(index+1).padStart(2,'0')}</span><h3>{chapter.title}</h3><small>{chapter.items.length} {data.lessons.length?'课时':'份资料'}</small><ul>{chapter.items.slice(0,5).map(item=><li key={item.id}><button onClick={()=>navigate(item.href)} title={item.title}><span>{item.title}</span>{item.is_preview?<em>免费</em>:item.locked?<LockKey size={12} aria-label="购买后解锁"/>:<CheckCircle size={12} aria-label="可学习"/>}</button></li>)}</ul>{!chapter.items.length&&<p>内容准备中</p>}</article>)}</div>{!chapters.length&&<div className="co-empty">课程目录准备中，发布后将在这里展示。</div>}</section>
+        <section className="co-section co-questions" aria-label="购买常见问题"><h2>购买前，你可能想了解</h2>{[['如何开始试听？',`点击免费${data.lessons.length?'试听':'预览'}，直接进入当前已开放的内容。正式交付状态可在课程目录和页面说明中确认。`],['购买后如何开通？','微信扫码付款，支付宝前往官方收银台付款。服务器核验到账后自动开通；页面未更新时，可在我的订单继续查询。'],['课程包含哪些实战项目？',scope.projects],['AI 和会员群如何使用？',scope.support],['已有问题或需要售后怎么办？','登录后通过帮助与售后提交申请，可关联付款订单并查看官方回复。退款由管理员人工核实处理。']].map(([title,copy])=><details key={title}><summary>{title}</summary><p>{copy}</p></details>)}</section>
       </div><aside className="co-rail">
         <section className="co-purchase" ref={purchaseRef} tabIndex={-1}><span className="co-purchase-badge"><Lightning size={15} weight="fill"/>课程优惠</span><h2>{pack.title}</h2><p>单次购买，开启系统学习</p><div className="co-price-row"><div className="co-price">{originalPrice>price&&<del aria-label={`原价${offerMoney(originalPrice)}`}>{offerMoney(originalPrice)}</del>}<strong>{offerMoney(price)}</strong><span>{pack.entitled?'当前账号已解锁':'课程售价 · 人民币'}</span></div>{originalPrice>price&&<div className="co-price-saving"><b>立省 {offerMoney(originalPrice-price)}</b><span>课程优惠价</span></div>}</div><button className="co-primary" disabled={!canBuy} onClick={buy}>{pack.entitled?<BookOpenText size={18}/>:<ShoppingCart size={18}/>} {pack.entitled?'进入课程学习':paymentReady?`${offerMoney(price)} 解锁完整课程`:'支付暂未开放'}<ArrowRight size={17}/></button>{previews.length>0&&<button className="co-preview" onClick={()=>navigate(previews[0].href)}><PlayCircle size={18}/>免费{data.lessons.length?'试听':'预览'} {previews.length} {data.lessons.length?'课时':'份资料'}</button>}
           <div className="co-payment-labels"><span className="co-wechat">微信支付</span><span className="co-alipay">支付宝</span><small>{paymentReady?'平台安全支付':'商户配置完成后开放'}</small></div>{paymentError&&<p className="co-payment-note" role="alert">支付信息暂未加载。<button onClick={()=>setRetry(n=>n+1)}>重试</button></p>}{model.user&&offer&&<button className="co-link co-history-link" onClick={()=>setConfirm(true)}>查看我的支付订单<ArrowRight size={14}/></button>}
@@ -110,7 +117,6 @@ export default function CourseOffer({model,navigate,embedded=false}) {
         </section>
         <details className="co-course-options"><summary>选择课程与购买说明</summary><label className="co-course-select">当前课程<select value={slug} onChange={e=>chooseCourse(e.target.value)}>{catalog.map(p=><option key={p.id} value={p.slug}>{p.title}</option>)}</select></label><small className="co-payment-note">在线支付仅对后台绑定的课程开放。微信扫码付款，支付宝前往官方收银台付款；到账核验后开通所购课程，不自动续费。</small></details>
         <ServiceSummary/>
-        <section className="co-questions"><header><h3>购买前，你可能想了解</h3></header>{[['如何开始试听？','点击免费试听，进入已开放的课时。完整内容以当前课程目录为准。'],['购买后如何开通？','支付渠道开放后，微信扫码付款，支付宝前往官方收银台付款。服务器核验到账后自动开通；页面未更新时可在我的订单查询。'],['包含所有项目和服务吗？','仅解锁所选课程。独立项目、会员群与 AI 服务范围，以对应说明为准。']].map(([title,copy],i)=><article key={title}><span className="co-question-icon">{String(i+1).padStart(2,'0')}</span><div><h4>{title}</h4><p>{copy}</p></div></article>)}</section>
       </aside></div>
       <section className="co-closing"><img src={mountain} alt="" width="2172" height="724" loading="lazy" decoding="async"/><div className="co-closing-copy"><span className="co-closing-kicker">🎯 你的下一个产品，就从这里开始</span><h2>现在加入 OneShowLearn<br/>用 AI 实现你的想法，做出真正属于自己的产品。</h2><div className="co-closing-points"><span><CheckCircle size={16}/>更低的试错成本</span><span><CheckCircle size={16}/>更高效的开发实践</span><span><CheckCircle size={16}/>持续积累产品经验</span></div></div><div className="co-closing-action"><i>Ideas into<br/>Real Products<br/>Together</i><button onClick={jumpToPurchase}>立即了解课程<ArrowRight size={17}/></button></div><i className="co-closing-quote">一个人<br/>也可以改变世界！</i></section>
       <footer className="co-footer"><span><ShieldCheck size={18}/>课程范围清晰可查</span><span><PlayCircle size={18}/>免费内容先行体验</span><span><LockKey size={18}/>核验到账后自动开通</span><span><NotePencil size={18}/>学习记录，账号保存</span></footer><ServiceLinks/></>}

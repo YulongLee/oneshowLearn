@@ -5,6 +5,7 @@ import {STAGES,liveAchievements,shortDate,tagsFromText} from './personal-model.j
 import {Gate,Modal as SharedModal,SafeLink} from './PersonalShared.jsx';
 import {OUTCOME_TYPES,OUTCOME_STARTERS,outcomeSummary,outcomeSource,filterOutcomes,outcomeCoverUrl,validateOutcome,saveOutcome,archiveOutcome} from './achievement-library-model.js';
 import './achievement-library.css';
+import {CourseCertificates} from './CourseCertificates.jsx';
 
 const icons={product:Cube,work:ImageIcon,document:FileText,code:Code};
 const typeLabel=type=>OUTCOME_TYPES.find(([id])=>id===type)?.[1]||'成果记录';
@@ -78,6 +79,7 @@ export function AchievementsWorkspace({model,navigate,notify,query='',setQuery,g
  };
  return <div className="ag-page">
   <header className="ag-heading"><div><nav aria-label="当前位置"><button onClick={()=>navigate('/app')}>工作台</button><span>›</span><span>我的成果</span></nav><h1>我的成果</h1><p>把想法、原型和上线过程，整理成自己的作品。</p></div><div className="ag-heading-actions"><span><LockSimple size={15}/>仅自己可见</span>{model.user&&<button className="ag-button" disabled={blocked} onClick={()=>{setArchiveOpen(true);setError('');}}>已归档{archived.length>0?' ('+archived.length+')':''}</button>}<button className="ag-primary" disabled={blocked||model.user&&limitReached} onClick={()=>edit()}><Plus size={18}/>新建成果</button></div></header>
+  <CourseCertificates user={model.user}/>
   {model.error?<div className="ag-notice" role="alert">成果数据暂时无法读取，请重试后再操作。<button onClick={()=>model.refresh()}>重新加载</button></div>:<Gate model={model} navigate={navigate}>
    {model.loading?<p className="ag-notice" role="status">正在读取你的成果…</p>:<>
     {achievements.length>0?<>

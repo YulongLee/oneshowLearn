@@ -22,6 +22,8 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run check:engineering
       - run: npm run test:engineering
+      # Registry or TLS errors fail this check; never disable certificate validation.
+      - run: npm run check:dependencies
       - name: Business regressions with actionable failure diagnostics
         run: node scripts/run-acceptance-with-diagnostics.mjs test
       - run: npm run build
@@ -30,6 +32,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: node scripts/run-acceptance-with-diagnostics.mjs test:browser
       - run: npm run ops -- build --release ci-${{ github.sha }}
+      - run: npm run test:auth-proxy
       # npm run test:deployment, with bounded failure evidence in check annotations.
       - run: node scripts/run-acceptance-with-diagnostics.mjs test:deployment --release ci-${{ github.sha }}
       - uses: actions/upload-artifact@v4

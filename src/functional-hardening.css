@@ -3,3 +3,13 @@
 .readiness-grid{display:grid;grid-template-columns:minmax(170px,2fr) repeat(3,minmax(100px,1fr));font-size:13px;gap:10px}.readiness-row{display:contents}.readiness-row>span{padding:12px 0;border-top:1px solid #eee;overflow-wrap:anywhere}.hardening-panel fieldset{border:0;padding:0}.hardening-panel label{display:grid;gap:8px;margin-block:12px}.hardening-panel input,.hardening-panel textarea,.hardening-panel select{max-width:100%}.hardening-panel .admin-check{display:flex;align-items:center}.admin-check input{width:auto}
 .ws-popover[aria-label="通知"]{max-height:min(600px,75vh);overflow:auto}.ws-popover[aria-label="通知"] button{display:block;overflow-wrap:anywhere}
 @media(max-width:600px){.readiness-grid{grid-template-columns:minmax(100px,2fr) repeat(3,minmax(55px,1fr));font-size:11px;gap:5px}}
+.readiness-capabilities {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px}
+.readiness-capabilities article,.readiness-lessons article {border:1px solid #e6e1f3;border-radius:12px;padding:16px;min-width:0;overflow-wrap:anywhere}
+.readiness-capabilities h3,.readiness-lessons h3 {font-size:15px;margin:0 0 10px}
+.readiness-capabilities p {line-height:1.8}
+.readiness-capabilities button {min-height:44px;border:1px solid #e3d9fa;background:#f8f5ff;color:#7049da;border-radius:8px;padding:8px 12px;cursor:pointer}
+.readiness-lessons {display:grid;gap:12px}
+.readiness-lessons dl {display:flex;flex-wrap:wrap;gap:12px 24px;margin:0}
+.readiness-lessons dl div {min-width:100px}
+.readiness-lessons dt {font-size:12px;color:#746d88;margin-bottom:5px}
+.readiness-lessons dd {font-size:13px;margin:0}

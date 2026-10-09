@@ -42,6 +42,8 @@ GitHub Actions 自动运行工程检查、业务回归、构建、隔离浏览�
 
 ## 维护原则
 
+2026-10-08 商业化补齐已部署并通过线上只读验收，发布记录和后台操作见 [统计 / MinerU / 结业证书说明](docs/commercial-completion-20261008.md)。MinerU 密钥保持服务端私有，解析与体验采集待所有者开启，自动发证需确认完整正式课程目录；当前演示课时不能启用发证。本轮未提交或推送 Git。
+
 - Git 仅管理源码、锁文件、测试和操作文档；密钥、数据库、附件与 QA 证据不提交。
 - 正式镜像从干净的 Git 版本构建；先在隔离环境验收再批准上线。
 - 升级只执行迁移，不导入演示数据、不重设管理员、不更改价格或历史订单。
@@ -49,3 +51,10 @@ GitHub Actions 自动运行工程检查、业务回归、构建、隔离浏览�
 - SQLite 采用单机单写入实例。不得把一个 SQLite 文件挂在多台服务器的网络盘上共同写入。跨机迁移必须停写、备份并切换，不能并行运营同一份支付订单。
 
 现有产品、课程内容和运营配置是否可正式交付，需要独立验收，不能从工程工具完善推导为全部功能或内容已经完成。
+### Read-only commercial operations checks (October 9)
+
+`npm run check:operations -- --origin http://127.0.0.1:8791 --data-dir /absolute/instance/data --backup-dir /absolute/verified-backup` checks `/api/ready`, data-volume free space (10% threshold), and an explicitly selected `oneshowlearn-backup-v1` backup's full file hashes and recorded creation time (48 hours by default). New portable backups record `createdAt`; existing backups without it retain hash/restore compatibility but cannot pass freshness checks. Copying a manifest does not refresh its recorded backup time. It performs no writes, restart, backup creation, deletion, provider request or credential output. Missing configuration and failures exit nonzero rather than claiming readiness. Existing systemd release backups use a different format and are not silently accepted as portable backups. A successful hash check does not prove application restore, off-site storage or a scheduled backup; continue isolated restore rehearsals and deliberately arrange the storage destination and stop-write window. No scheduler or alert channel is installed by this tool.
+
+`npm run check:dependencies` uses the official npm registry, checks production dependencies at high severity, and fails closed on audit/TLS/network errors. CI now includes this gate; failure to obtain advisories is not a clean security result. Keep TLS verification enabled. No runtime dependency version has been changed by this refinement.
+
+The Nginx HTTP/HTTPS templates now separate exact GET/HEAD account-information endpoints from login and verification operations. Login/registration/code requests and unknown paths retain the original 10/minute plus burst-10 guard; selected read-only account endpoints have a separate 120/minute plus burst-30 budget. Apply paired HTTP-level maps/zones and the application snippet only in a separately authorized production publication, after `nginx -t`, backup and read/mutation acceptance. These repository edits do not modify the running proxy.

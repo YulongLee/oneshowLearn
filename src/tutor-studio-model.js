@@ -1,4 +1,5 @@
 // Presentation only: permissions and actual retrieval scope remain server-side.
+export function needsTutorRecovery(message){return message.mode==='knowledge'&&message.grounded===false&&!message.unavailable&&!message.answerKind&&Boolean(message.retrieval);}
 export function tutorStudyPosition(courseId, entry = {}) {
   if (!courseId) return null;
   const lessons = (entry.lessons || []).filter(l => l.kind === 'course' && String(l.owner_id) === String(courseId) && !l.locked);

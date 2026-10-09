@@ -308,6 +308,7 @@ function ProjectDetail({ slug, workspace, placementId, model, navigate }) {
     }
   };
   const purchase = async () => {
+    if(project.bundleIncluded)return navigate('/course-offer');
     if (!model.user) return navigate("/login");
     if (
       !window.confirm(
@@ -418,14 +419,16 @@ function ProjectDetail({ slug, workspace, placementId, model, navigate }) {
             project.settings?.access_type === "paid" &&
             project.product && (
               <button disabled={busy} onClick={purchase}>
-                购买项目 · {money(project.product.price_cents)}
+                {project.bundleIncluded?'完整课程已包含此项目':`购买项目 · ${money(project.product.price_cents)}`}
               </button>
             )}
           <small>
             {!lessons.length
               ? "教程尚未发布"
               : !project.entitled
-                ? "项目权益独立于关联课程，请联系管理员确认；在线支付未接入。"
+                ? project.bundleIncluded
+                  ? "完整课程包含此项目；购买后可通过同一账号学习。"
+                  : "请查看项目学习权益说明，或联系管理员确认开通方式。"
                 : `${lessons.length} 节教程 · ${project.promptCount} 个 Prompt`}
           </small>
         </div>
@@ -492,7 +495,9 @@ function ProjectDetail({ slug, workspace, placementId, model, navigate }) {
             <section className="ls-panel">
               <h3>关联课程</h3>
               <p className="ls-muted">
-                课程和独立项目分别校验学习权益，既有课程资料保持可访问。
+                {project.bundleIncluded
+                  ? "完整课程包含平台已发布的配套实战项目；课程与项目使用同一购买账号。"
+                  : "课程与项目按各自授权范围校验，既有课程资料保持可访问。"}
               </p>
               {project.relatedCourses.map((c) => (
                 <button

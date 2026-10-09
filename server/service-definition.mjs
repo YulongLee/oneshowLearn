@@ -2,7 +2,7 @@
 export const SERVICE_DEFAULTS = {
   operatorName: '', contactEmail: '', contactWechat: '', responseTime: '',
   courseScope: '单次购买订单中列明的课程，不自动续费。课程视频、课件及配套资料通过购买账号访问。',
-  projectScope: '课程内案例以课程说明为准；独立实战项目拥有自己的访问规则，不因购买一门课程自动解锁全部项目。',
+  projectScope: 'AI OPC 完整课程一次购买，包含平台已发布的配套实战项目与授权学习资料。通过购买账号访问，按课程和项目阶段顺序学习。',
   aiScope: 'AI 导师用于辅助学习。可用模型、功能与使用额度以平台实际配置和页面提示为准，课程价格不代表无限量 AI 调用。',
   communityScope: '会员学习群由官方维护，加入条件、二维码有效期及入群方式见学习社区。请使用购买课程的账号查看。',
   updateScope: '已购课程的更新在相应课程目录中提供；新发布的独立商品不自动纳入原订单权益。',

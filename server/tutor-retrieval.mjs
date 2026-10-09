@@ -1,5 +1,6 @@
 import {row, rows} from './db.mjs';
 import {placement, canReadPlacement, stageAccessIssue, courseAccess} from './learning-model.mjs';
+import {isCourseOverview} from './tutor-intent.mjs';
 
 import {TUTOR_INSUFFICIENT} from './tutor-grounding.mjs';
 export {TUTOR_INSUFFICIENT} from './tutor-grounding.mjs';
@@ -86,17 +87,22 @@ export function rankTutorDocuments(docs, question, history = [], selectedCourse 
     const tf = c.counts.get(term)||0, idf = Math.log(1+(chunks.length-(df.get(term)||0)+.5)/((df.get(term)||0)+.5));
     return score + (tf ? idf * tf * 2.2 / (tf+1.2*(.25+.75*c.length/avg)) : 0) + (c.titleTerms.has(term) ? .4 : 0);
   },0);
-  const overview = selectedCourse && /^(请)?(帮我)?(总结|概括|介绍)(一下)?(这门|当前|所选)?课程[。？?！!\s]*$/.test(question.trim());
+  const overview = selectedCourse && isCourseOverview(question);
   const ranked = chunks.filter(c => c.score>0 || overview).sort((a,b) => b.score-a.score);
   const selected = [], docCount = new Map(), texts = new Set();
-  for (const chunk of ranked) {
-    if ((docCount.get(chunk.key)||0)>=2 || texts.has(chunk.text)) continue;
+  // An overview first represents distinct documents, then uses second chunks.
+  // Topic queries retain their original score order and two-chunk allowance.
+  for (const allowance of overview?[1,2]:[2]) for (const chunk of ranked) {
+    if (selected.length>=8) break;
+    if ((docCount.get(chunk.key)||0)>=allowance || texts.has(chunk.text)) continue;
     texts.add(chunk.text); docCount.set(chunk.key,(docCount.get(chunk.key)||0)+1);
     const {counts,length,titleTerms,score,...source} = chunk;
     selected.push({...source,id:`S${selected.length+1}`});
     if (selected.length>=8) break;
   }
-  return {sources:selected, retrieval:{method:'keyword-bm25',documents:docs.length,chunks:chunks.length,matched:ranked.length,included:selected.length,partial}};
+  // A bounded overview must not imply that every document was represented.
+  partial ||= Boolean(overview && docCount.size < docs.length);
+  return {sources:selected, retrieval:{method:overview?'course-overview':'keyword-bm25',documents:docs.length,chunks:chunks.length,matched:ranked.length,included:selected.length,partial}};
 }
 
 export function retrieveTutorEvidence(user, question, history, courseId) {

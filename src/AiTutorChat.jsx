@@ -7,7 +7,9 @@ import {useTutorConversations} from './useTutorConversations.js';
 import {peekTutorIntent,takeTutorIntent} from './tutor-navigation.js';
 
 import {api} from './api.js';
-import {tutorStudyPosition,tutorStarterQuestions,tutorScopeCopy,tutorRecentConversations,tutorConversationDate} from './tutor-studio-model.js';
+import {courseLearningPath} from './course-reader-model.js';
+import {useAiAllowance} from './useAiAllowance.js';
+import {needsTutorRecovery,tutorStudyPosition,tutorStarterQuestions,tutorScopeCopy,tutorRecentConversations,tutorConversationDate} from './tutor-studio-model.js';
 const starterIcons={book:BookOpenText,note:NotePencil,idea:Lightbulb,code:Code};
 
 export function AiTutorChat({model, cap, navigate, notify}) {
@@ -15,6 +17,7 @@ export function AiTutorChat({model, cap, navigate, notify}) {
   const webAvailable=available&&Boolean(cap?.features?.web);
   const session=useTutorConversations(model.user?.id);
   const {draft,setDraft,pending}=session;
+  const allowance=useAiAllowance(model.user?.id,pending?.id,session.sending);
   const busy=session.sending||Boolean(pending)||session.loading;
   const messages=(session.data?.turns||[]).flatMap(t=>t.status==='pending'?[]:[
     {id:t.id,role:'user',content:t.question,mode:t.mode,courseId:t.courseId,error:t.status==='failed'?(t.error==='联网回答的引用未能通过核对，请重新提问；不会用普通回答冒充搜索结果。'?'这次搜索结果暂时无法核实，请重试或换个更具体的问题。':t.error):null,turn:t},
@@ -60,6 +63,11 @@ export function AiTutorChat({model, cap, navigate, notify}) {
     }
   },[incoming, incomingReady, session.loading, model.loading, busy]);
   const selectQuestion = item => {setDraft(item.question);setMode(item.mode);composer.current?.focus();};
+  const prepareGeneral=message=>{
+    if(busy)return;
+    if(draft.trim()&&draft.trim()!==message.question.trim()&&!window.confirm('输入框中有未发送的草稿，是否替换为这个问题？'))return;
+    setDraft(message.question);setMode('general');setIncludeProduct(false);setSettingsOpen(true);composer.current?.focus();
+  };
   const send=async (event,quick=null)=>{
     event?.preventDefault();
     if(!available||busy||!(quick?.question||draft).trim())return;
@@ -106,6 +114,7 @@ export function AiTutorChat({model, cap, navigate, notify}) {
           {message.role==='assistant'&&<>
             <TutorSources key={message.id} sources={message.sources} mode={message.mode} searchedAt={message.searchedAt}/>
             {message.unavailable&&<button className="tc-retry-question" disabled={busy} onClick={()=>selectQuestion({question:message.question,mode:message.mode})}>重新提问</button>}
+            {needsTutorRecovery(message)&&<div className="tc-recovery"><p>可以补充具体章节或关键词，再检索课程资料；也可以先准备一个通用建议问题。</p><button type="button" disabled={busy} onClick={()=>prepareGeneral(message)}>准备通用建议问题</button>{model.library.find(c=>c.id===message.courseId)?.slug&&<button type="button" onClick={()=>navigate(courseLearningPath(model.library.find(c=>c.id===message.courseId).slug))}>查看这门课程</button>}<small>只准备问题，确认发送后才调用 AI。</small></div>}
             {message.retrieval?.partial&&<p className="tc-coverage">本次只检索了部分文字，请缩小课程范围或补充关键词。</p>}
             <div className="tc-answer-actions"><button onClick={()=>copy(message.content)} aria-label="复制回答"><Copy size={16}/>复制</button><button disabled={saveBusy||model.busy||saved.includes(message.id)} onClick={()=>saveNote(message)}>{saved.includes(message.id)?<Check size={16}/>:<NotePencil size={16}/>} {saved.includes(message.id)?'已保存':'保存笔记'}</button></div>
           </>}
@@ -131,6 +140,7 @@ export function AiTutorChat({model, cap, navigate, notify}) {
       <textarea ref={composer} value={draft} onChange={e=>setDraft(e.target.value)} disabled={busy} maxLength={4000} rows={3} aria-label="向 AI 导师提问" aria-description="Enter 发送，Shift Enter 换行" placeholder={mode==='web'?'搜索公开网络信息，回答将附网页来源…':mode==='knowledge'?'提问课程或项目中的问题，回答将附参考来源…':'描述你的目标、问题和已经尝试的方法…'} onCompositionStart={()=>{composing.current=true;}} onCompositionEnd={()=>{composing.current=false;}} onBlur={()=>{composing.current=false;}} onKeyDown={e=>handleTutorComposerKeyDown(e,send,composing.current)}/>
       <div className="tc-compose-bottom"><div className="tc-tools"><button type="button" className="tc-context-toggle" aria-label="添加上下文与问答设置" aria-expanded={settingsOpen} onClick={()=>setSettingsOpen(!settingsOpen)}><Plus size={17}/><span>{includeProduct ? '已加产品简介' : '添加上下文'}</span></button><button type="button" className="tc-web-toggle" aria-label="联网回答" aria-pressed={mode==='web'} disabled={busy||(!webAvailable&&mode!=='web')} title={!webAvailable?(cap?.webReason||'联网回答暂不可用'):'仅搜索公开网络信息'} onClick={()=>{setMode(mode==='web'?'general':'web');setIncludeProduct(false);}}><Globe size={18} aria-hidden="true"/><span>联网搜索</span>{mode==='web'&&<Check size={14} weight="bold"/>}</button></div><span className="tc-keyboard-hint">Enter 发送 · Shift+Enter 换行</span><div>{!available&&draft.trim()&&model.user&&<button type="button" disabled={saveBusy||model.busy} onClick={()=>saveNote(null)}>保存问题</button>}{pending?<button type="button" className="tc-send" aria-label="停止回答" onClick={cancel}><Square size={17} weight="fill"/></button>:<button type="submit" className="tc-send" aria-label="发送给 AI 导师" disabled={busy||!available||(mode==='web'&&!webAvailable)||!draft.trim()}><ArrowUp size={22} weight="bold"/></button>}</div></div>
       {mode==='web'&&!webAvailable&&<p className="tc-unavailable">{cap?.webReason||'联网回答暂不可用'}</p>}
+      {model.user&&<div className="tc-allowance" role="status">{allowance.state?.error?<>额度暂无法读取 <button type="button" onClick={allowance.retry}>重新读取</button></>:allowance.state?.data?<>当前 24 小时额度剩余 {allowance.state.data.daily.remaining} / {allowance.state.data.daily.limit} 次{allowance.state.data.daily.resetAt&&<> · 恢复于 {new Date(allowance.state.data.daily.resetAt).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</>}<span>与课程学习助手共用额度，实际调用及失败重试按服务规则计入。</span></>:<>正在读取账号额度…</>}</div>}
       {mode==='web'&&webAvailable&&<p className="tc-web-privacy">仅发送问题与联网对话，不附带私人学习资料。</p>}
       {cap&&!available&&<p className="tc-unavailable" role="status">{!model.user?'请先登录后使用 AI 导师。':cap.reason||'管理员已暂停 AI 导师，请稍后重试。'}</p>}
     </form><div className="tc-trust-row"><span><ShieldCheck size={17}/>{mode==='knowledge'?'资料回答附来源':mode==='web'?'联网回答附网页来源':'通用建议 · 非课程结论'}</span><span><LockSimple size={17}/>对话仅自己可见</span><span><NotePencil size={17}/>可保存为学习笔记</span></div></div>

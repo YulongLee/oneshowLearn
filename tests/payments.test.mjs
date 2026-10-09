@@ -120,7 +120,7 @@ test('online payments: private configuration, signed providers, callback settlem
     assert.ok(state.secretsConfigured.wechatPrivateKey);assert.ok(!JSON.stringify(state).includes(merchant.privateKey));assert.ok(!JSON.stringify(row('SELECT * FROM payment_configuration')).includes('PRIVATE KEY'));
     assert.equal(row('SELECT price_cents FROM products WHERE id=?',[productId]).price_cents,39900);assert.equal(row('SELECT price_cents FROM project_packs WHERE id=?',[packId]).price_cents,39900);
     assert.equal((await req('/admin/payments',admin,'PUT',{settings},0)).status,409);
-    const offer=(await req('/commerce/offer',null)).body;assert.equal(offer.productId,productId);assert.ok(offer.channels.every(c=>c.available));
+    const offer=(await req('/commerce/offer',null)).body;assert.equal(offer.productId,productId);assert.equal(offer.includesPublishedProjects,true);assert.ok(offer.channels.every(c=>c.available));
     const check=spawnSync(process.execPath,['--input-type=module','-e',"const {paymentConfiguration}=await import('./server/payment-configuration.mjs');console.log(paymentConfiguration().version)"],{env:process.env,encoding:'utf8'});assert.equal(check.status,0);assert.equal(check.stdout.trim(),'1');
     const wrong=spawnSync(process.execPath,['--input-type=module','-e',"const {paymentConfiguration}=await import('./server/payment-configuration.mjs');try{paymentConfiguration();process.exit(1)}catch{process.exit(0)}"],{env:{...process.env,PAYMENT_CONFIG_ENCRYPTION_KEY:'00'.repeat(32)},encoding:'utf8'});assert.equal(wrong.status,0);
     migratePayments(db);assert.equal(row('SELECT COUNT(*) n FROM payment_configuration').n,1);

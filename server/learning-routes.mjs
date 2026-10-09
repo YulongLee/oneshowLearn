@@ -7,6 +7,8 @@ import { materialUrl } from "./materials.mjs";
 import { validNoteBody } from "./learning-note-body.mjs";
 import { courseAIService } from "./course-ai-service.mjs";
 import {rateLimit} from './account-security.mjs';
+import {recordCompletion,issueCourseCertificate} from './course-certificates.mjs';
+import {bundlePackId} from './bundle-access.mjs';
 import {tutorConversationRouter} from './tutor-conversations.mjs';
 import {
   lessonSchema,
@@ -183,6 +185,7 @@ function projectSummary(project, user) {
       ? { ...config, tech_stack: JSON.parse(config.tech_stack) }
       : null,
     entitled: projectAccess(user, project.id),
+    bundleIncluded: Boolean(bundlePackId()),
     lessonCount: lessons.length,
     pptCount: new Set(lessons.map((p) => p.config.pptAssetId).filter(Boolean))
       .size,
@@ -405,13 +408,15 @@ export function learningRouter() {
         "UPDATE learning_progress SET video_duration=?,current_prompt_id=? WHERE user_id=? AND placement_id=?",
         [d.video_duration, d.current_prompt_id, req.user.id, p.id],
       );
+      if(d.complete)recordCompletion(req.user,p);
       if (p.kind === "project")
         run(
           "UPDATE project_runs SET current_placement_id=?,current_prompt_id=?,updated_at=CURRENT_TIMESTAMP,version=version+1 WHERE user_id=? AND project_id=?",
           [p.id, d.current_prompt_id, req.user.id, p.owner_id],
         );
     });
-    res.json({ progress: progressFor(req.user.id, p.id) });
+    const certificate=p.kind==='course'?issueCourseCertificate(req.user,p.owner_id):null;
+    res.json({ progress: progressFor(req.user.id, p.id),certificate:certificate?{id:certificate.id,revoked:Boolean(certificate.revoked_at)}:null });
   });
   router.post(
     "/learning/projects/:slug/stages/:id/accept",
@@ -562,6 +567,7 @@ export function learningRouter() {
   router.get("/learning/ai/capabilities", (_req, res) =>
     res.json(courseAIService.capabilities()),
   );
+  router.get('/learning/ai/allowance',requireAuth,(req,res)=>res.set('Cache-Control','private, no-store').json(courseAIService.allowance(req.user)));
   router.post('/learning/ai/tutor', requireAuth, async(req,res)=>{
     const d=parse(z.object({question:z.string().trim().min(1).max(4000),mode:z.enum(['knowledge','general']).default('knowledge'),courseId:z.number().int().positive().nullable().default(null),includeProduct:z.boolean().default(false),history:z.array(z.object({role:z.enum(['user','assistant']),content:z.string().min(1).max(18000)}).strict()).max(8).default([])}).strict(),req.body);
     rateLimit('tutor-retrieval-minute',String(req.user.id),20,60);

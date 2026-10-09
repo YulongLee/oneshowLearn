@@ -4,7 +4,7 @@ import {randomUUID} from 'node:crypto';
 import {createAliyunProvider} from './ai-provider.mjs';
 import {aiRuntime} from './ai-configuration.mjs';
 import {currentTimeAnswer,modelIdentityAnswer} from './ai-web-search.mjs';
-import {rateLimit} from './account-security.mjs';
+import {rateLimit,rateLimitStatus} from './account-security.mjs';
 import {courseEvidence,verifyCourseAnswer} from './course-ai-grounding.mjs';
 import {retrieveTutorEvidence,tutorDocuments,verifyTutorAnswer,TUTOR_INSUFFICIENT} from './tutor-retrieval.mjs';
 import {placement,canReadPlacement,stageAccessIssue} from './learning-model.mjs';
@@ -67,6 +67,10 @@ async function generateForUser(user,request,diagnostic=false) {
   }finally{inFlight.delete(user.id);}
 }
 export const courseAIService={
+  allowance(user){
+    const {settings,provider}=connection();
+    return {daily:rateLimitStatus('learning-ai-day',String(user.id),settings.dailyLimit),minute:rateLimitStatus('learning-ai-minute',String(user.id),10),busy:inFlight.has(user.id),available:Boolean(provider)};
+  },
   capabilities:()=>{const {settings,provider}=connection();return {available:Boolean(provider),provider:provider?.provider||'',model:provider?.model||'',dailyLimit:settings.dailyLimit,features:Object.fromEntries(Object.entries(settings.features).map(([key,value])=>[key,Boolean(provider)&&value&&(key!=='web'||Boolean(provider.webSearch)&&settings.features.tutor)])),webReason:!provider?.webSearch?'当前模型暂不支持已接入的联网搜索。':!settings.features.web?'管理员已暂停联网回答。':'',reason:provider?'':'AI 服务未启用或配置不可用；课程笔记和项目操作不受影响。'};},
   configure(adapter){if(adapter!==null&&adapter!==undefined&&typeof adapter.generate!=='function')throw Error('AI adapter must implement generate');adapterOverride=adapter;},
   async testConnection(user){await generateForUser(user,{action:'ask',question:'接口连接测试，请只回复：连接成功。',context:{}},true);return {ok:true};},

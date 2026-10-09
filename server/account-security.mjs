@@ -5,11 +5,18 @@ import { row, run } from "./db.mjs";
 export class AccountError extends Error {
   constructor(status, message, retryAfter = 0) { super(message); this.status = status; this.retryAfter = retryAfter; }
 }
+const rateKey=(scope,value)=>createHmac('sha256',config.jwtSecret).update(`${scope}:${value}`).digest('hex');
+// Same persisted budget as enforcement; reading never resets or consumes it.
+export function rateLimitStatus(scope,value,maximum,now=Date.now()){
+ const current=row('SELECT hits,expires_at FROM auth_rate_limits WHERE key=?',[rateKey(scope,value)]);
+ const used=current&&current.expires_at>now?current.hits:0;
+ return {limit:maximum,remaining:Math.max(0,maximum-used),resetAt:used?new Date(current.expires_at).toISOString():null};
+}
 
 // Persist limits so restarting the API does not reset the abuse budget.
 export function rateLimit(scope, value, maximum, seconds) {
   const now = Date.now();
-  const key = createHmac("sha256", config.jwtSecret).update(`${scope}:${value}`).digest("hex");
+  const key = rateKey(scope,value);
   run("DELETE FROM auth_rate_limits WHERE expires_at <= ?", [now]);
   const current = row("SELECT hits,expires_at FROM auth_rate_limits WHERE key=?", [key]);
   if (current && current.hits >= maximum) {

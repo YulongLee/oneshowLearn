@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { row, rows } from "./db.mjs";
+import {hasBundleAccess} from './bundle-access.mjs';
 
 const text = (n) => z.string().trim().max(n);
 const id = z.number().int().positive();
@@ -144,11 +145,12 @@ export function projectAccess(user, projectId) {
     "SELECT p.id,s.access_type FROM practice_projects p LEFT JOIN practice_project_settings s ON s.project_id=p.id WHERE p.id=? AND p.status='published'",
     [projectId],
   );
-  // Course ownership is deliberately not a project entitlement.
+  // The complete-course purchase includes published practice projects, alongside independent legacy grants.
   return Boolean(
     project &&
     (manager(user) ||
       project.access_type === "free" ||
+      hasBundleAccess(user) ||
       Boolean(
         user &&
         row(

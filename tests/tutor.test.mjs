@@ -5,7 +5,12 @@ import {createElement as h} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {TutorAnswer,TutorSources,answerHref,answerLabel} from '../src/TutorAnswer.js';
 import {readFileSync} from 'node:fs';
-import {tutorStudyPosition,tutorStarterQuestions,tutorScopeCopy,tutorRecentConversations,tutorConversationDate} from '../src/tutor-studio-model.js';
+import {needsTutorRecovery,tutorStudyPosition,tutorStarterQuestions,tutorScopeCopy,tutorRecentConversations,tutorConversationDate} from '../src/tutor-studio-model.js';
+test('missing evidence recovery is distinct from general, web, system and revoked-source responses',()=>{
+ const miss={mode:'knowledge',grounded:false,retrieval:{included:0}};
+ assert.equal(needsTutorRecovery(miss),true);
+ for(const props of [{mode:'general'},{mode:'web'},{grounded:true},{unavailable:true},{answerKind:'system-time'},{retrieval:null}])assert.equal(needsTutorRecovery({...miss,...props}),false);
+});
 
 function composerKey(overrides={}, composing=false) {
   let prevented=0, sent=0;

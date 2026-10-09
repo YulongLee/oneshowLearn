@@ -19,6 +19,10 @@
 .co-workspace .co-metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:24px; }
 .co-workspace .co-metrics>div { padding:0; border:0; }
 .co-workspace .co-rail { grid-template-columns:minmax(0,1fr); }
+.co-workspace .co-benefits {grid-template-columns:repeat(3,minmax(0,1fr))}
+.co-workspace .co-benefits article {flex-direction:column}
+.co-workspace .co-benefits h3 {font-size:15px}
+.co-workspace .co-benefits p {font-size:13px;line-height:1.8}
 .co-workspace .co-course-options { order:0; }
 .co-workspace .co-questions { display:block; }
 .co-workspace .co-closing-quote { display:none; }
@@ -30,9 +34,9 @@
   .co-workspace .co-rail { order:1; grid-template-columns:repeat(2,minmax(0,1fr)); }
   .co-workspace .co-purchase { grid-column:1; grid-row:1 / span 2; }
   .co-workspace .co-course-options { grid-column:2; grid-row:1; }
-  .co-workspace .co-questions { grid-column:2; grid-row:2; }
+  .co-workspace .co-main>.co-questions { grid-column:auto; grid-row:auto; display:block; }
   .co-workspace .co-section { order:2; }
-  .co-workspace .co-benefits { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .co-workspace .co-benefits { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .co-workspace .co-curriculum { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .co-workspace .co-hero h1 { font-size:46px; }
 }
@@ -43,8 +47,9 @@
   .co-workspace .co-hero-art { opacity:.10; width:42%; }
   .co-workspace .co-rail { grid-template-columns:minmax(0,1fr); }
   .co-workspace :is(.co-purchase,.co-course-options,.co-questions) { grid-column:auto; grid-row:auto; }
-  .co-workspace .co-questions { display:none; }
-  .co-workspace .co-benefits article { flex-direction:column; }
+  .co-workspace .co-main>.co-questions { display:block; }
+  .co-workspace .co-benefits {grid-template-columns:minmax(0,1fr)}
+  .co-workspace .co-benefits article { flex-direction:row; }
   .co-workspace .co-curriculum { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .co-workspace .co-closing { display:block; padding:24px 20px; }
   .co-workspace .co-closing-copy { width:100%; }
@@ -57,4 +62,5 @@
   .co-workspace :is(.co-benefits,.co-curriculum) { grid-template-columns:minmax(0,1fr); }
   .co-workspace .co-benefits article { flex-direction:row; }
   .co-workspace .co-purchase { padding-inline:16px; }
+  .co-workspace .co-benefit-details>div { grid-template-columns:minmax(0,1fr); }
 }

@@ -5,24 +5,28 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
+import {createServer} from 'node:net';
 
 const root = path.resolve(import.meta.dirname, "..");
 
 test("commercial API supports catalog, admin CMS and orders", async (t) => {
   const temp = mkdtempSync(path.join(tmpdir(), "oneshowlearn-api-"));
-  const port = 18787;
+  const reservation=createServer();await new Promise(resolve=>reservation.listen(0,'127.0.0.1',resolve));
+  const port=reservation.address().port;await new Promise(resolve=>reservation.close(resolve));
   const databasePath = path.join(temp, "test.db");
-  const env = { ...process.env, API_PORT: String(port), DATABASE_PATH: databasePath, UPLOAD_DIR: path.join(temp, "uploads"), JWT_SECRET: "test-secret-for-oneshowlearn", ADMIN_PASSWORD: "Admin-Test-Password-2026", ALLOW_DEV_EMAIL_DELIVERY: "true", REGISTRATION_ENABLED: "true" };
+  const env = { ...process.env, NODE_ENV:'test',API_HOST:'127.0.0.1',API_PORT: String(port), DATABASE_PATH: databasePath, UPLOAD_DIR: path.join(temp, "uploads"), JWT_SECRET: "test-secret-for-oneshowlearn", ADMIN_PASSWORD: "Admin-Test-Password-2026", ALLOW_DEV_EMAIL_DELIVERY: "true", REGISTRATION_ENABLED: "true",AI_ENABLED:'false',MINERU_API_KEY:'',EMAIL_PROVIDER:'resend',EMAIL_API_KEY:'',EMAIL_SMTP_HOST:'' };
   const seeded = spawnSync(process.execPath, ["server/seed.mjs"], { cwd: root, env, encoding: "utf8" });
   assert.equal(seeded.status, 0, seeded.stderr);
   const server = spawn(process.execPath, ["server/index.mjs"], { cwd: root, env, stdio: "ignore" });
-  t.after(() => { server.kill(); rmSync(temp, { recursive: true, force: true }); });
+  t.after(async() => { if(server.exitCode===null){const closed=new Promise(resolve=>server.once('close',resolve));server.kill();await closed;}rmSync(temp, { recursive: true, force: true }); });
 
   const base = `http://127.0.0.1:${port}/api`;
-  for (let attempt = 0; attempt < 40; attempt += 1) {
-    try { if ((await fetch(`${base}/health`)).ok) break; } catch {}
-    await new Promise((resolve) => setTimeout(resolve, 50));
+  let ready=false;const deadline=Date.now()+20000;
+  while(Date.now()<deadline&&server.exitCode===null){
+    try {const response=await fetch(`${base}/ready`,{signal:AbortSignal.timeout(500)});ready=response.status===200&&(await response.json()).service==='oneshowlearn-api';if(ready)break;} catch {}
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
+  assert.ok(ready,'isolated API must become ready before business requests');
   const login = await fetch(`${base}/auth/login`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email: "liyulong19950316@163.com", password: "Admin-Test-Password-2026" }) });
   assert.equal(login.status, 200);
   const { token } = await login.json();

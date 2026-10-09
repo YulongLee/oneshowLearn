@@ -1,0 +1,1 @@
+export function DataProcessingNotice(){return <section className="service-markdown"><h2>站内体验统计与资料解析</h2><p>平台可采集页面分类、临时匿名会话、浏览器性能数值和异常类型，用于改善体验，保留 90 天。不采集搜索正文、笔记、对话、错误堆栈或支付凭证，不进行跨站追踪；支持浏览器 Do Not Track。浏览器刷新会产生新的临时会话。</p><p>管理员确认后可将指定教学附件传给 MinerU 进行文档解析。解析结果由管理员审核后发布为学习资料。个人笔记与对话不会自动提交到解析服务。</p></section>;}

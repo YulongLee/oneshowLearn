@@ -18,6 +18,8 @@ COPY server ./server
 COPY deploy/portable ./deploy/portable
 COPY deploy/import-demo-materials.mjs deploy/publish-demo-projects.mjs deploy/import-opc-curriculum.mjs ./deploy/
 COPY scripts/prepare-opc-curriculum.mjs ./scripts/prepare-opc-curriculum.mjs
+COPY scripts/check-operations.mjs ./scripts/check-operations.mjs
+COPY deploy/configure-mineru.mjs deploy/update-commercial-completion.sh deploy/nginx-oneshowlearn.conf deploy/nginx-oneshowlearn-https.conf deploy/nginx-oneshowlearn-app.conf ./deploy/
 COPY docs/curriculum/ai-opc-20261001.json ./docs/curriculum/ai-opc-20261001.json
 COPY tests ./tests
 COPY Dockerfile .dockerignore ./

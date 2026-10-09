@@ -26,6 +26,9 @@
 !deploy/import-opc-curriculum.mjs
 !deploy/configure-mineru.mjs
 !deploy/update-commercial-completion.sh
+!deploy/check-commercial-refinement.mjs
+!deploy/package-commercial-refinement.mjs
+!deploy/update-commercial-refinement.sh
 !deploy/nginx-oneshowlearn.conf
 !deploy/nginx-oneshowlearn-https.conf
 !deploy/nginx-oneshowlearn-app.conf

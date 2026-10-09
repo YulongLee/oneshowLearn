@@ -75,6 +75,7 @@ function releaseSourceHash() {
   for(const name of ['src','server','deploy/portable','worker','.openai','tests'])treeHash(path.join(sourceRoot,name),hash);
   for(const name of ['package.json','package-lock.json','Dockerfile','.dockerignore','index.html','vite.config.mjs','scripts/prepare-sites-build.mjs','scripts/prepare-opc-curriculum.mjs','deploy/import-demo-materials.mjs','deploy/publish-demo-projects.mjs','deploy/import-opc-curriculum.mjs','docs/curriculum/ai-opc-20261001.json','.github/workflows/ci.yml'])hash.update(name+'\0').update(readFileSync(path.join(sourceRoot,name)));
   for(const name of ['scripts/check-operations.mjs','deploy/configure-mineru.mjs','deploy/update-commercial-completion.sh','deploy/nginx-oneshowlearn.conf','deploy/nginx-oneshowlearn-https.conf','deploy/nginx-oneshowlearn-app.conf'])hash.update(name+'\0').update(readFileSync(path.join(sourceRoot,name)));
+  for(const name of ['deploy/check-commercial-refinement.mjs','deploy/package-commercial-refinement.mjs','deploy/update-commercial-refinement.sh'])hash.update(name+'\0').update(readFileSync(path.join(sourceRoot,name)));
   return hash.digest('hex');
 }
 function fileDigest(file) {

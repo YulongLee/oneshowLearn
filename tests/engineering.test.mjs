@@ -12,8 +12,36 @@ import {safeDirectory,validateImagePair,verifyBackup} from '../deploy/portable/m
 import {onlyLoopbackWebBinding} from '../deploy/portable/container-inspection.mjs';
 import {mineruEnvironment} from '../deploy/configure-mineru.mjs';
 import {inspectOperations} from '../scripts/check-operations.mjs';
+import {checkDependencyDelta,prepareProxy,patchedVersions} from '../deploy/check-commercial-refinement.mjs';
+import proxyaddr from 'proxy-addr';
+import nodemailer from 'nodemailer';
 const temp=t=>{const p=realpathSync(mkdtempSync(path.join(tmpdir(),'osl-engineering-unit-')));t.after(()=>rmSync(p,{recursive:true,force:true}));return p;};
 const env=()=>initialEnvironment('https://engineering.example.invalid','owner@example.invalid');
+test('security dependency release accepts only the reviewed versions and obsolete upload removals',()=>{
+ const next=JSON.parse(readFileSync('package-lock.json')),old=structuredClone(next);
+ old.packages[''].dependencies={...next.packages[''].dependencies,multer:'^2.2.0',nodemailer:'^9.0.5',vite:'6.4.2'};
+ for(const name of Object.keys(patchedVersions))old.packages['node_modules/'+name].version='isolated-old-version';
+ old.packages['node_modules/concat-stream']={version:'2.0.0'};
+ checkDependencyDelta(old,next);
+ const wrong=structuredClone(next);wrong.packages['node_modules/express'].version='unexpected';assert.throws(()=>checkDependencyDelta(old,wrong));
+ const added=structuredClone(next);added.packages['node_modules/extra-runtime']={version:'1.0.0'};assert.throws(()=>checkDependencyDelta(old,added));
+ const missing=structuredClone(next);delete missing.packages['node_modules/multer'];assert.throws(()=>checkDependencyDelta(old,missing));
+});
+test('patched proxy address handling does not trust arbitrary IPv4 via an incomplete mapped subnet',()=>{
+ const trust=proxyaddr.compile(['::ffff:10.0.0.0/8']);
+ assert.equal(trust('198.51.100.2'),false);
+ const proper=proxyaddr.compile(['10.0.0.0/8']);assert.equal(proper('10.1.2.3'),true);assert.equal(proper('198.51.100.2'),false);
+});
+test('patched email API preserves local message composition without an SMTP or network call',async()=>{
+ const transport=nodemailer.createTransport({streamTransport:true,buffer:true,newline:'unix'});
+ try{const info=await transport.sendMail({from:'OneShowLearn <sender@example.invalid>',to:'learner@example.invalid',subject:'课程验证',text:'隔离验证，不发送邮件。'});assert.ok(Buffer.isBuffer(info.message));assert.deepEqual(info.envelope.to,['learner@example.invalid']);assert.ok(info.messageId);}finally{transport.close();}
+});
+test('live proxy transformation preserves site settings and uses a separate reload-safe write zone',()=>{
+ const oldSite='limit_req_zone $binary_remote_addr zone=oneshowlearn_auth:10m rate=10r/m;\nserver { keep-tls-and-custom-config; }',oldSnippet='location ^~ /api/auth/ {\n    limit_req zone=oneshowlearn_auth burst=10 nodelay;\n    limit_req_status 429;\n}';
+ const prefix=readFileSync('deploy/nginx-oneshowlearn.conf','utf8').split('\n\nserver {')[0],result=prepareProxy(oldSite,oldSnippet,prefix);
+ assert.ok(result.site.endsWith('\nserver { keep-tls-and-custom-config; }'));assert.match(result.site,/zone=oneshowlearn_auth_write_v2:10m rate=10r\/m/);assert.match(result.snippet,/zone=oneshowlearn_auth_write_v2 burst=10 nodelay/);assert.match(result.snippet,/zone=oneshowlearn_auth_read burst=30 nodelay/);assert.throws(()=>prepareProxy(result.site,result.snippet,prefix));
+ const shell=readFileSync('deploy/update-commercial-refinement.sh','utf8');assert.match(shell,/chmod -R a\+rX/);assert.match(shell,/No.*|no production npm mutation/);assert.ok(!shell.includes('configure-mineru'));assert.ok(!shell.includes('cp "$backup/release.db"'));assert.ok(shell.indexOf('DATABASE_PATH=')<shell.indexOf('systemctl stop oneshowlearn\nsnapshot'));
+});
 test('Nginx preserves mutation guards and separates only a closed set of account GET/HEAD reads',()=>{
  const http=readFileSync('deploy/nginx-oneshowlearn.conf','utf8'),https=readFileSync('deploy/nginx-oneshowlearn-https.conf','utf8'),app=readFileSync('deploy/nginx-oneshowlearn-app.conf','utf8');
  assert.equal(http.split('\n\nserver {')[0],https.split('\n\nserver {')[0]);

@@ -28,7 +28,7 @@
     "test:browser": "node scripts/run-browser-checks.mjs",
     "test:deployment": "node scripts/check-portable-deployment.mjs",
     "check:engineering": "node scripts/check-engineering.mjs",
-    "check:dependencies": "npm audit --omit=dev --audit-level=high --registry=https://registry.npmjs.org --fetch-timeout=15000 --fetch-retries=0",
+    "check:dependencies": "npm audit --audit-level=high --registry=https://registry.npmjs.org --fetch-timeout=15000 --fetch-retries=0",
     "check:operations": "node scripts/check-operations.mjs",
     "test:auth-proxy": "node scripts/check-auth-proxy.mjs",
     "ops": "node deploy/portable/manage.mjs"
@@ -46,12 +46,12 @@
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
-    "multer": "^2.2.0",
-    "nodemailer": "^9.0.5",
+    "multer": "2.4.0",
+    "nodemailer": "10.0.16",
     "qrcode": "^1.5.4",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "vite": "6.4.2",
+    "vite": "6.4.4",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -61,6 +61,14 @@
     "remark-gfm": "^4.0.1"
   },
   "overrides": {
+    "baseline-browser-mapping": "2.11.0",
+    "browserslist": "4.28.7",
+    "nanoid@^3": "3.3.18",
+    "postcss": "8.5.23",
+    "proxy-addr": "2.0.8",
+    "qs": "6.16.0",
+    "source-map-js": "1.2.2",
+    "shell-quote": "1.11.0",
     "alipay-sdk": {
       "urllib": "4.9.1"
     }

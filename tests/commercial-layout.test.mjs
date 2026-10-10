@@ -190,10 +190,13 @@ test('homepage cards preserve approved artwork and copy independently of course 
 
 test('public homepage shows the owner ICP number as an official accessible footer link',()=>{
   const homepage=source('PublicHomepage.jsx');
-  assert.match(homepage,/<footer[^>]*className="sales-footer"[^>]*>[\s\S]*<a className="sales-icp-link" href="https:\/\/beian\.miit\.gov\.cn\/" target="_blank" rel="noopener noreferrer"[^>]*>浙ICP备2026052190号-4<\/a><\/footer>/);
+  assert.match(homepage,/<footer[^>]*className="sales-footer"[^>]*>[\s\S]*<div className="sales-record-links"[^>]*>[\s\S]*<a className="sales-icp-link" href="https:\/\/beian\.miit\.gov\.cn\/" target="_blank" rel="noopener noreferrer"[^>]*>浙ICP备2026052190号-4<\/a>[\s\S]*<a className="sales-police-link" href=\{POLICE_RECORD_URL\} target="_blank" rel="noopener noreferrer"[^>]*>[\s\S]*\{POLICE_RECORD_NUMBER\}[\s\S]*<\/a>[\s\S]*<\/div><\/footer>/);
+  assert.match(homepage,/const POLICE_RECORD_URL='https:\/\/beian\.mps\.gov\.cn\/#\/query\/webSearch\?code=33010602014974'/);
+  assert.match(homepage,/const POLICE_RECORD_NUMBER='浙公网安备33010602014974号'/);
   const css=source('homepage.css');
   assert.match(css,/\.sales-footer \{[^}]*align-items: center/);
   assert.match(css,/\.sales-footer \.sales-icp-link:focus-visible/);
+  assert.match(css,/\.sales-footer \.sales-police-link:focus-visible/);
 });
 
 test('course learning URLs preserve legacy links and support every CMS slug',()=>{

@@ -131,7 +131,7 @@
 .sales-bottom-note { font-size:24px; line-height:1.55; font-family:"Segoe Print","Comic Sans MS",cursive; font-style:italic; transform:rotate(-9deg); color:#ece7ff; }
 .sales-footer { display:flex; flex-direction:column; align-items: center; gap:18px; padding:26px 0 20px; border-top:1px solid #efedf6; color:#777d95; font-size:13px; }
 .sales-footer-top { width:var(--home-width); display:flex; align-items:center; justify-content:space-between; gap:24px; }.sales-footer nav { display:flex; flex-wrap:wrap; gap:22px; }.sales-footer nav button { font-size:14px; padding:10px 0; min-height:44px; }
-.sales-footer .sales-icp-link { font-size:12px; color:#747b94; text-decoration:none; text-align:center; }.sales-footer .sales-icp-link:focus-visible { outline:2px solid #8359ff; outline-offset:5px; }
+.sales-record-links { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:8px 18px; text-align:center; }.sales-footer .sales-icp-link,.sales-footer .sales-police-link { display:inline-flex; align-items:center; gap:5px; font-size:12px; color:#747b94; text-decoration:none; text-align:center; }.sales-footer .sales-icp-link:focus-visible,.sales-footer .sales-police-link:focus-visible { outline:2px solid #8359ff; outline-offset:5px; }.sales-footer .sales-police-link svg { color:#7d68b2; flex-shrink:0; }
 
 .sales-eyebrow { display:block; color:#8a6cad; font-size:12px; font-weight:650; letter-spacing:1.2px; margin-bottom:10px; }
 .sales-trust-strip { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px 25px; padding:22px 0; border-bottom:1px solid #eeebf6; font-size:14px; color:#646b82; }

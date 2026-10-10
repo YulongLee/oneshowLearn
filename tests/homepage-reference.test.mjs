@@ -73,6 +73,12 @@ test('formal homepage has native FAQ and owner biography without illustrative ch
   assert.doesNotMatch(source,/api\([^\n]+method\s*:\s*['"](?:POST|PUT|DELETE)/);
   assert.doesNotMatch(source,/无限(?:次|量)|保证收入|自动部署|退款保证/);
 });
+test('homepage footer exposes the owner-provided police internet filing number with official query link',()=>{
+  const source=readFileSync(new URL('../src/PublicHomepage.jsx',import.meta.url),'utf8');
+  assert.match(source,/浙公网安备33010602014974号/);
+  assert.match(source,/beian\.mps\.gov\.cn\/#\/query\/webSearch\?code=33010602014974/);
+  assert.match(source,/sales-record-links/);
+});
 
 test('homepage proof excludes explicit demo projects without mutating the original catalogue',()=>{
   const original=[{id:1,title:'【演示】AI 工具',description:'展示',slug:'demo',status:'published',courses:[{}]},

@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { UserCircle, ShieldCheck, SlidersHorizontal, UploadSimple, CheckCircle, SignOut, LockSimple, Receipt, EnvelopeSimple, ArrowRight, Lifebuoy } from '@phosphor-icons/react';
 import { api, setToken } from './api.js';
 import { Gate, Modal } from './PersonalShared.jsx';
+// PersonalShared's dialog styles are loaded by the personal-workspace route in
+// normal navigation. Settings is a separate lazy route, so load the shared
+// dialog foundation here as well instead of falling back to browser defaults.
+import './personal-workspace.css';
 import { PLAYBACK_RATES, playbackRate } from './player-model.js';
 import './account-settings.css';
 import { LoginBindings } from './ExternalLogin.jsx';
@@ -88,6 +92,6 @@ function Settings({ model, navigate, notify }) {
     <div className="as-help"><Lifebuoy size={21}/><span>账号或购买遇到问题？</span><button disabled={busy} onClick={()=>navigate('/support')}>帮助与售后<ArrowRight size={16}/></button></div>
     <p className="as-bottom-note"><LockSimple size={14}/>个人资料修改不会影响已购课程与学习记录。</p>
     {reloadConfirm&&<Modal title="重新载入最新资料？" close={()=>setReloadConfirm(false)}><div className="ps-modal-body"><p>当前未保存的表单修改会被替换，已保存的账号资料不受影响。</p><div className="ps-form-actions"><button onClick={()=>setReloadConfirm(false)}>继续编辑</button><button onClick={()=>{setReloadConfirm(false);load();}}>重新载入</button></div></div></Modal>}
-    {logoutConfirm&&<Modal title={logoutConfirm==='all'?'退出所有设备？':'退出当前浏览器？'} close={()=>!busy&&setLogoutConfirm('')}><div className="ps-modal-body"><p>{logoutConfirm==='all'?'所有设备将需要重新登录。':'只清除当前浏览器的登录状态，不退出其他设备。'}未保存的输入会被清空，已保存的资料和课程权益不受影响。</p><div className="ps-form-actions"><button disabled={busy} onClick={()=>setLogoutConfirm('')}>取消</button><button className="as-danger" disabled={busy} onClick={logout}>{busy?'正在退出…':logoutConfirm==='all'?'确认退出所有设备':'确认退出当前浏览器'}</button></div></div></Modal>}
+    {logoutConfirm&&<Modal className="as-logout-modal" title={logoutConfirm==='all'?'退出所有设备？':'退出当前浏览器？'} close={()=>!busy&&setLogoutConfirm('')}><div className="ps-modal-body"><p>{logoutConfirm==='all'?'所有设备将需要重新登录。':'只清除当前浏览器的登录状态，不退出其他设备。'}未保存的输入会被清空，已保存的资料和课程权益不受影响。</p><div className="ps-form-actions"><button className="ps-outline" disabled={busy} onClick={()=>setLogoutConfirm('')}>取消</button><button className="as-danger" disabled={busy} onClick={logout}>{busy?'正在退出…':logoutConfirm==='all'?'确认退出所有设备':'确认退出当前浏览器'}</button></div></div></Modal>}
   </div>;
 }

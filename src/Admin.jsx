@@ -1,6 +1,6 @@
 import {BrandIdentity} from './BrandIdentity.jsx';
 import { useEffect, useState } from "react";
-import { ArrowRight, BookOpenText, ChartBar, Check, FileText, FolderOpen, House, List, Package, Plus, SignOut, Users, X } from "@phosphor-icons/react";
+import { ArrowRight, BookOpenText, ChartBar, Check, FileText, FolderOpen, House, List, Package, Plus, SignOut, Ticket, Users, X } from "@phosphor-icons/react";
 import { api, money, setToken } from "./api.js";
 import {uploadAsset} from "./upload-asset.js";
 import { AuthPage } from "./Auth.jsx";
@@ -16,6 +16,7 @@ const nav = [
   ["/admin/learning", "课时与项目编排", BookOpenText],
   ["/admin/ai", "AI 配置", ChartBar],
   ["/admin/payments", "支付与定价", Package],
+  ["/admin/redemption-codes", "课程兑换码", Ticket],
   ["/admin/service", "购买与服务说明", FileText], ["/admin/support", "售后申请", Users],
   ["/admin/login-settings", "登录方式配置", Users],
   ["/admin/opc", "AI OPC 编排", BookOpenText], ["/admin/assets", "附件库", FolderOpen], ["/admin/content-audit", "内容操作记录", FileText],
@@ -41,7 +42,7 @@ export function AdminShell({ route, navigate, children }) {
   useEffect(() => { let active = true; api("/auth/me").then(({ user }) => { if (!active) return; if (!canManage(user)) { navigate("/app"); return; } setUser(user); }).catch((e) => { if (!active) return; if (e.status === 401) { setToken(""); navigate("/admin/login"); } else setError(e.message); }); return () => { active = false; }; }, []);
   const logout = async () => { try { await api("/auth/logout", { method: "POST" }); } catch (e) { if (e.status !== 401) { setError(e.message); return; } } setToken(""); navigate("/admin/login"); };
   if (!user) return <div className="admin-state">{error || "正在验证管理权限…"}</div>;
-  const visibleNav = nav.filter(([path]) => user.role === "admin" || !["/admin/analytics", "/admin/parsing", "/admin/certificates", "/admin/readiness", "/admin/ai", "/admin/payments", "/admin/service", "/admin/support", "/admin/login-settings", "/admin/users", "/admin/email", "/admin/account-audit"].includes(path));
+  const visibleNav = nav.filter(([path]) => user.role === "admin" || !["/admin/analytics", "/admin/parsing", "/admin/certificates", "/admin/readiness", "/admin/ai", "/admin/payments", "/admin/redemption-codes", "/admin/service", "/admin/support", "/admin/login-settings", "/admin/users", "/admin/email", "/admin/account-audit"].includes(path));
   return <div className="admin-layout"><aside className={open ? "open" : ""}><button className="admin-brand" onClick={() => navigate("/admin")}><BrandIdentity tagline="运营管理后台"/></button><nav>{visibleNav.map(([path,label,Icon])=><button key={path} className={route===path?"active":""} onClick={()=>{navigate(path);setOpen(false);}}><Icon size={19}/>{label}</button>)}</nav><button className="admin-logout" onClick={logout}><SignOut size={19}/>退出登录</button></aside><main><header><button onClick={()=>setOpen(!open)} aria-label="打开管理导航">{open?<X size={22}/>:<List size={22}/>}</button><div><strong>内容与商业化管理</strong><small>所有前台课程资料均由这里配置</small></div><button className="admin-platform-switch" onClick={() => navigate("/app")}>切换到用户平台 <ArrowRight size={15}/></button></header><div className="admin-content">{error && <p className="admin-error" role="alert">{error}</p>}{children}</div></main></div>;
 }
 

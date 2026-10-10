@@ -12,7 +12,7 @@
     "start:api": "node server/index.mjs",
     "seed": "node server/seed.mjs",
     "build": "vite build && node scripts/prepare-sites-build.mjs",
-    "test:api": "node --test tests/api.test.mjs tests/accounts.test.mjs tests/production-seed.test.mjs tests/workspace.test.mjs tests/opc.test.mjs tests/projects.test.mjs tests/resources.test.mjs tests/personal.test.mjs tests/cms.test.mjs tests/platform-content.test.mjs tests/learning-system.test.mjs tests/demo-import.test.mjs tests/ai-admin.test.mjs tests/tutor-conversations.test.mjs tests/community.test.mjs tests/payments.test.mjs tests/account-profile.test.mjs tests/external-login.test.mjs tests/favorite-integration.test.mjs",
+    "test:api": "node --test tests/api.test.mjs tests/accounts.test.mjs tests/production-seed.test.mjs tests/workspace.test.mjs tests/opc.test.mjs tests/projects.test.mjs tests/resources.test.mjs tests/personal.test.mjs tests/cms.test.mjs tests/platform-content.test.mjs tests/learning-system.test.mjs tests/demo-import.test.mjs tests/ai-admin.test.mjs tests/tutor-conversations.test.mjs tests/community.test.mjs tests/payments.test.mjs tests/redemption-codes.test.mjs tests/account-profile.test.mjs tests/external-login.test.mjs tests/favorite-integration.test.mjs",
     "test": "npm run test:outcomes && npm run test:platforms && npm run test:account-menu && npm run test:api && npm run test:storage && npm run test:payment-diagnostics && npm run test:payment-page && npm run test:commercial && npm run test:sites && npm run test:performance",
     "test:performance": "vite build && node --test tests/performance.test.mjs",
     "test:outcomes": "node --test tests/achievement-library.test.mjs",

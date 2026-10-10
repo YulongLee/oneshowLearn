@@ -34,6 +34,7 @@ import {certificatesRouter,reconcileCertificates} from './course-certificates.mj
 import {documentParsingRouter} from './document-parsing.mjs';
 import {bundlePackId} from './bundle-access.mjs';
 import {operationalReadinessRouter} from './operational-readiness.mjs';
+import {redemptionRouter} from './redemption.mjs';
 
 mkdirSync(config.uploadDir, { recursive: true });
 
@@ -103,6 +104,7 @@ export function createApp({loginProviders,assetStorage,mineruProvider} = {}) {
   app.use('/api',learningRouter());
   app.use('/api',aiAdminRouter());
   app.use('/api',paymentRouter());
+  app.use('/api',redemptionRouter());
   app.use('/api',serviceRouter());
   app.use('/api',workspaceSearchRouter());
   app.use('/api',manualRefundRouter());

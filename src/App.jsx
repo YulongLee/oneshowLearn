@@ -100,6 +100,7 @@ const AdminAccountAudit=lazy(()=>import('./Admin.jsx').then(m=>({default:m.Admin
 const AdminLearning=lazy(()=>import('./AdminLearning.jsx').then(m=>({default:m.AdminLearning})));
 const AdminAi=lazy(()=>import('./AdminAi.jsx').then(m=>({default:m.AdminAi})));
 const AdminPayments=lazy(()=>import('./AdminPayments.jsx').then(m=>({default:m.AdminPayments})));
+const AdminRedemptionCodes=lazy(()=>import('./AdminRedemptionCodes.jsx').then(m=>({default:m.AdminRedemptionCodes})));
 const AdminLoginSettings=lazy(()=>import('./AdminLoginSettings.jsx').then(m=>({default:m.AdminLoginSettings})));
 const AdminCms=lazy(()=>import('./AdminCms.jsx').then(m=>({default:m.AdminCms})));
 const AdminPlatform=lazy(()=>import('./AdminPlatform.jsx').then(m=>({default:m.AdminPlatform})));
@@ -1004,6 +1005,8 @@ export function App() {
           <AdminLoginSettings navigate={navigate} />
         ) : route === "/admin/payments" ? (
           <AdminPayments />
+        ) : route === "/admin/redemption-codes" ? (
+          <AdminRedemptionCodes />
         ) : route === "/admin/email" ? (
           <AdminEmail />
         ) : route === "/admin/account-audit" ? (

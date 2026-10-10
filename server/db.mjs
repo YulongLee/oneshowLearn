@@ -9,6 +9,7 @@ import {migrateLogin} from './login-schema.mjs';
 import {migrateService} from './service-schema.mjs';
 import {migrateUploads} from './upload-schema.mjs';
 import {migrateCommercial} from './commercial-schema.mjs';
+import {migrateRedemptionCodes} from './redemption-schema.mjs';
 
 mkdirSync(path.dirname(config.databasePath), { recursive: true });
 
@@ -361,6 +362,7 @@ export function applyMigrations() {
   migrateService(db);
   migrateUploads(db);
   migrateCommercial(db);
+  migrateRedemptionCodes(db);
 }
 
 // Legacy installations retain their existing startup behavior. Portable releases

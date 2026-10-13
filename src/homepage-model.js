@@ -22,7 +22,7 @@ export function homepageCommercialProjects(site) {
 }
 
 // Biography supplied by the owner; former employers are experience, not sponsors.
-export const HOMEPAGE_INSTRUCTOR=Object.freeze({name:'Yulong Lee',identity:'OneShowAILab 创始人',
+export const HOMEPAGE_INSTRUCTOR=Object.freeze({name:'Cody老师',identity:'OneShowAILab 创始人',
   expertise:'大模型算法专家',experience:'10 年以上 AI 算法行业经验',
   background:'先后在百度、科大讯飞、阿里等国内一线互联网企业工作。',
   philosophy:'以长期主义建设 AI 产品，用技术判断连接真实需求、商业落地与持续影响力。'});

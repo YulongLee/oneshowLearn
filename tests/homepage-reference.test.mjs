@@ -92,7 +92,7 @@ test('homepage proof excludes explicit demo projects without mutating the origin
   assert.equal(homepageExamples({projects:original}).items[0].title,'【演示】AI 工具');
 });
 test('biography uses owner supplied identity and experience without invented employers or credentials',()=>{
-  assert.equal(HOMEPAGE_INSTRUCTOR.name,'Yulong Lee');assert.equal(HOMEPAGE_INSTRUCTOR.expertise,'大模型算法专家');
+  assert.equal(HOMEPAGE_INSTRUCTOR.name,'Cody老师');assert.equal(HOMEPAGE_INSTRUCTOR.expertise,'大模型算法专家');
   assert.match(HOMEPAGE_INSTRUCTOR.experience,/10 年以上/);assert.match(HOMEPAGE_INSTRUCTOR.background,/百度、科大讯飞、阿里/);
   assert.doesNotMatch(JSON.stringify(HOMEPAGE_INSTRUCTOR),/博士|首席|教授|认证|腾讯|字节/);
 });

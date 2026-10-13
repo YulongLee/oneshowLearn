@@ -129,7 +129,7 @@ if(preview){
   check(await p.locator('.sales-instructor-photo img').evaluate(async e=>{await e.decode();return e.naturalWidth===1536;}),'original brand portrait sharp and fully loaded');
   const portraitUrl=await p.locator('.sales-instructor-photo img').getAttribute('src');
   await c.route(base+portraitUrl,r=>r.abort());await p.goto(base+'/');await ready();await p.locator('.sales-instructor-photo').scrollIntoViewIfNeeded();await p.locator('.sales-portrait-fallback').waitFor();
-  check((await p.locator('.sales-portrait-fallback').innerText()).includes('Yulong Lee'),'portrait failure keeps identity and layout');
+  check((await p.locator('.sales-portrait-fallback').innerText()).includes('Cody老师'),'portrait failure keeps identity and layout');
   await c.unroute(base+portraitUrl);
   await c.route('**/api/site/pages/public',async r=>{const response=await r.fetch(),d=await response.json();d.projects=d.projects.map(p=>({...p,title:'【演示】'+p.title}));return r.fulfill({json:d});});
   await p.goto(base+'/');await p.locator('.sales-platform-case').nth(2).waitFor();

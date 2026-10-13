@@ -19,7 +19,7 @@ try {
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));checks++;
   assert.ok((await page.locator('.sales-price-slot').innerText()).includes(String(offer.priceCents/100)));checks++;
   assert.equal(await page.locator('.sales-audience article').count(),3);assert.equal(await page.locator('.sales-phase-grid>li').count(),5);assert.equal(await page.locator('.sales-case-card').count(),homepageCommercialProjects(site).length?homepageCommercialProjects(site).length+1:3);checks+=3;
-  await page.locator('.sales-instructor-bio h3').waitFor();assert.match(await page.locator('.sales-instructor-bio h3').innerText(),/Yulong Lee/);assert.equal(await page.locator('.sales-tutor-guide ol li').count(),3);assert.equal(await page.locator('.sales-demo-answer').count(),0);checks+=4;
+  await page.locator('.sales-instructor-bio h3').waitFor();assert.match(await page.locator('.sales-instructor-bio h3').innerText(),/Cody老师/);assert.equal(await page.locator('.sales-tutor-guide ol li').count(),3);assert.equal(await page.locator('.sales-demo-answer').count(),0);checks+=4;
   assert.doesNotMatch(await page.locator('.sales-page').innerText(),/背书|过往任职经历/);checks++;
   assert.equal(await page.locator('.sales-icp-link').getAttribute('href'),'https://beian.miit.gov.cn/');checks++;
   await page.locator('.sales-instructor-photo').scrollIntoViewIfNeeded();

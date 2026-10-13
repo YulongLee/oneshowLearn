@@ -67,13 +67,13 @@ function PlatformExample({navigate,feature=platformFeatures[0]}) {
 function InstructorProfile({onPreview,previewLabel}) {
   const [failed,setFailed]=useState(false);
   return <div className="sales-instructor-profile">
-    <div className="sales-instructor-copy"><span className="sales-eyebrow">课程主理人 · Yulong Lee</span><h2 id="instructor-title">不只学 AI 工具，<br/>更要学会做产品。</h2>
+    <div className="sales-instructor-copy"><span className="sales-eyebrow">课程主理人 · Cody老师</span><h2 id="instructor-title">不只学 AI 工具，<br/>更要学会做产品。</h2>
       <p className="sales-instructor-value">把需求判断、AI 开发、上线与收款串起来，学习围绕一个产品推进，而不是零散地追逐工具。</p>
       <ul className="sales-instructor-method">{['从需求出发','用 AI 动手做','理解上线与商业化'].map(text=><li key={text}><CheckCircle size={16}/>{text}</li>)}</ul>
       <div className="sales-instructor-bio"><h3>{HOMEPAGE_INSTRUCTOR.name}<span>{HOMEPAGE_INSTRUCTOR.identity}</span></h3><p className="sales-instructor-role">{HOMEPAGE_INSTRUCTOR.experience} · {HOMEPAGE_INSTRUCTOR.expertise}</p><p className="sales-instructor-background">{HOMEPAGE_INSTRUCTOR.background}</p></div>
       <button className="sales-instructor-preview" onClick={onPreview}><Play size={16} weight="fill"/>{previewLabel}<ArrowRight size={17}/></button>
     </div>
-    <figure className="sales-instructor-photo">{failed?<div className="sales-portrait-fallback" aria-label="Yulong Lee"><UserCircle size={96}/><strong>Yulong Lee</strong></div>:<img src={founderPortrait} width="1536" height="1024" alt="Yulong Lee 人物形象，背景经 AI 合成" loading="lazy" decoding="async" onError={()=>setFailed(true)}/>}<figcaption><strong>Yulong Lee</strong><span>OneShowAILab · Learn. Build. Grow.</span></figcaption></figure>
+    <figure className="sales-instructor-photo">{failed?<div className="sales-portrait-fallback" aria-label="Cody老师"><UserCircle size={96}/><strong>Cody老师</strong></div>:<img src={founderPortrait} width="1536" height="1024" alt="Cody老师人物形象，背景经 AI 合成" loading="lazy" decoding="async" onError={()=>setFailed(true)}/>}<figcaption><strong>Cody老师</strong><span>OneShowAILab · Learn. Build. Grow.</span></figcaption></figure>
   </div>;
 }
 export function PublicHomepage({navigate,configuration}) {

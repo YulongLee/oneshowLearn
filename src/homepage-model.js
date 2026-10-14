@@ -27,9 +27,13 @@ export const HOMEPAGE_INSTRUCTOR=Object.freeze({name:'Cody老师',identity:'OneS
   background:'先后在百度、科大讯飞、阿里等国内一线互联网企业工作。',
   philosophy:'以长期主义建设 AI 产品，用技术判断连接真实需求、商业落地与持续影响力。'});
 
+const HERO_DEFAULT_TITLE='AI 时代，\n一个人也能做出伟大的产品。';
+
 // Upgrade only bundled presentation; preserve authored CMS copy and destinations.
 export function homepagePresentation(site) {
+  const bundledDefaults=site.title===SITE_DEFAULTS.public.title&&site.description===SITE_DEFAULTS.public.description&&site.footerTitle===SITE_DEFAULTS.public.footerTitle&&site.footerDescription===SITE_DEFAULTS.public.footerDescription;
   return {...site,
+    title:bundledDefaults?HERO_DEFAULT_TITLE:site.title,
     description:site.description===SITE_DEFAULTS.public.description?'面向想做自己产品的个人创作者，系统学习从需求验证、AI 开发，到上线、收款和增长。':site.description,
     footerTitle:site.footerTitle===SITE_DEFAULTS.public.footerTitle?'让你的想法，有一个真正的开始。':site.footerTitle,
     footerDescription:site.footerDescription===SITE_DEFAULTS.public.footerDescription?'系统学习 AI 产品实战，从想法走向真实的产品。':site.footerDescription,

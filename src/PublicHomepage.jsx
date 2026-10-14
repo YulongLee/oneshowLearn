@@ -11,6 +11,9 @@ import interviewArt from './assets/workbench-interview-v1.webp';
 import directoryArt from './assets/workbench-directory-v1.webp';
 import mobileArt from './assets/project-mobile-cover-v1.webp';
 import agentArt from './assets/project-agent-cover-v1.webp';
+import coursesBackground from './assets/homepage-capability-courses-soft-v1.webp';
+import aiBackground from './assets/homepage-capability-ai-soft-v1.webp';
+import practiceBackground from './assets/homepage-capability-practice-soft-v1.webp';
 import {workbenchProjectVisual,workbenchProjectSummary} from './workbench-visual-model.js';
 import {useSitePage} from './useSitePage.js';
 import {offerMoney} from './course-offer-model.js';
@@ -54,14 +57,17 @@ function ExampleArt({item,project}) {
   return <div className="sales-example-art">{fallbackFailed?<div className="sales-art-fallback" aria-hidden="true"><Cube size={52}/></div>:<img src={illustrated?fallback:item.image} alt="" loading="lazy" decoding="async" onError={()=>{if(!illustrated)setFailed(true);else setFallbackFailed(true);}}/>}{illustrated&&<small>分类示意</small>}</div>;
 }
 const platformFeatures=[
-  {id:'courses',label:'课程与资料',title:'把知识和动手实践，放在一起',description:'课程目录、学习课件与资源资料，在同一个学习空间中衔接。',path:'/opc',action:'查看学习课程',icon:BookOpenText,items:['五章学习路线','课件与配套资料','进度与学习笔记'],tone:'violet'},
-  {id:'tutor',label:'AI 辅助学习',title:'遇到难点，不必一个人卡住',description:'围绕课程资料提问，解释难点、梳理要点，并查看回答的参考来源。',path:'/tutor',action:'了解 AI 导师',icon:Robot,items:['课程资料答疑','参考来源可查看','保留自己的对话'],tone:'blue'},
-  {id:'outcomes',label:'实践与沉淀',title:'让学习，留下自己的作品',description:'用项目练习方法，用笔记、收藏和私人成果记录自己的实践过程。',path:'/achievements',action:'探索成果空间',icon:Cube,items:['项目练习入口','私人学习记录','产品成果归档'],tone:'green'},
+  {id:'courses',label:'课程与资料',title:'把知识和动手实践，放在一起',description:'课程目录、学习课件与资源资料，在同一个学习空间中衔接。',path:'/opc',action:'查看学习课程',icon:BookOpenText,items:['五章学习路线','课件与配套资料','进度与学习笔记'],tone:'violet',background:coursesBackground},
+  {id:'tutor',label:'AI 辅助学习',title:'遇到难点，不必一个人卡住',description:'围绕课程资料提问，解释难点、梳理要点，并查看回答的参考来源。',path:'/tutor',action:'了解 AI 导师',icon:Robot,items:['课程资料答疑','参考来源可查看','保留自己的对话'],tone:'blue',background:aiBackground},
+  {id:'outcomes',label:'实践与沉淀',title:'让学习，留下自己的作品',description:'用项目练习方法，用笔记、收藏和私人成果记录自己的实践过程。',path:'/achievements',action:'探索成果空间',icon:Cube,items:['项目练习入口','私人学习记录','产品成果归档'],tone:'green',background:practiceBackground},
 ];
 function PlatformExample({navigate,feature=platformFeatures[0]}) {
   const Icon=feature.icon;
+  const [backgroundFailed,setBackgroundFailed]=useState(false);
+  useEffect(()=>setBackgroundFailed(false),[feature.background]);
   return <article className="sales-case-card sales-platform-case">
     <div className={'sales-platform-art sales-capability-art '+feature.tone}>
+      {!backgroundFailed&&<img className="sales-capability-background" src={feature.background} width="1536" height="1024" alt="" aria-hidden="true" loading="lazy" decoding="async" onError={()=>setBackgroundFailed(true)}/>}
       <span className="sales-art-label">平台功能概览</span>
       <div className="sales-capability-icon"><Icon size={44} weight="duotone"/></div>
       <strong>{feature.label}</strong>

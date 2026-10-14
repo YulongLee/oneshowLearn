@@ -62,6 +62,7 @@ if(preview){
   check(await p.locator('.sales-phase').count()===5,'exactly five chapter directions');
   check(await p.locator('.sales-case-card').count()===3,'one platform capability and two formal published projects');
   check(await p.locator('.sales-case-label.live').innerText()==='OneShowLearn','platform capability honestly labeled');
+  check(await p.locator('.sales-platform-case .sales-capability-background').count()===1,'real published projects retain their CMS covers beside one capability scene');
   check(!(await p.locator('.sales-page').innerText()).includes('【演示】保留在项目目录'),'demo projects not presented as public commercial proof');
   check(row("SELECT COUNT(*) n FROM practice_projects WHERE slug='homepage-demo' AND status='published'").n===1,'demo project publication preserved in actual catalogue');
   check((await p.locator('.sales-instructor-profile').innerText()).includes('大模型算法专家'),'owner biography replaces placeholder');
@@ -119,6 +120,40 @@ if(preview){
   check(await p.locator('.sales-start').innerText().then(s=>s.includes('作者入口')),'custom navigation purchase label retained');
   check(await p.locator('.sales-price-card .sales-button').innerText().then(s=>s.includes('作者入口')),'custom final CTA label retained');
   check(await p.locator('.sales-platform-case').count()===3,'empty formal catalogue presents only actual platform capabilities');
+  const scenes=p.locator('.sales-capability-background'),art=p.locator('.sales-capability-art');
+  check(await scenes.count()===3,'three actual platform capabilities have individual soft-focus scenes');
+  check(await scenes.evaluateAll(els=>els.every(e=>e.getAttribute('alt')===''&&e.getAttribute('aria-hidden')==='true'&&e.loading==='lazy'&&e.decoding==='async'&&e.getAttribute('width')==='1536'&&e.getAttribute('height')==='1024')),'scene backgrounds remain lazy, decorative and intrinsically sized');
+  const sceneUrls=await scenes.evaluateAll(els=>els.map(e=>e.src));
+  check(new Set(sceneUrls).size===3&&sceneUrls.every(url=>url.startsWith(base+'/assets/')),'three distinct bundled scenes use only the local asset origin');
+  check(JSON.stringify(await art.locator(':scope>strong').allTextContents())===JSON.stringify(['课程与资料','AI 辅助学习','实践与沉淀']),'backgrounds preserve all three platform capability titles');
+  check(await art.locator('li').count()===9,'backgrounds preserve all nine capability facts');
+  for(const width of [320,390,600,768,1000,1024,1180,1440,1920,2560]){
+   await p.setViewportSize({width,height:1000});await p.evaluate(()=>document.fonts.ready);
+   for(const scene of await scenes.all()){await scene.scrollIntoViewIfNeeded();await scene.evaluate(e=>e.decode());}
+   check(await scenes.evaluateAll(els=>els.every(e=>e.complete&&e.naturalWidth===1536&&e.naturalHeight===1024)),'all three scene assets decode '+width);
+   check(await art.evaluateAll(els=>els.every(e=>[e,...e.querySelectorAll('.sales-capability-icon,strong,ul,li,.sales-art-label')].every(n=>getComputedStyle(n).filter==='none'))),'soft-focus treatment never blurs foreground text or icons '+width);
+   check(await art.evaluateAll(els=>els.every(e=>{const bounds=e.getBoundingClientRect();return e.scrollWidth<=e.clientWidth+1&&[...e.querySelectorAll('.sales-capability-icon,strong,ul,li,.sales-art-label')].every(n=>{const b=n.getBoundingClientRect();return b.left>=bounds.left-1&&b.right<=bounds.right+1&&b.top>=bounds.top-1&&b.bottom<=bounds.bottom+1;});})),'scene panel foreground fits without clipping '+width);
+   check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'scene cards keep document within viewport '+width);
+  }
+  await p.setViewportSize({width:1440,height:1000});
+  const sceneCardSize=()=>p.locator('.sales-platform-case').evaluateAll(els=>els.map(e=>{const b=e.getBoundingClientRect();return {width:b.width,height:b.height};}));
+  const withScenes=await sceneCardSize();
+  await scenes.evaluateAll(els=>els.forEach(e=>e.style.display='none'));
+  check(JSON.stringify(await sceneCardSize())===JSON.stringify(withScenes),'decorative scene visibility does not alter card dimensions');
+  await scenes.evaluateAll(els=>els.forEach(e=>e.style.removeProperty('display')));
+  // Block only the three captured decorative URLs, never CMS covers or other imagery.
+  for(const url of sceneUrls)await c.route(url,r=>r.abort());
+  await p.goto(base+'/');await p.locator('.sales-platform-case').nth(2).waitFor();
+  for(const panel of await art.all())await panel.scrollIntoViewIfNeeded();
+  await p.waitForFunction(()=>[...document.querySelectorAll('.sales-capability-background')].every(e=>e.complete&&e.naturalWidth===0));
+  check(JSON.stringify(await sceneCardSize())===JSON.stringify(withScenes),'failed background images retain exact card dimensions');
+  check(await art.locator(':scope>strong').evaluateAll(els=>els.length===3&&els.every(e=>{const s=getComputedStyle(e);return e.getClientRects().length&&s.filter==='none'&&s.visibility==='visible'&&s.opacity==='1';})),'failed scenes leave all foreground titles visible and sharp');
+  check(await p.locator('.sales-platform-case .sales-case-copy button').evaluateAll(els=>els.length===3&&els.every(e=>e.getClientRects().length&&e.getBoundingClientRect().height>=44)),'failed scenes preserve three usable capability destinations');
+  for(const url of sceneUrls)await c.unroute(url);
+  for(const [index,destination] of ['/opc','/tutor','/achievements'].entries()){
+   await p.locator('.sales-platform-case .sales-case-copy button').nth(index).click();await p.waitForURL(base+destination);check(true,'capability scene preserves destination '+destination);
+   await p.goto(base+'/');await p.locator('.sales-platform-case').nth(2).waitFor();
+  }
   await p.locator('.sales-hero-buttons button').first().click();await p.waitForURL(base+'/resources');check(true,'custom CMS purchase destination retained');
   await c.unroute('**/api/site/pages/public');
   await c.route('**/api/learning/entry',r=>r.fulfill({status:503,json:{error:'隔离目录读取失败'}}));await p.goto(base+'/');

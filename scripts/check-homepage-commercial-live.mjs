@@ -24,6 +24,16 @@ try {
   if(width>=768&&await page.locator('.sales-hero-bundled').count()){assert.ok(await page.locator('h1>.sales-hero-title-line').evaluateAll(els=>els.length===2&&els.every(e=>e.getBoundingClientRect().height<=parseFloat(getComputedStyle(e).lineHeight)+1)));checks++;}
   assert.ok((await page.locator('.sales-price-slot').innerText()).includes(String(offer.priceCents/100)));checks++;
   assert.equal(await page.locator('.sales-audience article').count(),3);assert.equal(await page.locator('.sales-phase-grid>li').count(),5);assert.equal(await page.locator('.sales-case-card').count(),homepageCommercialProjects(site).length?homepageCommercialProjects(site).length+1:3);checks+=3;
+  const sceneCount=homepageCommercialProjects(site).length?1:3,scenes=page.locator('.sales-capability-background'),panels=page.locator('.sales-capability-art');
+  assert.equal(await scenes.count(),sceneCount);checks++;
+  assert.ok(await scenes.evaluateAll(els=>els.every(e=>e.getAttribute('alt')===''&&e.getAttribute('aria-hidden')==='true'&&e.loading==='lazy'&&e.decoding==='async'&&e.getAttribute('width')==='1536'&&e.getAttribute('height')==='1024')));checks++;
+  for(const scene of await scenes.all()){await scene.scrollIntoViewIfNeeded();await scene.evaluate(e=>e.decode());}
+  assert.ok(await scenes.evaluateAll(els=>els.every(e=>e.complete&&e.naturalWidth===1536&&e.naturalHeight===1024)));checks++;
+  assert.ok(await panels.evaluateAll(els=>els.every(e=>[e,...e.querySelectorAll('.sales-capability-icon,strong,ul,li,.sales-art-label')].every(n=>getComputedStyle(n).filter==='none'))));checks++;
+  assert.ok(await panels.evaluateAll(els=>els.every(e=>{const bounds=e.getBoundingClientRect();return e.scrollWidth<=e.clientWidth+1&&[...e.querySelectorAll('.sales-capability-icon,strong,ul,li,.sales-art-label')].every(n=>{const b=n.getBoundingClientRect();return b.left>=bounds.left-1&&b.right<=bounds.right+1&&b.top>=bounds.top-1&&b.bottom<=bounds.bottom+1;});})));checks++;
+  assert.equal(await panels.locator('li').count(),sceneCount*3);checks++;
+  assert.deepEqual(await panels.locator(':scope>strong').allTextContents(),sceneCount===3?['课程与资料','AI 辅助学习','实践与沉淀']:['课程与资料']);checks++;
+  if([390,1440].includes(width))await page.locator('.sales-example-grid').screenshot({path:path.join(out,`capability-scenes-${width}.png`)});
   await page.locator('.sales-instructor-bio h3').waitFor();assert.match(await page.locator('.sales-instructor-bio h3').innerText(),/Cody老师/);assert.equal(await page.locator('.sales-tutor-guide ol li').count(),3);assert.equal(await page.locator('.sales-demo-answer').count(),0);checks+=4;
   assert.doesNotMatch(await page.locator('.sales-page').innerText(),/背书|过往任职经历/);checks++;
   assert.equal(await page.locator('.sales-icp-link').getAttribute('href'),'https://beian.miit.gov.cn/');checks++;
@@ -42,5 +52,5 @@ try {
  await page.locator('.sales-hero-buttons').getByRole('button',{name:homepagePreviewText(course)}).click();await page.waitForURL(base+course.previewPath);checks++;
  await page.goto(base+'/account?section=orders');await page.getByRole('heading',{name:'登录后保存你的学习记录',exact:true}).waitFor();checks++;
  assert.deepEqual(errors,[]);assert.deepEqual(external,[]);assert.deepEqual(writes,[]);checks+=3;
- console.log(`PASS ${checks} ${isProduction?'live':'local read-only'} homepage checks: 320–2560px, actual course/price/preview, FAQ/focus/routes/privacy, zero browser errors/external/write/provider requests.`);
+ console.log(`PASS ${checks} ${isProduction?'live':'local read-only'} homepage checks: 320–2560px, actual course/price/preview, decoded decorative capability scenes with sharp foreground, FAQ/focus/routes/privacy, zero browser errors/external/write/provider requests.`);
 }finally{await browser.close();}

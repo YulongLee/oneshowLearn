@@ -33,6 +33,28 @@ test('missing cases use clearly named learning directions, not fabricated produc
   assert.equal(result.projects,false);assert.equal(result.items.length,3);
   assert.ok(result.items.every(item=>item.label==='学习方向'&&item.path.startsWith('/')));
 });
+test('platform capability scene backgrounds stay local, bounded and decorative',()=>{
+  const source=readFileSync(new URL('../src/PublicHomepage.jsx',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../src/homepage.css',import.meta.url),'utf8');
+  for(const topic of ['courses','ai','practice']){
+    const asset=`homepage-capability-${topic}-soft-v1.webp`;
+    assert.ok(source.includes(`./assets/${asset}`),'bundled local '+topic+' scene');
+    const data=readFileSync(new URL('../src/assets/'+asset,import.meta.url));
+    assert.ok(data.length>1000&&data.length<150000,'bounded '+topic+' background asset');
+    assert.equal(data.subarray(0,4).toString(),'RIFF');assert.equal(data.subarray(8,12).toString(),'WEBP');
+  }
+  const component=source.slice(source.indexOf('function PlatformExample('),source.indexOf('function ',source.indexOf('function PlatformExample(')+1));
+  assert.match(component,/className="sales-capability-background"/);
+  assert.match(component,/src=\{feature\.background\}/);
+  assert.match(component,/alt=""/);assert.match(component,/aria-hidden="true"/);
+  assert.match(component,/loading="lazy"/);assert.match(component,/decoding="async"/);
+  assert.match(component,/width="1536" height="1024"/);
+  assert.match(component,/feature\.items\.map/);assert.match(component,/navigate\(feature\.path\)/);
+  assert.match(css,/\.sales-capability-background\s*\{[^}]*position:absolute/);
+  assert.match(css,/\.sales-capability-background\s*\{[^}]*object-fit:cover/);
+  assert.match(css,/\.sales-capability-background\s*\{[^}]*pointer-events:none/);
+  assert.doesNotMatch(css,/\.sales-capability-art(?:\s|\.[\w-]+)*\s*\{[^}]*filter:blur/);
+});
 test('homepage preserves backend configuration and has no fabricated testimonials or totals',()=>{
   const source=readFileSync(new URL('../src/PublicHomepage.jsx',import.meta.url),'utf8');
   assert.match(source,/sharedRead\('\/commerce\/offer',\{force:true\}\)/);

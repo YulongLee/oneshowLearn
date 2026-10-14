@@ -43,7 +43,7 @@ test('homepage preserves backend configuration and has no fabricated testimonial
 
 test('commercial copy only replaces bundled defaults without changing CMS routes or source',()=>{
   const before=structuredClone(SITE_DEFAULTS.public),after=homepagePresentation(before);
-  assert.match(after.description,/个人创作者/);assert.match(after.footerTitle,/真正的开始/);
+  assert.match(after.description,/从 0 到 1/);assert.match(after.footerTitle,/真正的开始/);
   assert.deepEqual(before,SITE_DEFAULTS.public);
   const authored={...before,description:'作者介绍',footerTitle:'作者标题',footerDescription:'作者结尾',ctaLabel:'自定义入口',secondaryPath:'/resources'};
   assert.deepEqual(homepagePresentation(authored),authored);

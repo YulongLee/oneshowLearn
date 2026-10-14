@@ -14,7 +14,7 @@ import agentArt from './assets/project-agent-cover-v1.webp';
 import {workbenchProjectVisual,workbenchProjectSummary} from './workbench-visual-model.js';
 import {useSitePage} from './useSitePage.js';
 import {offerMoney} from './course-offer-model.js';
-import {homepageCommercialProjects,homepageOffer,homepagePresentation,homepageCourse,homepagePreviewText,homepageDeliveryText,HOMEPAGE_INSTRUCTOR} from './homepage-model.js';
+import {homepageCommercialProjects,homepageOffer,homepagePresentation,homepageCourse,homepagePreviewText,homepageDeliveryText,HOMEPAGE_INSTRUCTOR,HOMEPAGE_HERO_TITLE} from './homepage-model.js';
 import {currentPublicCopy} from '../server/site-defaults.mjs';
 import './homepage.css';
 
@@ -37,6 +37,12 @@ const benefits=[
   {icon:FileText,title:'配套资料与模板',text:'结合已发布的课件、文档与 Prompt，把方法用在实践中。',tone:'green'},
   {icon:Robot,title:'AI 导师 · 课程答疑',text:'围绕有权访问的课程资料提问，结合参考来源理解知识。',tone:'violet'},
   {icon:Users,title:'学习交流入口',text:'阅读官方实战分享；会员群加入条件以社区说明为准。',tone:'blue'},
+];
+const heroCapabilities=[
+  {icon:BookOpenText,title:'系统课程'},
+  {icon:Cube,title:'实战项目'},
+  {icon:Robot,title:'AI 导师'},
+  {icon:Users,title:'学习交流'},
 ];
 
 function ExampleArt({item,project}) {
@@ -77,10 +83,11 @@ function InstructorProfile({onPreview,previewLabel}) {
   </div>;
 }
 function HeroTitle({title}) {
+  const bundled=title===HOMEPAGE_HERO_TITLE;
   return title.split('\n').map((line,i)=>{
     const marker='伟大的产品';
     const markerIndex=line.indexOf(marker);
-    return <span key={i}>{markerIndex>=0?<>{line.slice(0,markerIndex)}<em className="sales-hero-emphasis">{marker}</em>{line.slice(markerIndex+marker.length)}</>:line}</span>;
+    return <span className="sales-hero-title-line" key={i}>{markerIndex>=0?<>{line.slice(0,markerIndex)}<span className={bundled?'sales-hero-title-tail':undefined}><em className="sales-hero-emphasis">{marker}</em>{line.slice(markerIndex+marker.length)}</span></>:line}</span>;
   });
 }
 export function PublicHomepage({navigate,configuration}) {
@@ -107,7 +114,7 @@ export function PublicHomepage({navigate,configuration}) {
   const bundledPreview=site.secondaryPath==='/opc'&&['查看课程与试听','查看课程介绍'].includes(site.secondaryLabel);
   const previewLabel=bundledPreview?previewText:site.secondaryLabel;
   const purchaseLabel=site.ctaLabel==='解锁完整课程'?'查看完整课程':site.ctaLabel;
-  const purchaseText=site.ctaPath==='/membership'&&price.priced?`${offerMoney(offer.priceCents)} ${purchaseLabel}`:purchaseLabel;
+  const heroPurchaseLabel=site.ctaPath==='/membership'&&site.ctaLabel==='解锁完整课程'?'立即开始学习':purchaseLabel;
   const metadata=course?[course.chapterCount>0&&`${course.chapterCount} 章`,course.lessonCount>0&&`${course.lessonCount} 节`,'一次购买'].filter(Boolean):['五章学习路线','一次购买'];
   const faqs=[
     ['需要什么基础？','建议先了解基本电脑操作；开发和上线实践会涉及技术工具。先试看课程，再判断内容与你当前的基础是否匹配。'],
@@ -123,7 +130,36 @@ export function PublicHomepage({navigate,configuration}) {
       <nav id="homepage-navigation" className={`sales-links${menuOpen?' open':''}`} aria-label="主要导航"><button className="active" onClick={scrollHome}>首页</button><button onClick={()=>scrollTo('roadmap')}>课程体系</button><button onClick={()=>scrollTo('hot-courses')}>实战案例</button><button onClick={()=>scrollTo('home-tutor')}>AI 导师</button><button onClick={()=>scrollTo('home-instructor')}>课程主理人</button></nav>
       <div className="sales-actions"><div ref={searchRoot} className="sales-search-wrap"><form className="sales-search" role="search" onSubmit={e=>{e.preventDefault();setSearchOpen(true);}}><MagnifyingGlass size={17}/><input aria-label="搜索课程" placeholder="搜索课程…" value={search} onFocus={()=>setSearchOpen(true)} onChange={e=>{setSearch(e.target.value);setSearchOpen(true);}}/></form>{searchOpen&&<section className="sales-search-results" aria-label="课程搜索结果"><header><strong>已发布课程</strong><button aria-label="关闭课程搜索" onClick={()=>setSearchOpen(false)}><X size={18}/></button></header>{searchStatus==='loading'?<p role="status">正在读取课程…</p>:searchStatus==='error'?<div><p role="alert">搜索暂不可用，请重试。</p><button onClick={()=>setRetry(n=>n+1)}>重试搜索</button></div>:results.length?results.map(item=><button key={item.id} onClick={()=>go('/course-offer?course='+encodeURIComponent(item.slug))}>{item.title}<ArrowRight size={15}/></button>):<p>没有匹配的课程，试试其他关键词。</p>}</section>}</div><button className="sales-login" onClick={()=>go('/login')}>登录</button><button className="sales-start" onClick={()=>go(site.ctaPath)}>{site.ctaPath==='/membership'?'课程与价格':purchaseLabel}<ArrowRight size={16}/></button><button className="sales-menu" aria-controls="homepage-navigation" aria-expanded={menuOpen} aria-label={menuOpen?'关闭导航':'打开导航'} onClick={()=>setMenuOpen(v=>!v)}>{menuOpen?<X size={22}/>:<List size={22}/>}</button></div>
     </header>
-    <section className="sales-hero" aria-labelledby="home-title"><img className="sales-hero-image" src={!site.image||site.image==='/assets/oneshowlearn-hero.png'?hero:site.image} alt="学习者使用电脑实践 AI 项目" fetchPriority="high" decoding="async"/><div className="sales-hero-wash" aria-hidden="true"/><div className="sales-hero-inner"><div className="sales-hero-copy"><span className="sales-pill"><Sparkle size={14} weight="fill"/>{site.eyebrow}</span><h1 id="home-title"><HeroTitle title={site.title}/></h1><p className="sales-lead">{site.description}</p><div className="sales-hero-buttons"><button className="sales-button primary" onClick={()=>go(site.ctaPath)}>{purchaseText}<ArrowRight size={18}/></button><button className="sales-button ghost" onClick={()=>go(bundledPreview?previewPath:site.secondaryPath)}><Play size={17} weight="fill"/>{previewLabel}</button></div><div className="sales-hero-promises" aria-label="课程概览">{metadata.map((text,i)=><span key={text}>{i===0?<BookOpenText/>:i===1?<VideoCamera/>:<ShieldCheck/>}{text}</span>)}</div>{metadataError&&<p className="sales-metadata-error" role="status">课程或价格信息暂未完整读取。<button onClick={()=>setRetry(n=>n+1)}>重新读取</button></p>}</div></div><span className="sales-handwriting" aria-hidden="true">Learn<br/>Build<br/>Grow</span><aside className="sales-hero-quote sales-hero-growth" aria-label="课程学习成果路径"><span>把想法变成产品</span><strong>从 0 到 1</strong><div className="sales-growth-bars" aria-hidden="true"><i/><i/><i/><i/><i/></div></aside><div className="sales-hero-note" aria-label="课程学习重点">{['一个人的产品公司','AI 驱动的生产力','从想法到上线','真实可落地的实战'].map(text=><span key={text}><CheckCircle size={19} weight="fill"/>{text}</span>)}</div><div className="sales-hero-rail" aria-label="平台能力概览"><div className="sales-hero-rail-inner">{benefits.map(({icon:Icon,title,text})=><article key={title}><i><Icon size={22} weight="duotone"/></i><div><strong>{title}</strong><small>{text}</small></div></article>)}</div></div></section>
+    <section className={`sales-hero sales-hero-reference${site.title===HOMEPAGE_HERO_TITLE?' sales-hero-bundled':''}`} aria-labelledby="home-title">
+      <img className="sales-hero-image" src={!site.image||site.image==='/assets/oneshowlearn-hero.png'?hero:site.image} alt="学习者使用电脑实践 AI 项目" width="1536" height="1024" fetchPriority="high" decoding="async"/>
+      <div className="sales-hero-wash" aria-hidden="true"/>
+      <div className="sales-hero-inner">
+        <div className="sales-hero-copy">
+          <span className="sales-pill"><Sparkle size={14} weight="fill"/>{site.eyebrow}</span>
+          <h1 id="home-title"><HeroTitle title={site.title}/></h1>
+          <p className="sales-lead">{site.description}</p>
+          <div className="sales-hero-buttons">
+            <button className="sales-button primary" onClick={()=>go(site.ctaPath)}>{heroPurchaseLabel}<ArrowRight size={18}/></button>
+            <button className="sales-button ghost" onClick={()=>go(bundledPreview?previewPath:site.secondaryPath)}><Play size={17} weight="fill"/>{previewLabel}</button>
+          </div>
+          <div className="sales-hero-promises" aria-label="课程概览">{metadata.map((text,i)=><span key={text}>{i===0?<BookOpenText/>:i===1?<VideoCamera/>:<ShieldCheck/>}{text}</span>)}</div>
+          {metadataError&&<p className="sales-metadata-error" role="status">课程或价格信息暂未完整读取。<button onClick={()=>setRetry(n=>n+1)}>重新读取</button></p>}
+        </div>
+      </div>
+      <div className="sales-hero-callouts">
+        <aside className="sales-hero-quote sales-hero-growth" aria-label="课程学习路径">
+          <strong>从想法到上线</strong>
+          <div className="sales-growth-graphic" aria-hidden="true">
+            <svg viewBox="0 0 160 65" fill="none"><path d="M6 58C62 48 108 26 149 8" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/><path d="m136 8 14-2-5 14" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <div className="sales-growth-bars"><i/><i/><i/><i/><i/></div>
+          </div>
+        </aside>
+        <div className="sales-hero-note" aria-label="课程学习重点">{['一个人的产品公司','AI 驱动的生产力','从想法到上线','真实可落地的实战'].map(text=><span key={text}><CheckCircle size={20} weight="fill"/>{text}</span>)}</div>
+      </div>
+      <div className="sales-hero-rail" aria-label="平台能力概览">
+        <div className="sales-hero-rail-inner">{heroCapabilities.map(({icon:Icon,title})=><article key={title}><i><Icon size={28} weight="duotone"/></i><strong>{title}</strong></article>)}</div>
+      </div>
+    </section>
     <section className="sales-audience sales-container" aria-labelledby="audience-title"><header className="sales-audience-head"><div><span className="sales-eyebrow"><Sparkle size={12} weight="fill"/>选择你的起点</span><h2 id="audience-title">你现在，正处在哪个阶段？</h2><p>这是一套面向真实产品实践的课程。选最接近你的起点，按自己的节奏往前走。</p></div><div className="sales-audience-route" aria-label="课程推进方式"><span>想法</span><ArrowRight size={15}/><span>开发</span><ArrowRight size={15}/><span>上线</span><ArrowRight size={15}/><span>增长</span></div></header><div className="sales-audience-grid">{audiences.map(({icon:Icon,number,label,title,text,points,tone})=><article className={`sales-audience-card ${tone}`} key={title}><header><span className="sales-audience-phase"><span className="sales-audience-step">{number}</span><span className="sales-audience-label">{label}</span></span><i><Icon size={25} weight="duotone"/></i></header><h3>{title}</h3><p>{text}</p><ul>{points.map(point=><li key={point}><CheckCircle size={15} weight="fill"/>{point}</li>)}</ul></article>)}</div></section>
     <section className="sales-examples" id="hot-courses" tabIndex={-1} aria-labelledby="examples-title"><div className="sales-container"><div className="sales-section-head"><div><span className="sales-eyebrow">LEARN · BUILD · GROW</span><h2 id="examples-title">不只是课程，也是你的产品学习空间</h2><p>从理解知识到动手实践，把课程、AI 答疑与自己的学习记录连接起来。</p></div><button onClick={()=>go('/projects')}>探索实战项目<ArrowRight size={16}/></button></div>{error&&<p role="alert">项目内容暂未读取，仍可通过下方入口了解平台功能。</p>}<div className="sales-example-grid" aria-busy={loading}>{cards.length?<><PlatformExample navigate={go}/>{cards.map(item=><article className="sales-case-card sales-public-project" key={item.id}><ExampleArt item={item} project/><div className="sales-case-copy"><span className="sales-case-label">{item.label}</span><h3>{item.title.replaceAll('\n',' · ')}</h3><p>{workbenchProjectSummary({description:item.description})}</p><button onClick={()=>go(item.path)}>查看项目详情<ArrowRight size={17}/></button></div></article>)}</>:platformFeatures.map(feature=><PlatformExample key={feature.id} feature={feature} navigate={go}/>)}</div></div></section>
     <section className="sales-roadmap sales-container" id="roadmap" tabIndex={-1} aria-labelledby="roadmap-title"><div className="sales-section-head sales-roadmap-head"><div><span className="sales-eyebrow">产品能力地图</span><h2 id="roadmap-title">从想法到上线，一条完整的学习路径</h2><p>系统学习 AI 产品从需求到增长的关键环节，在实践中逐步建立自己的产品能力。</p></div><div className="sales-roadmap-actions"><span className="sales-roadmap-count"><Sparkle size={14} weight="fill"/>5 个阶段，沿着产品真实节奏推进</span><button onClick={()=>go('/paths')}>查看完整课程体系<ArrowRight size={17}/></button></div></div><ol className="sales-phase-grid" aria-label="五阶段学习路径">{phases.map(({title,icon:Icon,tone,items},i)=><li className={`sales-phase ${tone}`} key={title}><div className="sales-phase-top"><span className="sales-phase-number">0{i+1}</span><span className="sales-phase-icon-wrap"><Icon className="sales-phase-icon" size={26} weight="duotone"/></span></div><h3>{title}</h3><ul>{items.map(text=><li key={text}><CheckCircle size={13} weight="fill"/>{text}</li>)}</ul>{i<4&&<ArrowRight className="sales-phase-arrow" size={21}/>}</li>)}</ol></section>

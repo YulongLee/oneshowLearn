@@ -14,9 +14,14 @@ const out=path.resolve('artifacts/homepage-commercial/'+(isProduction?'live':'lo
 await context.route('**/*',r=>{const q=r.request();if(!q.url().startsWith(base+'/')){external.push(q.url());return r.abort();}if(!['GET','HEAD'].includes(q.method())){writes.push(q.url());return r.abort();}return r.continue();});
 const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));let checks=0;
 try {
- for(const width of [320,390,768,1024,1440,1920,2560]){
+ for(const width of [320,390,768,1024,1180,1440,1920,2560]){
   await page.setViewportSize({width,height:1000});await page.goto(base+'/');await page.locator('.sales-hero-promises').getByText(`${course.lessonCount} 节`,{exact:true}).waitFor();await page.evaluate(()=>document.fonts.ready);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));checks++;
+  assert.deepEqual(await page.locator('.sales-hero-rail strong').allTextContents(),['系统课程','实战项目','AI 导师','学习交流']);checks++;
+  assert.ok(await page.locator('.sales-hero-rail strong').evaluateAll(els=>els.every(e=>e.scrollWidth<=e.clientWidth+1)));checks++;
+  assert.ok(await page.evaluate(()=>document.querySelector('.sales-hero-rail').getBoundingClientRect().bottom+7<=document.querySelector('.sales-audience').getBoundingClientRect().top));checks++;
+  assert.ok(await page.locator('.sales-hero-callouts').evaluate(e=>{if(!e.getClientRects().length)return true;const growth=e.querySelector('.sales-hero-growth').getBoundingClientRect(),note=e.querySelector('.sales-hero-note').getBoundingClientRect(),title=document.querySelector('h1').getBoundingClientRect();return note.top-growth.bottom>=20&&Math.min(growth.left,note.left)>title.right;}));checks++;
+  if(width>=768&&await page.locator('.sales-hero-bundled').count()){assert.ok(await page.locator('h1>.sales-hero-title-line').evaluateAll(els=>els.length===2&&els.every(e=>e.getBoundingClientRect().height<=parseFloat(getComputedStyle(e).lineHeight)+1)));checks++;}
   assert.ok((await page.locator('.sales-price-slot').innerText()).includes(String(offer.priceCents/100)));checks++;
   assert.equal(await page.locator('.sales-audience article').count(),3);assert.equal(await page.locator('.sales-phase-grid>li').count(),5);assert.equal(await page.locator('.sales-case-card').count(),homepageCommercialProjects(site).length?homepageCommercialProjects(site).length+1:3);checks+=3;
   await page.locator('.sales-instructor-bio h3').waitFor();assert.match(await page.locator('.sales-instructor-bio h3').innerText(),/Cody老师/);assert.equal(await page.locator('.sales-tutor-guide ol li').count(),3);assert.equal(await page.locator('.sales-demo-answer').count(),0);checks+=4;

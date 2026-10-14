@@ -84,16 +84,22 @@ if(preview){
   check(await p.locator('.sales-search-results>button').count()===1,'search reads published course catalogue');
   await p.keyboard.press('Escape');check(await p.locator('.sales-search-results').count()===0,'Escape closes search');
   await search.fill('');await p.keyboard.press('Escape');
-  for(const width of [320,390,600,768,1000,1024,1280,1440,1920,2560]){
+  for(const width of [320,390,600,768,1000,1024,1180,1280,1440,1920,2560]){
    await p.setViewportSize({width,height:1000});await p.evaluate(()=>document.fonts.ready);
    check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'no horizontal overflow '+width);
    check(await p.locator('.sales-case-copy').evaluateAll(els=>els.every(e=>e.scrollWidth<=e.clientWidth+1)),'card text fits '+width);
    check(await p.locator('.sales-hero-copy').evaluate(e=>e.getBoundingClientRect().right<=innerWidth),'hero fits '+width);
+   check(await p.locator('.sales-hero-title-tail').evaluate(e=>e.scrollWidth<=e.clientWidth+1),'product phrase remains whole and visible '+width);
+   if(width>=768)check(await p.locator('h1>.sales-hero-title-line').evaluateAll(els=>els.length===2&&els.every(e=>e.getBoundingClientRect().height<=parseFloat(getComputedStyle(e).lineHeight)+1)),'desktop headline stays on two lines '+width);
+   check(await p.locator('.sales-hero-rail strong').evaluateAll(els=>els.length===4&&els.every(e=>e.scrollWidth<=e.clientWidth+1)),'all four capability labels fit '+width);
+   check(await p.evaluate(()=>document.querySelector('.sales-hero-rail').getBoundingClientRect().bottom+7<=document.querySelector('.sales-audience').getBoundingClientRect().top),'capability rail clears following section '+width);
+   check(await p.locator('.sales-hero-callouts').evaluate(e=>{if(!e.getClientRects().length)return true;const growth=e.querySelector('.sales-hero-growth').getBoundingClientRect(),note=e.querySelector('.sales-hero-note').getBoundingClientRect(),title=document.querySelector('h1').getBoundingClientRect();return note.top-growth.bottom>=20&&Math.min(growth.left,note.left)>title.right;}),'helper cards stay separated from title and each other '+width);
    check(await p.locator('.sales-hero-buttons button').evaluateAll(els=>els.every(e=>e.getBoundingClientRect().height>=44)),'touch targets '+width);
    check(await p.locator('.sales-instructor-copy').evaluate(e=>e.scrollWidth<=e.clientWidth+1),'instructor value and biography fit '+width);
    check(await p.locator('.sales-instructor-photo').evaluate(e=>e.getBoundingClientRect().height>=280),'portrait reserves stable space '+width);
    if([390,1440].includes(width)){await p.locator('.sales-instructor-profile').scrollIntoViewIfNeeded();await p.locator('.sales-instructor-photo img').evaluate(e=>e.decode());await p.locator('.sales-instructor-profile').screenshot({path:path.join(out,'instructor-v2-'+width+'.png')});}
    if([390,1440,2560].includes(width)){await p.evaluate(()=>scrollTo(0,document.body.scrollHeight));await p.locator('.sales-example-art img').evaluateAll(els=>Promise.all(els.map(e=>e.decode().catch(()=>{}))));await p.evaluate(()=>scrollTo(0,0));await p.screenshot({path:path.join(out,'homepage-'+width+'.png'),fullPage:true});}
+   if([390,1180,1440,2560].includes(width)){await p.evaluate(()=>scrollTo(0,0));await p.locator('.sales-hero-image').evaluate(e=>e.decode());const rail=await p.locator('.sales-hero-rail').boundingBox();await p.screenshot({path:path.join(out,'hero-first-'+width+'.png'),clip:{x:0,y:0,width,height:Math.min(1000,Math.ceil(rail.y+rail.height+24))}});}
   }
   await p.setViewportSize({width:390,height:800});await p.getByRole('button',{name:'打开导航'}).click();check(await p.locator('.sales-links').isVisible(),'mobile navigation opens');
   await p.locator('.sales-links').getByRole('button',{name:'课程体系',exact:true}).click();check(!await p.locator('.sales-links').isVisible(),'mobile anchor closes drawer');

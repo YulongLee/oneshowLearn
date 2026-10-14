@@ -55,6 +55,65 @@ test('platform capability scene backgrounds stay local, bounded and decorative',
   assert.match(css,/\.sales-capability-background\s*\{[^}]*pointer-events:none/);
   assert.doesNotMatch(css,/\.sales-capability-art(?:\s|\.[\w-]+)*\s*\{[^}]*filter:blur/);
 });
+test('platform capability feedback stays scoped, keyboard-accessible and motion-aware',()=>{
+  const source=readFileSync(new URL('../src/PublicHomepage.jsx',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../src/homepage.css',import.meta.url),'utf8');
+  const component=source.slice(source.indexOf('function PlatformExample('),source.indexOf('function ',source.indexOf('function PlatformExample(')+1));
+  assert.match(component,/<article className="sales-case-card sales-platform-case">/);
+  assert.doesNotMatch(component,/<article[^>]*(?:onClick|tabIndex|role=)/);
+  assert.equal((component.match(/<button/g)||[]).length,1);
+  assert.match(component,/<button onClick=\{\(\)=>navigate\(feature\.path\)\}/);
+  assert.match(css,/\.sales-platform-case\s*\{[^}]*transition:[^}]*transform\s+\.18s[^}]*box-shadow\s+\.18s[^}]*border-color\s+\.18s/);
+  assert.match(css,/@media\s*\(hover:\s*hover\)\s*and\s*\(pointer:\s*fine\)\s*\{\s*\.sales-platform-case:hover\s*,\s*\.sales-platform-case:focus-within\s*\{[^}]*transform:\s*translateY\(-3px\)/);
+  assert.match(css,/\.sales-platform-case:active\s*\{[^}]*transform:\s*translateY\(-1px\)/);
+  assert.match(css,/\.sales-platform-case\s+[^{}]*button:active\s*\{[^}]*transform:\s*translateY\(1px\)/);
+  assert.match(css,/\.sales-platform-case\s+[^{}]*button:focus-visible\s*\{[^}]*outline:[^}]*outline-offset:/);
+  assert.doesNotMatch(css,/\.sales-platform-case\s*\{[^}]*cursor:\s*pointer/);
+  assert.doesNotMatch(css,/\.sales-case-card:(?:hover|focus-within|active)\s*\{/);
+  const reduced=css.slice(css.indexOf('@media(prefers-reduced-motion:reduce)'));
+  assert.match(reduced,/\.sales-platform-case\s*,\s*\.sales-platform-case\s+[^{}]*button\s*\{[^}]*transform:\s*none\s*!important/);
+  assert.match(reduced,/transition:\s*none\s*!important/);
+});
+test('audience stages add only bounded decorative backgrounds with a white failure fallback',()=>{
+  const source=readFileSync(new URL('../src/PublicHomepage.jsx',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../src/homepage.css',import.meta.url),'utf8');
+  let total=0;
+  for(const topic of ['idea','build','launch']){
+    const asset=`homepage-audience-${topic}-soft-v1.webp`;
+    assert.ok(source.includes(`./assets/${asset}`),'bundled local '+topic+' audience scene');
+    const data=readFileSync(new URL('../src/assets/'+asset,import.meta.url));total+=data.length;
+    assert.ok(data.length>1000&&data.length<20000,'audience '+topic+' background stays below 20KB');
+    assert.equal(data.subarray(0,4).toString(),'RIFF');assert.equal(data.subarray(8,12).toString(),'WEBP');
+  }
+  assert.ok(total<45000,'all three audience scenes stay below the 45KB aggregate budget');
+  const provenance=JSON.parse(readFileSync(new URL('../src/assets/homepage-audience-soft-v1.prompts.json',import.meta.url),'utf8'));
+  assert.match(provenance.method,/Built-in image_gen/);
+  assert.deepEqual(provenance.assets.map(item=>item.name),['idea','build','launch']);
+  for(const item of provenance.assets){
+    assert.equal(item.asset,`src/assets/homepage-audience-${item.name}-soft-v1.webp`);
+    assert.ok(item.prompt.length>500&&item.prompt.includes('no text'),'full text-free asset prompt retained '+item.name);
+  }
+  const component=source.slice(source.indexOf('function AudienceBackground('),source.indexOf('function ',source.indexOf('function AudienceBackground(')+1));
+  assert.match(component,/useState\(false\)/);assert.match(component,/failed\s*\?\s*null\s*:/);
+  assert.match(component,/className="sales-audience-background"/);assert.match(component,/src=\{src\}/);
+  assert.match(component,/alt=""/);assert.match(component,/aria-hidden="true"/);
+  assert.match(component,/loading="lazy"/);assert.match(component,/decoding="async"/);
+  assert.match(component,/width="1536" height="1024"/);assert.match(component,/onError=\{\(\)=>setFailed\(true\)\}/);
+  const audience=source.slice(source.indexOf('<section className="sales-audience'),source.indexOf('</section>',source.indexOf('<section className="sales-audience')));
+  assert.match(audience,/<article[^>]*><AudienceBackground src=\{background\}\/>/);
+  assert.doesNotMatch(audience,/<article[^>]*(?:onClick|tabIndex|role=)/);
+  assert.match(audience,/<h3>\{title\}<\/h3><p>\{text\}<\/p><ul>/);
+  assert.match(audience,/points\.map\(point=><li/);
+  const data=source.slice(source.indexOf('const audiences=['),source.indexOf('const benefits=['));
+  for(const preserved of ['从想法开始','边学边做','准备上线','有想法，却不知道先验证什么','想用 AI，把开发效率真正提起来','产品已在手上，差上线与商业化','发现值得做的机会','把想法拆成清晰的产品问题','从架构到 MVP 开发','按步骤留下自己的实践记录','上线与合规的关键环节','定价、支付与运营思路'])assert.ok(data.includes(preserved),'audience wording retained: '+preserved);
+  assert.match(css,/\.sales-audience-card\s*\{[^}]*isolation:isolate/);
+  assert.match(css,/\.sales-audience-background\s*\{[^}]*position:absolute/);
+  assert.match(css,/\.sales-audience-background\s*\{[^}]*pointer-events:none/);
+  assert.doesNotMatch(css,/\.sales-audience-card(?:\s+[^{}]+)?\s*\{[^}]*filter:\s*blur/);
+  assert.doesNotMatch(css,/\}sales-/,'responsive selectors retain their class prefix');
+  assert.match(css,/\.sales-tutor,\.sales-clarity\s*\{\s*grid-template-columns:1fr/,'shared narrow-screen learning layout is retained');
+  assert.match(css,/\.sales-commercial \.sales-roadmap\s*\{\s*margin-block:30px/,'existing mobile roadmap geometry is retained');
+});
 test('homepage preserves backend configuration and has no fabricated testimonials or totals',()=>{
   const source=readFileSync(new URL('../src/PublicHomepage.jsx',import.meta.url),'utf8');
   assert.match(source,/sharedRead\('\/commerce\/offer',\{force:true\}\)/);

@@ -14,6 +14,9 @@ import agentArt from './assets/project-agent-cover-v1.webp';
 import coursesBackground from './assets/homepage-capability-courses-soft-v1.webp';
 import aiBackground from './assets/homepage-capability-ai-soft-v1.webp';
 import practiceBackground from './assets/homepage-capability-practice-soft-v1.webp';
+import ideaBackground from './assets/homepage-audience-idea-soft-v1.webp';
+import buildBackground from './assets/homepage-audience-build-soft-v1.webp';
+import launchBackground from './assets/homepage-audience-launch-soft-v1.webp';
 import {workbenchProjectVisual,workbenchProjectSummary} from './workbench-visual-model.js';
 import {useSitePage} from './useSitePage.js';
 import {offerMoney} from './course-offer-model.js';
@@ -31,9 +34,9 @@ const phases=[
 const POLICE_RECORD_NUMBER='浙公网安备33010602014974号';
 const POLICE_RECORD_URL='https://beian.mps.gov.cn/#/query/webSearch?code=33010602014974';
 const audiences=[
-  {icon:Lightbulb,number:'01',label:'从想法开始',title:'有想法，却不知道先验证什么',text:'你想做一个真实产品，但还在需求、用户和方向之间犹豫。',points:['发现值得做的机会','把想法拆成清晰的产品问题'],tone:'violet'},
-  {icon:CreditCard,number:'02',label:'边学边做',title:'想用 AI，把开发效率真正提起来',text:'你有一定基础，想把 AI 放进产品开发流程，练习独立做出可运行的 MVP。',points:['从架构到 MVP 开发','按步骤留下自己的实践记录'],tone:'blue'},
-  {icon:Code,number:'03',label:'准备上线',title:'产品已在手上，差上线与商业化',text:'你已经有雏形或开发经验，正在补齐部署、收款与增长的方法。',points:['上线与合规的关键环节','定价、支付与运营思路'],tone:'green'},
+  {icon:Lightbulb,number:'01',label:'从想法开始',title:'有想法，却不知道先验证什么',text:'你想做一个真实产品，但还在需求、用户和方向之间犹豫。',points:['发现值得做的机会','把想法拆成清晰的产品问题'],tone:'violet',background:ideaBackground},
+  {icon:CreditCard,number:'02',label:'边学边做',title:'想用 AI，把开发效率真正提起来',text:'你有一定基础，想把 AI 放进产品开发流程，练习独立做出可运行的 MVP。',points:['从架构到 MVP 开发','按步骤留下自己的实践记录'],tone:'blue',background:buildBackground},
+  {icon:Code,number:'03',label:'准备上线',title:'产品已在手上，差上线与商业化',text:'你已经有雏形或开发经验，正在补齐部署、收款与增长的方法。',points:['上线与合规的关键环节','定价、支付与运营思路'],tone:'green',background:launchBackground},
 ];
 const benefits=[
   {icon:VideoCamera,title:'系统课程',text:'从产品机会到运营增长，按五章路线循序学习。',tone:'blue'},
@@ -48,6 +51,10 @@ const heroCapabilities=[
   {icon:Users,title:'学习交流'},
 ];
 
+function AudienceBackground({src}) {
+  const [failed,setFailed]=useState(false);
+  return failed?null:<img className="sales-audience-background" src={src} width="1536" height="1024" alt="" aria-hidden="true" loading="lazy" decoding="async" onError={()=>setFailed(true)}/>;
+}
 function ExampleArt({item,project}) {
   const [failed,setFailed]=useState(false),[fallbackFailed,setFallbackFailed]=useState(false);
   useEffect(()=>{setFailed(false);setFallbackFailed(false);},[item.image]);
@@ -166,7 +173,7 @@ export function PublicHomepage({navigate,configuration}) {
         <div className="sales-hero-rail-inner">{heroCapabilities.map(({icon:Icon,title})=><article key={title}><i><Icon size={28} weight="duotone"/></i><strong>{title}</strong></article>)}</div>
       </div>
     </section>
-    <section className="sales-audience sales-container" aria-labelledby="audience-title"><header className="sales-audience-head"><div><span className="sales-eyebrow"><Sparkle size={12} weight="fill"/>选择你的起点</span><h2 id="audience-title">你现在，正处在哪个阶段？</h2><p>这是一套面向真实产品实践的课程。选最接近你的起点，按自己的节奏往前走。</p></div><div className="sales-audience-route" aria-label="课程推进方式"><span>想法</span><ArrowRight size={15}/><span>开发</span><ArrowRight size={15}/><span>上线</span><ArrowRight size={15}/><span>增长</span></div></header><div className="sales-audience-grid">{audiences.map(({icon:Icon,number,label,title,text,points,tone})=><article className={`sales-audience-card ${tone}`} key={title}><header><span className="sales-audience-phase"><span className="sales-audience-step">{number}</span><span className="sales-audience-label">{label}</span></span><i><Icon size={25} weight="duotone"/></i></header><h3>{title}</h3><p>{text}</p><ul>{points.map(point=><li key={point}><CheckCircle size={15} weight="fill"/>{point}</li>)}</ul></article>)}</div></section>
+    <section className="sales-audience sales-container" aria-labelledby="audience-title"><header className="sales-audience-head"><div><span className="sales-eyebrow"><Sparkle size={12} weight="fill"/>选择你的起点</span><h2 id="audience-title">你现在，正处在哪个阶段？</h2><p>这是一套面向真实产品实践的课程。选最接近你的起点，按自己的节奏往前走。</p></div><div className="sales-audience-route" aria-label="课程推进方式"><span>想法</span><ArrowRight size={15}/><span>开发</span><ArrowRight size={15}/><span>上线</span><ArrowRight size={15}/><span>增长</span></div></header><div className="sales-audience-grid">{audiences.map(({icon:Icon,number,label,title,text,points,tone,background})=><article className={`sales-audience-card ${tone}`} key={title}><AudienceBackground src={background}/><header><span className="sales-audience-phase"><span className="sales-audience-step">{number}</span><span className="sales-audience-label">{label}</span></span><i><Icon size={25} weight="duotone"/></i></header><h3>{title}</h3><p>{text}</p><ul>{points.map(point=><li key={point}><CheckCircle size={15} weight="fill"/>{point}</li>)}</ul></article>)}</div></section>
     <section className="sales-examples" id="hot-courses" tabIndex={-1} aria-labelledby="examples-title"><div className="sales-container"><div className="sales-section-head"><div><span className="sales-eyebrow">LEARN · BUILD · GROW</span><h2 id="examples-title">不只是课程，也是你的产品学习空间</h2><p>从理解知识到动手实践，把课程、AI 答疑与自己的学习记录连接起来。</p></div><button onClick={()=>go('/projects')}>探索实战项目<ArrowRight size={16}/></button></div>{error&&<p role="alert">项目内容暂未读取，仍可通过下方入口了解平台功能。</p>}<div className="sales-example-grid" aria-busy={loading}>{cards.length?<><PlatformExample navigate={go}/>{cards.map(item=><article className="sales-case-card sales-public-project" key={item.id}><ExampleArt item={item} project/><div className="sales-case-copy"><span className="sales-case-label">{item.label}</span><h3>{item.title.replaceAll('\n',' · ')}</h3><p>{workbenchProjectSummary({description:item.description})}</p><button onClick={()=>go(item.path)}>查看项目详情<ArrowRight size={17}/></button></div></article>)}</>:platformFeatures.map(feature=><PlatformExample key={feature.id} feature={feature} navigate={go}/>)}</div></div></section>
     <section className="sales-roadmap sales-container" id="roadmap" tabIndex={-1} aria-labelledby="roadmap-title"><div className="sales-section-head sales-roadmap-head"><div><span className="sales-eyebrow">产品能力地图</span><h2 id="roadmap-title">从想法到上线，一条完整的学习路径</h2><p>系统学习 AI 产品从需求到增长的关键环节，在实践中逐步建立自己的产品能力。</p></div><div className="sales-roadmap-actions"><span className="sales-roadmap-count"><Sparkle size={14} weight="fill"/>5 个阶段，沿着产品真实节奏推进</span><button onClick={()=>go('/paths')}>查看完整课程体系<ArrowRight size={17}/></button></div></div><ol className="sales-phase-grid" aria-label="五阶段学习路径">{phases.map(({title,icon:Icon,tone,items},i)=><li className={`sales-phase ${tone}`} key={title}><div className="sales-phase-top"><span className="sales-phase-number">0{i+1}</span><span className="sales-phase-icon-wrap"><Icon className="sales-phase-icon" size={26} weight="duotone"/></span></div><h3>{title}</h3><ul>{items.map(text=><li key={text}><CheckCircle size={13} weight="fill"/>{text}</li>)}</ul>{i<4&&<ArrowRight className="sales-phase-arrow" size={21}/>}</li>)}</ol></section>
     <section className="sales-instructor sales-container" id="home-instructor" tabIndex={-1} aria-labelledby="instructor-title"><InstructorProfile onPreview={()=>go(bundledPreview?previewPath:site.secondaryPath)} previewLabel={previewLabel}/></section>

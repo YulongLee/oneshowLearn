@@ -76,7 +76,8 @@ if(preview){
   check((await delivery.innerText()).includes('40 节使用演示素材'),'actual outstanding delivery shown in purchase FAQ');await delivery.locator('summary').click();
   check(!(await p.locator('.sales-page').innerText()).includes('PRIVATE_PROJECT_BODY'),'draft project never appears');
   check(await p.locator('.sales-price-slot strong').innerText()==='¥499','authoritative price');
-  check(await p.locator('.sales-hero-buttons button').last().innerText().then(s=>s.includes('免费试看前 2 节')),'preview count from actual metadata');
+  check(await p.locator('.sales-hero-buttons button').count()===1,'default hero has one clear learning action');
+  check(await p.locator('.sales-bottom-preview').innerText().then(s=>s.includes('免费试看前 2 节')),'retained preview count from actual metadata');
   await p.locator('.sales-links').getByRole('button',{name:'AI 导师',exact:true}).click();
   check(await p.evaluate(()=>document.activeElement.id==='home-tutor'),'anchor transfers keyboard focus to tutor section');
   const faq=p.locator('.sales-faq details').first();await faq.locator('summary').focus();await p.keyboard.press('Enter');
@@ -104,7 +105,7 @@ if(preview){
   }
   await p.setViewportSize({width:390,height:800});await p.getByRole('button',{name:'打开导航'}).click();check(await p.locator('.sales-links').isVisible(),'mobile navigation opens');
   await p.locator('.sales-links').getByRole('button',{name:'课程体系',exact:true}).click();check(!await p.locator('.sales-links').isVisible(),'mobile anchor closes drawer');
-  await p.setViewportSize({width:1440,height:1000});await p.locator('.sales-hero-buttons button').last().click();await p.waitForURL(base+'/learn/'+curriculum.slug+'/lessons/'+placements[0]);
+  await p.setViewportSize({width:1440,height:1000});await p.locator('.sales-bottom-preview').click();await p.waitForURL(base+'/learn/'+curriculum.slug+'/lessons/'+placements[0]);
   check(true,'preview opens exact actual lesson without selecting an unrelated course');
   await p.goto(base+'/');await ready();await p.locator('.sales-hero-buttons button').first().click();await p.waitForURL(base+'/membership');check(true,'purchase opens existing shared sales flow');
   await p.goto(base+'/');await ready();await p.locator('.sales-instructor-preview').click();await p.waitForURL(base+'/learn/'+curriculum.slug+'/lessons/'+placements[0]);check(true,'instructor preview opens exact authorized lesson');
@@ -112,7 +113,7 @@ if(preview){
   await p.goto(base+'/');await ready();await p.locator('.sales-tutor-guide').getByRole('button',{name:'进入 AI 导师'}).click();await p.waitForURL(base+'/tutor');check(true,'AI entry opens tutor without sending a question');
   await c.route('**/api/commerce/offer',r=>r.fulfill({status:503,json:{error:'隔离价格读取失败'}}));await p.goto(base+'/');await p.getByText('课程或价格信息暂未完整读取。',{exact:false}).waitFor();
   check(!(await p.locator('.sales-price-slot strong').innerText()).includes('499'),'failed price never fabricated from marketing copy');
-  check(!(await p.locator('.sales-hero-buttons').innerText()).includes('前 2'),'unknown offer does not claim a preview scope');
+  check(!(await p.locator('.sales-bottom-preview').innerText()).includes('前 2'),'unknown offer does not claim a preview scope');
   await c.unroute('**/api/commerce/offer');await p.getByRole('button',{name:'重新读取',exact:true}).click();await ready();check(await p.locator('.sales-price-slot strong').innerText()==='¥499','metadata retry restores server price and course');
   await c.route('**/api/site/pages/public',async r=>{const response=await r.fetch();const d=await response.json();return r.fulfill({json:{...d,title:'自定义首页标题',description:'作者维护的介绍',ctaLabel:'作者入口',ctaPath:'/resources',secondaryLabel:'作者次入口',secondaryPath:'/community',footerTitle:'作者结尾标题',footerDescription:'作者结尾介绍',projects:[]}});});
   await p.goto(base+'/');await p.getByRole('heading',{name:'自定义首页标题',exact:true}).waitFor();check((await p.locator('.sales-lead').innerText())==='作者维护的介绍','custom authored CMS copy retained');
@@ -159,7 +160,7 @@ if(preview){
   await c.route('**/api/learning/entry',r=>r.fulfill({status:503,json:{error:'隔离目录读取失败'}}));await p.goto(base+'/');
   await p.getByText('课程或价格信息暂未完整读取。',{exact:false}).waitFor();
   check(!(await p.locator('.sales-hero-promises').innerText()).includes('40'),'failed catalogue does not invent lesson count');
-  check(!(await p.locator('.sales-hero-buttons').innerText()).includes('前 2'),'failed catalogue does not invent preview count');
+  check(!(await p.locator('.sales-bottom-preview').innerText()).includes('前 2'),'failed catalogue does not invent preview count');
   await c.unroute('**/api/learning/entry');await p.getByRole('button',{name:'重新读取',exact:true}).click();await ready();check(true,'catalogue retry restores current course');
   await c.route('**/api/site/pages/public',async r=>{const response=await r.fetch(),d=await response.json();d.projects[0].cover_url='/assets/missing-homepage-cover.webp';return r.fulfill({json:d});});
   await p.goto(base+'/');await ready();await p.locator('.sales-case-card').nth(1).scrollIntoViewIfNeeded();

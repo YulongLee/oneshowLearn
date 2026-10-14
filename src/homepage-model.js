@@ -2,8 +2,14 @@ import {homepageCards} from '../server/homepage-cards.mjs';
 import {SITE_DEFAULTS} from '../server/site-defaults.mjs';
 
 export function homepageOffer(offer) {
-  const priced=Number.isInteger(offer?.priceCents)&&offer.priceCents>=0;
-  return {priced,discounted:priced&&Number.isInteger(offer?.originalPriceCents)&&offer.originalPriceCents>offer.priceCents};
+  const priced=Number.isSafeInteger(offer?.priceCents)&&offer.priceCents>=0;
+  return {priced,discounted:priced&&Number.isSafeInteger(offer?.originalPriceCents)&&offer.originalPriceCents>offer.priceCents};
+}
+
+export function homepageDiscount(offer) {
+  const sale=offer?.priceCents,original=offer?.originalPriceCents;
+  const active=Number.isSafeInteger(offer?.productId)&&offer.productId>0&&typeof offer.slug==='string'&&offer.slug.trim();
+  return active&&Number.isSafeInteger(sale)&&sale>0&&Number.isSafeInteger(original)&&original>sale?{savingCents:original-sale}:null;
 }
 
 export function homepageExamples(site) {

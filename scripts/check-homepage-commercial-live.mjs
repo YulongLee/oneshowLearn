@@ -77,7 +77,7 @@ try {
  await page.setViewportSize({width:1440,height:1000});const summary=page.locator('.sales-faq summary').first();await summary.focus();await page.keyboard.press('Enter');assert.equal(await summary.evaluate(s=>s.parentElement.open),true);checks++;
  const delivery=page.locator('.sales-faq details').filter({hasText:'课程内容和更新如何查看？'});await delivery.locator('summary').click();assert.ok((await delivery.innerText()).includes(homepageDeliveryText(course)));checks++;await delivery.locator('summary').click();
  await page.locator('#homepage-navigation').getByRole('button',{name:'课程体系',exact:true}).click();assert.equal(await page.evaluate(()=>document.activeElement.id),'roadmap');checks++;
- await page.locator('.sales-hero-buttons').getByRole('button',{name:homepagePreviewText(course)}).click();await page.waitForURL(base+course.previewPath);checks++;
+ assert.ok((await page.locator('.sales-bottom-preview').innerText()).includes(homepagePreviewText(course)));checks++;await page.locator('.sales-bottom-preview').click();await page.waitForURL(base+course.previewPath);checks++;
  await page.goto(base+'/account?section=orders');await page.getByRole('heading',{name:'登录后保存你的学习记录',exact:true}).waitFor();checks++;
  assert.deepEqual(errors,[]);assert.deepEqual(external,[]);assert.deepEqual(writes,[]);checks+=3;
  console.log(`PASS ${checks} ${isProduction?'live':'local read-only'} homepage checks: 320–2560px, actual course/price/preview, decoded decorative audience/capability scenes with sharp foreground and audience failure fallback, FAQ/focus/routes/privacy, zero browser errors/external/write/provider requests.`);

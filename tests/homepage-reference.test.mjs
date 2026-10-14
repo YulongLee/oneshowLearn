@@ -1,15 +1,68 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {homepageExamples,homepageOffer,homepagePresentation,homepageCourse,homepagePreviewText,homepageCommercialProjects,homepageDeliveryText,HOMEPAGE_INSTRUCTOR} from '../src/homepage-model.js';
+import {homepageExamples,homepageOffer,homepageDiscount,homepagePresentation,homepageCourse,homepagePreviewText,homepageCommercialProjects,homepageDeliveryText,HOMEPAGE_INSTRUCTOR} from '../src/homepage-model.js';
 import {currentPublicCopy,SITE_DEFAULTS} from '../server/site-defaults.mjs';
 
 test('homepage price only comes from a valid commerce offer',()=>{
   assert.deepEqual(homepageOffer(null),{priced:false,discounted:false});
   assert.equal(homepageOffer({priceCents:'39900'}).priced,false);
   assert.equal(homepageOffer({priceCents:-1}).priced,false);
+  assert.equal(homepageOffer({priceCents:49900.5}).priced,false);
+  assert.equal(homepageOffer({priceCents:Number.MAX_SAFE_INTEGER+1}).priced,false);
   assert.deepEqual(homepageOffer({priceCents:39900,originalPriceCents:99900}),{priced:true,discounted:true});
   assert.equal(homepageOffer({priceCents:39900,originalPriceCents:29900}).discounted,false);
+});
+test('homepage discount calculates the current authoritative difference in integer cents',()=>{
+  for(const [priceCents,originalPriceCents,savingCents] of [[49900,499900,450000],[29900,199900,170000],[1,2,1],[12999,34995,21996]]){
+    const offer={productId:7,slug:'actual-offer',priceCents,originalPriceCents},before=structuredClone(offer);
+    assert.deepEqual(homepageDiscount(offer),{savingCents});
+    assert.deepEqual(offer,before,'price presentation never changes the offer');
+  }
+});
+test('homepage discount never invents promotions for absent, free, non-discounted or malformed offers',()=>{
+  for(const value of [null,undefined,{}, {priceCents:49900}, {originalPriceCents:499900},
+    {priceCents:49900,originalPriceCents:49900},{priceCents:49900,originalPriceCents:29900},
+    {priceCents:0,originalPriceCents:499900},{priceCents:-1,originalPriceCents:499900},
+    {priceCents:49900,originalPriceCents:-1},{priceCents:'49900',originalPriceCents:499900},
+    {priceCents:49900,originalPriceCents:'499900'}, {priceCents:49900.5,originalPriceCents:499900},
+    {priceCents:49900,originalPriceCents:499900.5}, {priceCents:NaN,originalPriceCents:499900},
+    {priceCents:49900,originalPriceCents:Infinity},
+    {priceCents:Number.MAX_SAFE_INTEGER+1,originalPriceCents:Number.MAX_SAFE_INTEGER+4},
+    {priceCents:49900,originalPriceCents:Number.MAX_SAFE_INTEGER+1}]){
+    const offer=value==null?value:{productId:7,slug:'actual-offer',...value};
+    assert.equal(homepageDiscount(offer),null,JSON.stringify(offer));
+  }
+  for(const identity of [{},{productId:7},{slug:'actual-offer'},{productId:0,slug:'actual-offer'},
+    {productId:-1,slug:'actual-offer'},{productId:7.5,slug:'actual-offer'},{productId:'7',slug:'actual-offer'},
+    {productId:Number.MAX_SAFE_INTEGER+1,slug:'actual-offer'},{productId:7,slug:''},{productId:7,slug:'   '}]){
+    assert.equal(homepageDiscount({...identity,priceCents:49900,originalPriceCents:499900}),null,'unavailable product is never promoted');
+  }
+});
+test('homepage default hero has one action while authored CMS secondary actions and real previews remain available',()=>{
+  const source=readFileSync(new URL('../src/PublicHomepage.jsx',import.meta.url),'utf8');
+  const hero=source.slice(source.indexOf('<div className="sales-hero-buttons">'),source.indexOf('<div className="sales-hero-promises"'));
+  assert.match(hero,/!bundledPreview&&<button/);
+  assert.match(hero,/onClick=\{\(\)=>go\(site\.secondaryPath\)\}/);
+  assert.match(source,/className="sales-bottom-preview" onClick=\{\(\)=>go\(bundledPreview\?previewPath:site\.secondaryPath\)\}/);
+  assert.match(source,/onPreview=\{\(\)=>go\(bundledPreview\?previewPath:site\.secondaryPath\)\}/);
+  assert.match(source,/heroPurchaseLabel=.*立即开始学习/);
+});
+test('homepage promotion and inclusion FAQ derive from the live offer without frozen price or artificial urgency',()=>{
+  const source=readFileSync(new URL('../src/PublicHomepage.jsx',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../src/homepage.css',import.meta.url),'utf8');
+  const footer=source.slice(source.indexOf('<section className="sales-bottom">'),source.indexOf('<footer className="sales-footer"'));
+  assert.match(footer,/discount&&<span className="sales-saving">立省 \{offerMoney\(discount\.savingCents\)\}/);
+  assert.match(footer,/offerMoney\(offer\.priceCents\)/);
+  assert.match(footer,/discount&&<del[^>]*>原价 \{offerMoney\(offer\.originalPriceCents\)\}/);
+  assert.match(footer,/aria-label=\{'原价 '\+offerMoney\(offer\.originalPriceCents\)\}/,'original-price accessible name includes its dynamic amount');
+  assert.match(source,/\['课程包含哪些内容？'/);
+  assert.doesNotMatch(source,/499(?:9)?|price\.priced\?[^\n]*包含|限时|倒计时|仅剩|销量|sales-bottom-note/);
+  const savingStyle=css.match(/\.sales-saving\s*\{([^}]*)\}/)?.[1];
+  assert.ok(savingStyle&&/color:/.test(savingStyle),'saving uses a scoped text accent');
+  const savingBackground=savingStyle.match(/background(?:-color)?:\s*([^;]+)/)?.[1];
+  assert.ok(!savingBackground||/^(?:transparent|none)$/.test(savingBackground.trim()),'saving has no filled promotional badge background');
+  assert.match(css,/\.sales-page \.sales-price-card \.sales-button\s*\{[^}]*background:(?:white|#fff)(?:;|\s)/,'purchase retains its white button background');
 });
 test('reference hero upgrades bundled text but preserves authored CMS fields',()=>{
   const old={title:'学会 AI。\n用好 AI。\n做出你的 AI 产品。',description:'Custom description',ctaLabel:'开始学习',ctaPath:'/login',secondaryLabel:'Custom button',secondaryPath:'/resources'};
@@ -113,6 +166,54 @@ test('audience stages add only bounded decorative backgrounds with a white failu
   assert.doesNotMatch(css,/\}sales-/,'responsive selectors retain their class prefix');
   assert.match(css,/\.sales-tutor,\.sales-clarity\s*\{\s*grid-template-columns:1fr/,'shared narrow-screen learning layout is retained');
   assert.match(css,/\.sales-commercial \.sales-roadmap\s*\{\s*margin-block:30px/,'existing mobile roadmap geometry is retained');
+});
+test('five-phase roadmap adds bounded decorative scenes without changing the learning route',()=>{
+  const source=readFileSync(new URL('../src/PublicHomepage.jsx',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../src/homepage.css',import.meta.url),'utf8');
+  const names=['opportunity','development','launch','commerce','growth'];let total=0;
+  for(const name of names){
+    const asset=`homepage-roadmap-${name}-soft-v1.webp`;
+    assert.ok(source.includes(`./assets/${asset}`),'bundled local '+name+' roadmap scene');
+    const data=readFileSync(new URL('../src/assets/'+asset,import.meta.url));total+=data.length;
+    assert.ok(data.length>1000&&data.length<100000,'bounded '+name+' roadmap scene');
+    assert.equal(data.subarray(0,4).toString(),'RIFF');assert.equal(data.subarray(8,12).toString(),'WEBP');
+  }
+  assert.ok(total<100000,'all five roadmap scenes stay below the 100KB aggregate budget');
+  const provenance=JSON.parse(readFileSync(new URL('../src/assets/homepage-roadmap-soft-v1.prompts.json',import.meta.url),'utf8'));
+  assert.match(provenance.method,/Built-in image_gen/);
+  assert.deepEqual(provenance.assets.map(item=>item.name),names);
+  for(const item of provenance.assets){
+    assert.equal(item.asset,`src/assets/homepage-roadmap-${item.name}-soft-v1.webp`);
+    assert.ok(item.prompt.length>500&&/no text/i.test(item.prompt),'full text-free roadmap prompt retained '+item.name);
+  }
+  const component=source.slice(source.indexOf('function PhaseBackground('),source.indexOf('function ',source.indexOf('function PhaseBackground(')+1));
+  assert.match(component,/useState\(false\)/);assert.match(component,/failed\s*\?\s*null\s*:/);
+  assert.match(component,/className="sales-phase-background"/);assert.match(component,/src=\{src\}/);
+  assert.match(component,/alt=""/);assert.match(component,/aria-hidden="true"/);
+  assert.match(component,/loading="lazy"/);assert.match(component,/decoding="async"/);
+  assert.match(component,/width="1024" height="1536"/);assert.match(component,/onError=\{\(\)=>setFailed\(true\)\}/);
+  const roadmap=source.slice(source.indexOf('<section className="sales-roadmap'),source.indexOf('</section>',source.indexOf('<section className="sales-roadmap')));
+  assert.match(roadmap,/<ol className="sales-phase-grid" aria-label="五阶段学习路径">/);
+  assert.match(roadmap,/phases\.map\(\(\{[^}]*background/);
+  assert.match(roadmap,/<li className=\{`sales-phase \$\{tone\}`\} key=\{title\}><div className="sales-phase-card"><PhaseBackground src=\{background\}\/>/);
+  assert.match(roadmap,/<h3>\{title\}<\/h3><ul>\{items\.map/);
+  assert.match(roadmap,/<\/ul><\/div>\{i<4&&<ArrowRight className="sales-phase-arrow"[^>]*aria-hidden="true"/);
+  assert.match(roadmap,/onClick=\{\(\)=>go\('\/paths'\)\}/);
+  assert.doesNotMatch(roadmap,/<(?:li|div)[^>]*(?:onClick|tabIndex|role=)/,'stage content is not turned into new interaction');
+  const phases=source.slice(source.indexOf('const phases=['),source.indexOf('const POLICE_RECORD_NUMBER='));
+  for(const preserved of ['产品与机会','AI 产品开发','上线与合规','收款与商业化','运营与增长','发现市场机会','用户需求分析','产品定位与规划','用 Codex 高效开发','产品架构设计','快速构建 MVP','域名与服务器','备案与数据合规','发布上线流程','微信 / 支付宝接入','海外支付方案','定价策略与商业模式','SEO / GEO 优化','内容与社群推广','数据分析与迭代'])assert.ok(phases.includes(preserved),'roadmap copy retained: '+preserved);
+  assert.match(css,/\.sales-phase-card\s*\{[^}]*isolation:isolate/);
+  assert.match(css,/\.sales-phase-card\s*\{[^}]*overflow:hidden/);
+  assert.match(css,/\.sales-phase-background\s*\{[^}]*position:absolute/);
+  assert.match(css,/\.sales-phase-background\s*\{[^}]*pointer-events:none/);
+  assert.doesNotMatch(css,/\.sales-phase(?:-card)?(?:\s+[^{}]+)?\s*\{[^}]*filter:\s*blur/);
+  assert.doesNotMatch(css,/\.sales-phase:hover\s*\{[^}]*transform:/,'outer step never moves its route connector');
+  assert.match(css,/\.sales-phase-arrow\s*\{[^}]*top:50%/,'desktop arrows connect at the common card midpoint');
+  assert.match(css,/\.sales-phase-arrow\s*\{[^}]*pointer-events:none/);
+  assert.match(css,/@media\(max-width:1000px\)[^\n]*\.sales-phase-arrow\s*\{\s*display:none/,'desktop arrows are hidden before the route wraps');
+  assert.match(css,/@media\(max-width:600px\)[^\n]*\.sales-phase-grid::before\s*\{[^}]*width:2px; height:auto/,'existing vertical mobile route is retained');
+  const reduced=css.slice(css.indexOf('@media(prefers-reduced-motion:reduce)'));
+  assert.match(reduced,/\.sales-phase-card[^{}]*\{[^}]*transform:\s*none/,'reduced motion disables inner-card movement');
 });
 test('homepage preserves backend configuration and has no fabricated testimonials or totals',()=>{
   const source=readFileSync(new URL('../src/PublicHomepage.jsx',import.meta.url),'utf8');

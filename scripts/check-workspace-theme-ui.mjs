@@ -92,7 +92,17 @@ const gradientContrast=async(locator,label)=>{
 };
 const fit=async(p,label)=>check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'no document overflow '+label);
 const headingSelectors=heading=>[heading==='.pd-hero'?'.pd-catalog .pd-section-heading h2':heading+' h1',heading==='.pd-hero'?'.pd-catalog .pd-section-heading p':heading+' p'];
-const lightReadingStyles=async(p,heading)=>Promise.all(headingSelectors(heading).map(selector=>p.locator(selector).first().evaluate(e=>{const s=getComputedStyle(e);return{color:s.color,background:s.backgroundColor,fontFamily:s.fontFamily,fontSize:s.fontSize,fontWeight:s.fontWeight,lineHeight:s.lineHeight};})));
+const lightReadingStyles=async(p,heading)=>{
+  // Course headings can move into their portal after the route heading appears.
+  // Query and copy both styles in one document turn, never from a detached handle.
+  const snapshot=await p.waitForFunction(selectors=>{
+    const elements=selectors.map(selector=>document.querySelector(selector));
+    if(elements.some(element=>!element?.isConnected||element.ownerDocument!==document))return false;
+    const values=elements.map(element=>{const s=getComputedStyle(element);return{color:s.color,background:s.backgroundColor,fontFamily:s.fontFamily,fontSize:s.fontSize,fontWeight:s.fontWeight,lineHeight:s.lineHeight};});
+    return elements.every((element,index)=>element.isConnected&&document.querySelector(selectors[index])===element)&&values.every(value=>Object.values(value).every(part=>typeof part==='string'&&part.trim()!==''))?values:false;
+  },headingSelectors(heading));
+  try{return await snapshot.jsonValue();}finally{await snapshot.dispose();}
+};
 const routeAppearance=async(p,heading,theme,label)=>{
   await p.locator(heading+' h1').waitFor();await p.waitForTimeout(80);await fit(p,label);
   // The project hero sits over actual artwork, not a flat reading panel. Its

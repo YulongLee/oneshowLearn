@@ -6,12 +6,13 @@ import {sidebarPreferences,sidebarWidth,readSidebarPreferences,saveSidebarPrefer
 
 test('learner navigation typography stays legible and does not jump on selection',()=>{
   const css=readFileSync(new URL('../src/workspace-shell.css',import.meta.url),'utf8');
-  assert.match(css,/\.ws-unified-layout \.wb-nav-group > button \{[^}]*min-height:48px;[^}]*padding:12px 14px;[^}]*gap:12px;[^}]*font-size:16px; line-height:24px; font-weight:500/);
+  assert.match(css,/\.ws-unified-layout \.wb-nav-group > button \{[^}]*min-height:48px;[^}]*padding:13px 14px;[^}]*gap:12px;[^}]*color:#60718e; font-size:15px; line-height:22px; font-weight:400/);
   assert.match(css,/\.wb-nav-group > button \{[^}]*border-radius:10px/);
-  assert.match(css,/\.ws-unified-layout \.wb-nav-group > button\.is-active \{[^}]*background:#f3efff;[^}]*color:#7042ff;[^}]*font-size:16px; font-weight:600/);
-  assert.match(css,/\.ws-unified-layout \.wb-nav-group > span \{[^}]*font-size:12px; line-height:20px; font-weight:500; color:#6b7280/);
-  assert.match(css,/\.ws-unified-layout \.wb-settings>svg \{ width:20px; height:20px/);
-  assert.match(css,/\.ws-unified-layout \.wb-settings \{[^}]*font-size:16px; line-height:24px; font-weight:500/);
+  assert.match(css,/\.ws-unified-layout \.wb-nav-group > button\.is-active \{[^}]*background:#f3efff;[^}]*color:#7042ff; font-weight:500/);
+  assert.match(css,/\.ws-unified-layout \.wb-nav-group > span \{[^}]*font-size:12px; line-height:20px; font-weight:400; color:#6b7280/);
+  assert.match(css,/\.ws-unified-layout \.wb-settings>svg \{ width:18px; height:18px;[^}]*color:inherit/);
+  assert.match(css,/\.ws-layout\.ws-unified-layout \.ws-sidebar nav button>svg,/);
+  assert.match(css,/\.ws-unified-layout \.wb-settings \{[^}]*font-size:15px; line-height:22px; font-weight:400/);
   assert.match(css,/\.ws-unified-layout \.wb-nav-group \{ margin-top:18px/);
   assert.match(css,/\.ws-layout\.ws-unified-layout \{ grid-template-columns:var\(--sidebar-width,248px\)/);
 });
@@ -37,6 +38,7 @@ test('sidebar controls retain accessible restore, icon labels and pointer/keyboa
   const shell=readFileSync(new URL('../src/Workspace.jsx',import.meta.url),'utf8');
   assert.match(shell,/aria-label=\{title\}/);assert.match(shell,/显示侧栏/);assert.match(shell,/隐藏侧栏/);
   assert.match(shell,/useSidebarLayout\(\)/);
+  assert.match(shell,/<Icon size=\{18\} weight="regular" \/>/);
   const hook=readFileSync(new URL('../src/useSidebarLayout.js',import.meta.url),'utf8');
   for(const behavior of ['setPointerCapture','releasePointerCapture','onPointerCancel','onLostPointerCapture','ArrowLeft','ArrowRight','onDoubleClick'])assert.ok(hook.includes(behavior));
   assert.match(hook,/max-width:1000px/);

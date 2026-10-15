@@ -65,18 +65,20 @@ const contrast=(foreground,background)=>{
   const front=luminance(foreground),back=luminance(background);return (Math.max(front,back)+.05)/(Math.min(front,back)+.05);
 };
 const typography=async(p,label)=>{
-  const values=await nav(p).locator('button').evaluateAll(buttons=>buttons.map(button=>{const s=getComputedStyle(button),icon=button.querySelector('svg'),r=button.getBoundingClientRect(),is=getComputedStyle(icon),text=button.querySelector('span').getBoundingClientRect();return {active:button.hasAttribute('aria-current'),size:s.fontSize,line:s.lineHeight,weight:s.fontWeight,gap:s.gap,radius:s.borderRadius,height:r.height,icon:[is.width,is.height],fits:text.right<=r.right-10,background:s.backgroundColor,color:s.color,transform:s.transform};}));
+  const values=await nav(p).locator('button').evaluateAll(buttons=>buttons.map(button=>{const s=getComputedStyle(button),icon=button.querySelector('svg'),r=button.getBoundingClientRect(),is=getComputedStyle(icon),text=button.querySelector('span').getBoundingClientRect();return {active:button.hasAttribute('aria-current'),size:s.fontSize,line:s.lineHeight,weight:s.fontWeight,gap:s.gap,radius:s.borderRadius,height:r.height,icon:[is.width,is.height],iconColor:is.color,fits:text.right<=r.right-10,background:s.backgroundColor,color:s.color,transform:s.transform};}));
   equal(values.length,10,'ten navigation destinations '+label);
   check(await nav(p).evaluate(e=>getComputedStyle(e).fontFamily.startsWith('system-ui')),'navigation uses scoped system typeface '+label);
   equal(await sidebar(p).evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(255, 255, 255)','known opaque navigation background '+label);
   check(values.every(v=>contrast(v.color,v.active?v.background:'rgb(255, 255, 255)')>=4.5)&&contrast('rgb(107, 114, 128)','rgb(255, 255, 255)')>=4.5,'menu and caption contrast on actual surfaces '+label);
   for(const [i,v] of values.entries()){
-    equal([v.size,v.line,v.weight,v.gap,v.radius],['16px','24px',v.active?'600':'500','12px','10px'],'stable menu typography '+label+' '+i);
-    equal(v.icon,['20px','20px'],'restrained icon size '+label+' '+i);
+    equal([v.size,v.line,v.weight,v.gap,v.radius],['15px','22px',v.active?'500':'400','12px','10px'],'stable reference-like menu typography '+label+' '+i);
+    equal(v.icon,['18px','18px'],'restrained outline icon size '+label+' '+i);
+    equal(v.iconColor,v.color,'outline icon follows its menu label '+label+' '+i);
     check(v.height>=48&&v.fits&&v.transform==='none','target and label fit '+label+' '+i);
     if(v.active)equal([v.background,v.color],['rgb(243, 239, 255)','rgb(112, 66, 255)'],'selected tone '+label+' '+i);
+    else equal(v.color,'rgb(96, 113, 142)','readable gray-blue menu label '+label+' '+i);
   }
-  equal(await p.locator('.wb-nav-group>span').evaluateAll(elements=>elements.map(e=>{const s=getComputedStyle(e);return [s.fontSize,s.lineHeight,s.fontWeight,s.color];})),Array(4).fill(['12px','20px','500','rgb(107, 114, 128)']),'muted group caption hierarchy '+label);
+  equal(await p.locator('.wb-nav-group>span').evaluateAll(elements=>elements.map(e=>{const s=getComputedStyle(e);return [s.fontSize,s.lineHeight,s.fontWeight,s.color];})),Array(4).fill(['12px','20px','400','rgb(107, 114, 128)']),'muted group caption hierarchy '+label);
 };
 
 try{
@@ -86,6 +88,7 @@ try{
   const stable=await geometry(item(p,'工作台'));await sidebar(p).evaluate(e=>{e.dataset.acceptanceIdentity='same-sidebar';});
   for(const [label,destination] of routes){
     await item(p,label).click();await p.waitForURL(base+destination);equal(await nav(p).locator('[aria-current="page"]').getAttribute('aria-label'),label,'exact selected destination '+destination);
+    equal(await item(p,label).evaluate(e=>{const s=getComputedStyle(e),icon=getComputedStyle(e.querySelector('svg'));return [s.fontSize,s.lineHeight,s.fontWeight,icon.width,s.color,icon.color];}),['15px','22px','500','18px','rgb(112, 66, 255)','rgb(112, 66, 255)'],'every selected destination retains the same reference typography '+destination);
     equal(await geometry(item(p,label)),stable,'selection does not resize menu row '+destination);
     equal(await sidebar(p).getAttribute('data-acceptance-identity'),'same-sidebar','persistent sidebar '+destination);
     check(Math.abs((await sidebar(p).boundingBox()).width-248)<1,'stable sidebar width '+destination);

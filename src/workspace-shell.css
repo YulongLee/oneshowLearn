@@ -18,7 +18,7 @@
 .ws-reference-layout .ws-brand small { color:#63708c; font-size:11px; font-weight:400; letter-spacing:.05px; }
 .ws-unified-layout .ws-sidebar nav { gap:0; font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; }
 .ws-reference-layout .ws-sidebar nav > button, .wb-nav-group > button { display:flex; align-items:center; gap:16px; width:100%; min-height:42px; padding:10px 16px; border:0; background:transparent; text-align:left; font-size:14px; color:#27314e; }
-.ws-reference-layout .ws-sidebar nav > button.is-active { background:linear-gradient(110deg,#f0ebff,#f6f2ff); color:var(--wb-violet); font-size:16px; }
+.ws-reference-layout .ws-sidebar nav > button.is-active { background:linear-gradient(110deg,#f0ebff,#f6f2ff); color:var(--wb-violet); }
 .wb-nav-group { display:grid; gap:1px; margin-top:15px; }
 .wb-nav-group > span { margin:0 14px 7px; color:#63708c; font-size:12px; }
 .wb-nav-group > button:hover { background:#f7f6fc; color:#27314e; }
@@ -56,14 +56,14 @@ html:has(.ws-unified-layout) { scrollbar-gutter:stable; }
 .ws-unified-layout .ws-brand { font-size:18px; gap:10px; }
 .ws-unified-layout .ws-sidebar { padding:10px 13px 16px; gap:24px; }
 .ws-unified-layout .ws-sidebar nav > button,
-.ws-unified-layout .wb-nav-group > button { min-height:48px; padding:12px 14px; gap:12px; border-radius:10px; font-size:16px; line-height:24px; font-weight:500; }
+.ws-unified-layout .wb-nav-group > button { min-height:48px; padding:13px 14px; gap:12px; border-radius:10px; color:#60718e; font-size:15px; line-height:22px; font-weight:400; }
 .ws-unified-layout .ws-sidebar nav > button.is-active,
-.ws-unified-layout .wb-nav-group > button.is-active { background:#f3efff; color:#7042ff; font-size:16px; font-weight:600; }
+.ws-unified-layout .wb-nav-group > button.is-active { background:#f3efff; color:#7042ff; font-weight:500; }
 .ws-unified-layout .wb-nav-group { margin-top:18px; }
-.ws-unified-layout .wb-nav-group > span { display:block; font-size:12px; line-height:20px; font-weight:500; color:#6b7280; }
-.ws-unified-layout .ws-sidebar nav button>svg,
-.ws-unified-layout .wb-settings>svg { width:20px; height:20px; flex-shrink:0; }
-.ws-unified-layout .wb-settings { min-height:48px; padding:12px 29px; font-size:16px; line-height:24px; font-weight:500; }
+.ws-unified-layout .wb-nav-group > span { display:block; font-size:12px; line-height:20px; font-weight:400; color:#6b7280; }
+.ws-layout.ws-unified-layout .ws-sidebar nav button>svg,
+.ws-unified-layout .wb-settings>svg { width:18px; height:18px; flex-shrink:0; color:inherit; }
+.ws-unified-layout .wb-settings { min-height:48px; padding:13px 29px; font-size:15px; line-height:22px; font-weight:400; }
 .ws-unified-layout .ws-topbar { height:58px; padding:0 24px; }
 .ws-unified-layout .ws-content { width:100%; max-width:1840px; margin-inline:auto; padding:28px clamp(20px,2vw,40px) 40px; container:learner / inline-size; }
 /* Course tools fill the workspace; public/admin and discovery pages keep their geometry. */

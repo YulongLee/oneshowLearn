@@ -107,7 +107,7 @@ export function WorkspaceShell({ route, navigate, notify, children, resourceSear
     ["社区", [["/community", "学习社区", UsersThree]]],
     ["我的", [["/notes", "学习笔记", NotePencil], ["/favorites", "我的收藏", Star], ["/achievements", "我的成果", Trophy], ["/account", "设置中心", GearSix]]],
   ];
-  const navItem = ([path, title, Icon]) => <button key={`${path}-${title}`} title={title} aria-label={title} className={selected(path) ? "is-active" : ""} aria-current={selected(path) ? "page" : undefined} onClick={() => go(path)}><Icon size={21} weight={selected(path) ? "fill" : "regular"} /><span>{title}</span></button>;
+  const navItem = ([path, title, Icon]) => <button key={`${path}-${title}`} title={title} aria-label={title} className={selected(path) ? "is-active" : ""} aria-current={selected(path) ? "page" : undefined} onClick={() => go(path)}><Icon size={18} weight="regular" /><span>{title}</span></button>;
   return <LearningLayoutContext.Provider value={{host:learningHost,setFocused:setLearningFocused}}><div className="ws-layout ws-reference-layout ws-unified-layout" data-theme={theme} data-learning-focused={learningFocused||undefined} data-sidebar={sidebar.mode} data-resizing={sidebar.resizing||undefined} style={{'--sidebar-width':`${sidebar.width}px`}}>
     {menu && <button className="ws-scrim" aria-label="关闭侧边导航" onClick={() => setMenu(false)} />}
     <div className="ws-sidebar-frame">

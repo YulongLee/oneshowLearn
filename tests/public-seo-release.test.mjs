@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync,writeFileSync,mkdirSync,mkdtempSync,rmSync,readdirSync,symlinkSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdirSync,mkdtempSync,rmSync,readdirSync,symlinkSync,chmodSync,statSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
+import {publicAssetLocation} from '../deploy/check-public-seo-release.mjs';
 
 const source=readFileSync(new URL('../deploy/update-public-seo.sh',import.meta.url),'utf8');
 const validation=source.match(/"\$stage" "\$app" "\$snippet" <<'NODE'\n([\s\S]*?)\nNODE/)?.[1];
@@ -30,7 +31,7 @@ function fixture(t){
   put(stage,'client/index.html','<meta name="document-rendering" content="public-ssr-v1"><div id="root"></div>');
   put(stage,'client/.vite/manifest.json','{}');put(stage,'client/assets/index-hash.js','// isolated compiled client');
   put(stage,'render/public-render.mjs','export const renderPublicPage = () => "isolated";');
-  const proxy='location ^~ /api/auth/ {\n limit_req zone=oneshowlearn_auth_write_v2 burst=10 nodelay;\n limit_req zone=oneshowlearn_auth_read burst=30 nodelay;\n limit_req_status 429;\n}\nlocation / {\n if ($request_method !~ ^(GET|HEAD)$) { return 405; }\n if ($uri ~* ^/(api|uploads)(/|$)) { return 404; }\n proxy_pass http://127.0.0.1:8791;\n}\n';
+  const proxy='location ^~ /api/auth/ {\n limit_req zone=oneshowlearn_auth_write_v2 burst=10 nodelay;\n limit_req zone=oneshowlearn_auth_read burst=30 nodelay;\n limit_req_status 429;\n}\n'+publicAssetLocation+'\n\nlocation / {\n if ($request_method !~ ^(GET|HEAD)$) { return 405; }\n if ($uri ~* ^/(api|uploads)(/|$)) { return 404; }\n proxy_pass http://127.0.0.1:8791;\n}\n';
   put(stage,'nginx-app.conf',proxy);put(stage,'nginx-maintenance.conf','location / { return 503; }\n');
   put(stage,'maintenance.sha256',hash(readFileSync(path.join(stage,'nginx-maintenance.conf')))+'  '+snippet+'\n');
   const live=[app+'/package.json',app+'/package-lock.json',app+'/dist/client/index.html',
@@ -73,6 +74,17 @@ test('document writes, weakened authentication limits and wrong maintenance hash
   await t.test('wrong authentication zone',t=>{const f=fixture(t),file=path.join(f.stage,'nginx-app.conf');writeFileSync(file,readFileSync(file,'utf8').replace('oneshowlearn_auth_write_v2','bypassed'));f.manifest();assert.notEqual(f.run().status,0);});
   await t.test('maintenance hash differs from reviewed maintenance snippet',t=>{const f=fixture(t);f.put(f.stage,'maintenance.sha256','0'.repeat(64)+'  '+snippet+'\n');f.manifest();assert.notEqual(f.run().status,0);});
 });
+test('public assets require the exact isolated static prefix, without document or filesystem leaks',async t=>{
+  for(const [name,changed] of [
+    ['missing public asset prefix',''],
+    ['broad prefix without slash',publicAssetLocation.replace('/assets/ {','/assets {')],
+    ['duplicate asset prefix',publicAssetLocation+'\n'+publicAssetLocation],
+    ['alias escapes the public root',publicAssetLocation.replace('try_files $uri =404;','alias /isolated/private/;')],
+    ['root escapes the public directory',publicAssetLocation.replace('try_files $uri =404;','root /isolated/private;\n    try_files $uri =404;')],
+    ['proxy would expose another route',publicAssetLocation.replace('try_files $uri =404;','proxy_pass http://127.0.0.1:8791;')],
+    ['missing asset falls back to the document shell',publicAssetLocation.replace('try_files $uri =404;','try_files $uri /index.html;')],
+  ])await t.test(name,t=>{const f=fixture(t),file=path.join(f.stage,'nginx-app.conf');writeFileSync(file,readFileSync(file,'utf8').replace(publicAssetLocation,changed));f.manifest();assert.notEqual(f.run().status,0);});
+});
 test('publication orders consistent backups, provider-blocked rehearsal, idle guards and paired cutover',()=>{
   assert.match(source,/stage.*\^\/tmp\/oneshowlearn-seo-\[a-zA-Z0-9\]\+\$/);
   assert.match(source,/modules=\(index payment-configuration public-seo public-seo-data public-seo-model\)/);
@@ -97,9 +109,25 @@ test('rollback is code-only, retains all assets/runtime and remains armed until 
   const restore=source.slice(source.indexOf('restore_code(){'),source.indexOf('recover(){'));
   assert.doesNotMatch(restore,/(?:cp|install|mv)[^\n]*\$backup\/(?:data|before\.db|release\.db|node_modules|uploads|oneshowlearn\.env)/);
   assert.match(restore,/case "\$name" in public-seo\|public-seo-data\|public-seo-model\)/);
+  assert.doesNotMatch(restore,/atomic_(?:file|original) "\$backup\/package-lock\.json"/);
+  assert.match(restore,/atomic_original "\$backup\/server\/\$name\.mjs"/);
+  for(const name of ['package.json','client/index.html','client/.vite/manifest.json'])assert.ok(restore.includes('atomic_original "$backup/'+name+'"'));
+  assert.doesNotMatch(restore,/chmod -R a\+rX/);
+  assert.match(source,/atomic_original "\$backup\/oneshowlearn-app\.conf" "\$snippet"/);
   assert.doesNotMatch(source,/rm -rf|docker (?:system|volume|container)|npm (?:ci|install)|(?:bootstrap|migrate)\.mjs|systemctl (?:stop|start|restart) (?:nginx|oneshowseo|pocketledger)/);
   assert.match(source,/if \[\[ -e "\$target" \]\]; then cmp/);
   assert.match(source,/sleep 3/);assert.doesNotMatch(source,/sleep (?:[6-9]\d|\d{3,})/);
+});
+test('atomic original-file recovery preserves backed-up bytes, owner, group and private modes',t=>{
+  const folder=mkdtempSync(path.join(tmpdir(),'osl-seo-original-metadata-'));t.after(()=>rmSync(folder,{recursive:true,force:true}));
+  const original=source.slice(source.indexOf('atomic_original(){'),source.indexOf('original_guard(){'));assert.match(original,/cp -p -- "\$source" "\$pending"/);assert.ok(original.indexOf('cp -p')<original.indexOf('mv -f'));
+  const backup=path.join(folder,'backup'),target=path.join(folder,'target');
+  for(const mode of [0o600,0o640,0o644]){
+    writeFileSync(backup,'original-content-'+mode);chmodSync(backup,mode);writeFileSync(target,'new-content');chmodSync(target,0o644);
+    const result=spawnSync('bash',['-c',original+'\natomic_original "$1" "$2"','isolated',backup,target],{encoding:'utf8'});assert.equal(result.status,0,result.stderr);
+    const a=statSync(backup),b=statSync(target);assert.equal(readFileSync(target,'utf8'),readFileSync(backup,'utf8'));assert.equal(b.mode&0o777,a.mode&0o777);assert.equal(b.uid,a.uid);assert.equal(b.gid,a.gid);
+  }
+  const linked=path.join(folder,'linked');symlinkSync(target,linked);const rejected=spawnSync('bash',['-c',original+'\natomic_original "$1" "$2"','isolated',backup,linked],{encoding:'utf8'});assert.notEqual(rejected.status,0);assert.equal(readFileSync(target,'utf8'),readFileSync(backup,'utf8'));
 });
 test('an interrupted receipt remains recoverable until the final commit marker exists',t=>{
   const backup=mkdtempSync(path.join(tmpdir(),'osl-seo-final-marker-'));
@@ -123,6 +151,7 @@ systemctl(){ echo SYSTEMCTL "$@"; }
 restore_code(){ echo RESTORE_CODE; }
 ready(){ echo READY; }
 atomic_file(){ echo ATOMIC "$@"; }
+atomic_original(){ echo ORIGINAL "$@"; }
 nginx(){ echo NGINX "$@"; }
 ${recover}
 false
@@ -130,7 +159,7 @@ recover
 `],{encoding:'utf8'});
   for(const [maintenance,idle] of [[1,0],[0,1]]){
     const result=run(maintenance,idle);assert.equal(result.status,1);assert.ok(result.stdout.includes('MAINTENANCE'));
-    assert.ok(!result.stdout.includes('SYSTEMCTL'));assert.ok(!result.stdout.includes('RESTORE_CODE'));assert.ok(!result.stdout.includes('ATOMIC'));
+    assert.ok(!result.stdout.includes('SYSTEMCTL'));assert.ok(!result.stdout.includes('RESTORE_CODE'));assert.ok(!result.stdout.includes('ATOMIC'));assert.ok(!result.stdout.includes('ORIGINAL'));
   }
   const earlyRollback=run(0,1,true);assert.equal(earlyRollback.status,1);
   assert.ok(earlyRollback.stdout.includes('ATOMIC /isolated/stage/nginx-app.conf /isolated/snippet'));
@@ -138,5 +167,5 @@ recover
   assert.doesNotMatch(earlyRollback.stdout,/SYSTEMCTL (?:stop|start)/);assert.ok(!earlyRollback.stdout.includes('RESTORE_CODE'));
   const safe=run(0,0);assert.equal(safe.status,1);assert.ok(safe.stdout.indexOf('IDLE')<safe.stdout.indexOf('SYSTEMCTL stop'));
   assert.ok(safe.stdout.indexOf('SYSTEMCTL stop')<safe.stdout.indexOf('RESTORE_CODE'));
-  assert.ok(safe.stdout.includes('ATOMIC /isolated/backup/oneshowlearn-app.conf /isolated/snippet'));
+  assert.ok(safe.stdout.includes('ORIGINAL /isolated/backup/oneshowlearn-app.conf /isolated/snippet'));
 });

@@ -59,6 +59,15 @@ atomic_file(){
   install -o root -g root -m 644 -- "$source" "$pending" || return 1
   mv -f -- "$pending" "$target" || return 1
 }
+atomic_original(){
+  local source="$1" target="$2" pending
+  [[ -f "$source" && ! -L "$source" && ! -L "$target" ]] || return 1
+  pending=$(mktemp "$target.seo-next-XXXXXXXX") || return 1
+  # Preserve original ownership/mode before the atomic rename. A private old
+  # file must never be reopened as the publication helper's public root:644.
+  cp -p -- "$source" "$pending" || return 1
+  mv -f -- "$pending" "$target" || return 1
+}
 original_guard(){ sha256sum --quiet -c "$stage/live.sha256"; }
 maintenance_guard(){
   awk '$2 != "/etc/nginx/snippets/oneshowlearn-app.conf"' "$stage/live.sha256" | sha256sum --quiet -c -
@@ -113,16 +122,16 @@ enter_maintenance(){
 restore_code(){
   local name failed_render restore_render
   for name in "${modules[@]}"; do
-    if [[ -f "$backup/server/$name.mjs" ]]; then atomic_file "$backup/server/$name.mjs" "$app/server/$name.mjs" || return 1;
+    if [[ -f "$backup/server/$name.mjs" ]]; then atomic_original "$backup/server/$name.mjs" "$app/server/$name.mjs" || return 1;
     else
       # Only these exact newly introduced module targets can be removed.
       case "$name" in public-seo|public-seo-data|public-seo-model) rm -f -- "$app/server/$name.mjs" || return 1;; *) return 1;; esac
     fi
   done
-  atomic_file "$backup/package.json" "$app/package.json" || return 1
-  atomic_file "$backup/package-lock.json" "$app/package-lock.json" || return 1
-  atomic_file "$backup/client/index.html" "$app/dist/client/index.html" || return 1
-  if [[ -f "$backup/client/.vite/manifest.json" ]]; then atomic_file "$backup/client/.vite/manifest.json" "$app/dist/client/.vite/manifest.json" || return 1;
+  atomic_original "$backup/package.json" "$app/package.json" || return 1
+  # The lock is never published: retain its exact original bytes AND metadata.
+  atomic_original "$backup/client/index.html" "$app/dist/client/index.html" || return 1
+  if [[ -f "$backup/client/.vite/manifest.json" ]]; then atomic_original "$backup/client/.vite/manifest.json" "$app/dist/client/.vite/manifest.json" || return 1;
   else rm -f -- "$app/dist/client/.vite/manifest.json" || return 1; fi
   if [[ -e "$app/dist/render" ]]; then
     failed_render="$app/dist/.render-failed-$release_id-$(date +%s)"
@@ -132,7 +141,6 @@ restore_code(){
   if [[ -d "$backup/render" ]]; then
     restore_render=$(mktemp -d "$app/dist/.render-restore-$release_id-XXXXXXXX") || return 1
     cp -a --reflink=auto -- "$backup/render/." "$restore_render/" || return 1
-    chmod -R a+rX "$restore_render" || return 1
     mv -- "$restore_render" "$app/dist/render" || return 1
   fi
   # Deliberately no copy from before.db/release.db, private environment, keys,
@@ -165,7 +173,8 @@ recover(){
   # pair. Reopen its matching proxy, never the old static proxy over new code.
   if [[ "$rollback_mode" = true && "$changed" = false ]]; then restore_proxy="$stage/nginx-app.conf"; fi
   if [[ "$proxy_changed" = true && "$recovery_status" = 0 ]]; then
-    atomic_file "$restore_proxy" "$snippet" || recovery_status=1
+    if [[ "$restore_proxy" = "$backup/oneshowlearn-app.conf" ]]; then atomic_original "$restore_proxy" "$snippet" || recovery_status=1;
+    else atomic_file "$restore_proxy" "$snippet" || recovery_status=1; fi
     nginx -t && systemctl reload nginx || recovery_status=1
   fi
   if [[ "$recovery_status" != 0 ]]; then
@@ -210,7 +219,7 @@ NODE
   restore_code
   systemctl start oneshowlearn
   ready
-  atomic_file "$backup/oneshowlearn-app.conf" "$snippet"
+  atomic_original "$backup/oneshowlearn-app.conf" "$snippet"
   nginx -t
   systemctl reload nginx
   maintenance=false
@@ -252,6 +261,10 @@ for(const name of [app+'/package.json',app+'/package-lock.json',app+'/dist/clien
 const maintenance=/^([a-f0-9]{64})  ([^\r\n]+)\n?$/.exec(readFileSync(stage+'/maintenance.sha256','utf8'));assert.ok(maintenance);assert.equal(maintenance[2],snippet);assert.equal(createHash('sha256').update(readFileSync(stage+'/nginx-maintenance.conf')).digest('hex'),maintenance[1]);
 assert.match(readFileSync(stage+'/client/index.html','utf8'),/name="document-rendering" content="public-ssr-v1"/);
 const proxy=readFileSync(stage+'/nginx-app.conf','utf8');assert.match(proxy,/location \/ \{/);assert.match(proxy,/\$request_method !~ \^\(GET\|HEAD\)\$/);assert.match(proxy,/return 405/);assert.match(proxy,/if \(\$uri ~\* \^\/\(api\|uploads\)\(\/\|\$\)\) \{ return 404; \}/);assert.match(proxy,/zone=oneshowlearn_auth_write_v2 burst=10 nodelay/);assert.match(proxy,/zone=oneshowlearn_auth_read burst=30 nodelay/);assert.match(proxy,/limit_req_status 429/);
+const publicAssetLocation='location ^~ /assets/ {\n    expires 7d;\n    add_header X-Content-Type-Options "nosniff" always;\n    try_files $uri =404;\n}';
+const assetLocations=proxy.match(/location \^~ \/assets\/ \{\n[\s\S]*?\n\}/g);
+assert.equal(assetLocations?.length,1,'One explicit public assets prefix required');
+assert.equal(assetLocations[0],publicAssetLocation,'Public assets never proxy, alias outside their root or fall back to the document shell');
 NODE
 (cd "$stage" && sha256sum --quiet -c release.sha256)
 original_guard

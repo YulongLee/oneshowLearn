@@ -12,6 +12,7 @@ import http from 'node:http';
 import https from 'node:https';
 
 export const reviewedModules=['index','payment-configuration','public-seo','public-seo-data','public-seo-model'];
+export const publicAssetLocation='location ^~ /assets/ {\n    expires 7d;\n    add_header X-Content-Type-Options "nosniff" always;\n    try_files $uri =404;\n}';
 export const transientTables=new Set(['auth_rate_limits','login_challenges','payment_checkout_locks']);
 export const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 export const encode=value=>JSON.stringify(value,(_key,item)=>typeof item==='bigint'?{$integer:item.toString()}:item instanceof Uint8Array?{$bytes:Buffer.from(item).toString('base64')}:item);
@@ -38,6 +39,10 @@ export function compareDatabase(actual,expected,{all=false,schemaOnly=false}={})
   assert.equal(actual.schema,expected.schema,'Exact database schema retained; no migration');assert.deepEqual(Object.keys(actual.tables),Object.keys(expected.tables),'Exact table set retained');
   if(!schemaOnly)for(const name of Object.keys(expected.tables))if(all||!transientTables.has(name))assert.equal(actual.tables[name],expected.tables[name],'Full protected table values retained: '+name);
 }
+export function validateAcceptance(proof,{stage,backup,manifest,assets}){
+  assert.equal(proof.stage,stage);assert.equal(proof.backup,backup);assert.equal(proof.releaseManifest,manifest);assert.match(proof.gitCommit,/^[a-f0-9]{40}$/);assert.equal(proof.ciSuccess,true);assert.ok(Number.isSafeInteger(proof.ciId)&&proof.ciId>0);assert.equal(proof.providerRequests,0);assert.equal(proof.writeRequests,0);assert.ok(Number.isSafeInteger(proof.copyBrowser)&&proof.copyBrowser>0);
+  assert.deepEqual(Object.keys(proof.counts).sort(),['anonymous','promotion','seo','staticAssets']);for(const count of Object.values(proof.counts))assert.ok(Number.isSafeInteger(count)&&count>0);assert.equal(proof.counts.staticAssets,assets,'Every compiled asset accepted before final receipt');
+}
 function services({allowStoppedApplication=false}={}){
   const output=execFileSync('systemctl',['show','oneshowlearn','nginx','oneshowseo','pocketledger','-p','Id','-p','MainPID','-p','NRestarts','-p','ActiveState'],{encoding:'utf8'});
   const result=Object.fromEntries(output.trim().split(/\n\s*\n/).map(block=>{const row=Object.fromEntries(block.split('\n').map(line=>{const at=line.indexOf('=');assert.ok(at>0);return [line.slice(0,at),line.slice(at+1)];}));return [row.Id,row];}));
@@ -45,7 +50,7 @@ function services({allowStoppedApplication=false}={}){
 }
 export function assertProxyPair(original,next,maintenance){
   const root=/location \/ \{\n[\s\S]*?\n\}/g,roots=original.match(root);assert.equal(roots?.length,1,'One reviewed original document location');
-  const newRoots=next.match(root);assert.equal(newRoots?.length,1,'One paired document location');assert.equal(original.replace(root,'DOCUMENT'),next.replace(root,'DOCUMENT'),'Only document routing changes; API/auth/uploads/assets policy retained');
+  const newRoots=next.match(root);assert.equal(newRoots?.length,1,'One paired document location');assert.equal(next,original.replace(root,publicAssetLocation+'\n\n'+newRoots[0]),'Only exact public-asset/document routing changes; API/auth/uploads/other static policy retained');
   assert.match(newRoots[0],/if \(\$request_method !~ \^\(GET\|HEAD\)\$\) \{ return 405; \}/,'Document proxy never introduces a write-rate-limit bypass');
   assert.match(newRoots[0],/if \(\$uri ~\* \^\/\(api\|uploads\)\(\/\|\$\)\) \{ return 404; \}/,'Noncanonical API/upload spelling cannot enter the document proxy');
   assert.match(newRoots[0],/proxy_pass http:\/\/127\.0\.0\.1:8791;/);assert.match(newRoots[0],/proxy_set_header Cookie "";/);assert.match(newRoots[0],/proxy_set_header Authorization "";/);assert.ok(!newRoots[0].includes('try_files'),'Directory index cannot bypass raw SSR');
@@ -135,6 +140,7 @@ async function acceptance(mode,stage,backup,{serve=false}={}){
   }finally{db.close();await rehearsal?.close();if(serve)console.log(JSON.stringify({mode:'rehearsal-closed',allTableValuesUnchanged:true,exactSchema:true,providersCalled:rehearsal.counts().providers,writeRequests:rehearsal.counts().writes}));}
 }
 async function receipt(stage,backup){
+  const proof=readJson(backup+'/browser-acceptance.json');validateAcceptance(proof,{stage,backup,manifest:digest(readFileSync(stage+'/release.sha256')),assets:Object.keys(treeState(stage+'/client/assets')).length});
   verifyGuard(stage,backup,'post');for(const name of reviewedModules)assert.equal(digest(readFileSync(app+'/server/'+name+'.mjs')),digest(readFileSync(stage+'/server/'+name+'.mjs')));
   for(const relative of ['package.json','package-lock.json'])assert.equal(digest(readFileSync(app+'/'+relative)),digest(readFileSync(stage+'/'+relative)));
   assert.equal(digest(readFileSync(snippet)),digest(readFileSync(stage+'/nginx-app.conf')));
@@ -142,7 +148,7 @@ async function receipt(stage,backup){
   for(const [relative,state] of Object.entries(treeState(stage+'/client'))){const live=lstatSync(app+'/dist/client/'+relative);assert.ok(live.isFile());assert.equal(digest(readFileSync(app+'/dist/client/'+relative)),state.hash,'Exact compiled client '+relative);}
   const recovery=readJson(backup+'/recovery.json');assert.equal(recovery.rollbackArmed,true,'Outer rollback remains armed until final acceptance');
   compareDatabase(databaseState(backup+'/data/oneshowlearn.db'),databaseState(backup+'/release.db'),{all:true});
-  const result={format:'oneshowlearn-public-seo-receipt-v1',createdAt:new Date().toISOString(),stage,backup,releaseManifest:digest(readFileSync(stage+'/release.sha256')),entry:digest(readFileSync(app+'/dist/client/index.html')),privateEnvironmentChanged:false,schemaChanged:false,dependenciesChanged:false,providersCalled:0,writeRequests:0,rollback:'code/render/template/manifest/proxy only; never restore old database over current records',services:services()};
+  const result={format:'oneshowlearn-public-seo-receipt-v1',createdAt:new Date().toISOString(),stage,backup,gitCommit:proof.gitCommit,ciId:proof.ciId,checks:proof.counts,releaseManifest:digest(readFileSync(stage+'/release.sha256')),entry:digest(readFileSync(app+'/dist/client/index.html')),privateEnvironmentChanged:false,schemaChanged:false,dependenciesChanged:false,providersCalled:0,writeRequests:0,rollback:'code/render/template/manifest/proxy only; never restore old database over current records',services:services()};
   privateJson(backup+'/receipt.json',result);
   const files=treeState(backup);privateJson(backup+'/files.json',files);assert.deepEqual(treeState(backup),{...files,'files.json':{hash:digest(readFileSync(backup+'/files.json')),mode:0o600}});
   // This is the sole commit marker. All fallible code/data/backup verification

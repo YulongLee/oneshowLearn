@@ -4,7 +4,7 @@ import {mkdtempSync,rmSync,writeFileSync,chmodSync,mkdirSync,symlinkSync,unlinkS
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {DatabaseSync} from 'node:sqlite';
-import {databaseState,compareDatabase,treeState,assertProxyPair,transientTables} from '../deploy/check-public-seo-release.mjs';
+import {databaseState,compareDatabase,treeState,assertProxyPair,transientTables,publicAssetLocation} from '../deploy/check-public-seo-release.mjs';
 
 function fixture(t){
   const folder=mkdtempSync(path.join(tmpdir(),'osl-seo-guards-')),file=path.join(folder,'isolated.db'),db=new DatabaseSync(file);
@@ -49,7 +49,7 @@ location ~* \\.js$ {
     proxy_set_header Cookie "";
     proxy_set_header Authorization "";
 }`;
-  const next=original.replace(/location \/ \{\n[\s\S]*?\n\}/g,root);
+  const next=original.replace(/location \/ \{\n[\s\S]*?\n\}/g,publicAssetLocation+'\n\n'+root);
   const maintenance=original.replace(/(location (?:\^~ \/(?:api\/(?:auth\/)?|uploads\/)|\/) \{)/g,'$1\n    add_header Retry-After 30 always;\n    return 503;');
   return {original,next,maintenance};
 }
@@ -107,6 +107,12 @@ test('tree guards refuse ambiguous newline names',t=>{
 test('proxy pairing accepts only the reviewed document change and exact closed maintenance transform',()=>{
   const p=proxies();assert.doesNotThrow(()=>assertProxyPair(p.original,p.next,p.maintenance));
   const changes=[
+    p.next.replace(publicAssetLocation,''),
+    p.next.replace('/assets/ {','/assets {'),
+    p.next.replace(publicAssetLocation,publicAssetLocation+'\n'+publicAssetLocation),
+    p.next.replace(publicAssetLocation,publicAssetLocation.replace('try_files $uri =404;','alias /isolated/private/;')),
+    p.next.replace(publicAssetLocation,publicAssetLocation.replace('try_files $uri =404;','proxy_pass http://127.0.0.1:8791;')),
+    p.next.replace(publicAssetLocation,publicAssetLocation.replace('try_files $uri =404;','try_files $uri /index.html;')),
     p.next.replace('burst=10 nodelay','burst=999 nodelay'),
     p.next.replace('location ^~ /api/ {','location /api/ {'),
     p.next.replace('if ($request_method !~ ^(GET|HEAD)$) { return 405; }',''),

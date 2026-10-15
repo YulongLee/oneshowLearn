@@ -6,6 +6,9 @@ app=/var/www/oneshowlearn
 node=/opt/node-v22/bin/node
 [[ "$EUID" -eq 0 && "$staging" == /tmp/oneshowlearn-homepage-* && -d "$staging" && ! -L "$staging" ]] || exit 1
 test -f "$staging/client/index.html"
+if grep -q 'name="document-rendering" content="public-ssr-v1"' "$staging/client/index.html"; then
+  echo 'Public SEO documents require a paired backend/render/template/proxy release; historical homepage publication refused.' >&2; exit 1
+fi
 if find "$staging/client" "$staging/server" -type l -print -quit | grep -q .; then exit 1; fi
 if find "$staging/client" -name '._*' -print -quit | grep -q .; then echo 'Repackage into a clean stage without AppleDouble metadata.' >&2; exit 1; fi
 exec 9>/var/lock/oneshowlearn-workspace-release.lock

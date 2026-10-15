@@ -10,6 +10,9 @@ node=/opt/node-v22/bin/node
 [[ "$EUID" -eq 0 && "$staging" == /tmp/oneshowlearn-homepage-* && -d "$staging" && ! -L "$staging" ]] || exit 1
 [[ "$live_entry" =~ ^[a-f0-9]{64}$ && "$new_entry" =~ ^[a-f0-9]{64}$ && "$live_entry" != "$new_entry" ]] || exit 1
 test -f "$staging/client/index.html"
+if grep -q 'name="document-rendering" content="public-ssr-v1"' "$staging/client/index.html"; then
+  echo 'Public SEO documents require a paired backend/render/template/proxy release; frontend-only publication refused.' >&2; exit 1
+fi
 test -d "$staging/client/assets"
 if find "$staging" -type l -print -quit | grep -q .; then exit 1; fi
 if find "$staging" -name '._*' -print -quit | grep -q .; then exit 1; fi

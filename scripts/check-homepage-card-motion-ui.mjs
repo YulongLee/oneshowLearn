@@ -61,7 +61,7 @@ try{
   equal(await page.locator('.sales-capability-art>strong').allTextContents(),['课程与资料','AI 辅助学习','实践与沉淀'],'existing three capability titles retained');
   equal(await page.locator('.sales-capability-art li').count(),9,'all nine capability facts retained');
   check(await page.locator('.sales-capability-background').evaluateAll(els=>els.length===3&&els.every(e=>e.complete&&e.naturalWidth===1536&&e.naturalHeight===1024&&e.alt===''&&e.getAttribute('aria-hidden')==='true')),'all three decorative scenes decode without changing semantics');
-  check(await page.locator('.sales-platform-case').evaluateAll(els=>els.every(e=>e.tagName==='ARTICLE'&&!e.hasAttribute('tabindex')&&!e.hasAttribute('role')&&e.querySelectorAll('button').length===1&&getComputedStyle(e).cursor!=='pointer')),'only the existing CTA is interactive; article remains non-navigation content');
+  check(await page.locator('.sales-platform-case').evaluateAll(els=>els.every(e=>e.tagName==='ARTICLE'&&!e.hasAttribute('tabindex')&&!e.hasAttribute('role')&&e.querySelectorAll('a').length===1&&getComputedStyle(e).cursor!=='pointer')),'only the existing CTA is interactive; article remains non-navigation content');
 
   for(const width of [320,390,600,768,1000,1024,1180,1440,1920,2560]){
     await page.setViewportSize({width,height:1000});await clearPointer(page);
@@ -78,7 +78,7 @@ try{
   await page.setViewportSize({width:1440,height:1000});await clearPointer(page);
   const routePaths=['/opc','/tutor','/achievements'];
   for(let index=0;index<3;index++){
-    const card=page.locator('.sales-platform-case').nth(index),button=card.locator('button');
+    const card=page.locator('.sales-platform-case').nth(index),button=card.locator('a');
     const baseline=await card.evaluate(e=>({shadow:getComputedStyle(e).boxShadow,border:getComputedStyle(e).borderColor}));
     await card.hover({position:{x:30,y:30}});await pause(page);
     const lifted=await card.evaluate(e=>({shadow:getComputedStyle(e).boxShadow,border:getComputedStyle(e).borderColor}));
@@ -92,7 +92,7 @@ try{
     check(await button.evaluate(e=>{const s=getComputedStyle(e);return s.outlineStyle!=='none'&&parseFloat(s.outlineWidth)>=2&&parseFloat(s.outlineOffset)>=2;}),'CTA '+index+' has a clear offset focus ring');
     await page.keyboard.press('Enter');await page.waitForURL(base+routePaths[index]);equal(new URL(page.url()).pathname,routePaths[index],'keyboard CTA keeps exact existing route '+index);
     await home(page);
-    const current=page.locator('.sales-platform-case').nth(index),cta=current.locator('button');
+    const current=page.locator('.sales-platform-case').nth(index),cta=current.locator('a');
     await cta.scrollIntoViewIfNeeded();const box=await cta.boundingBox();
     await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await pause(page);await page.mouse.down();await pause(page);
     check(Math.abs((await transform(current)).y+1)<.05&&Math.abs((await transform(cta)).y-1)<.05,'nested CTA press keeps stable card and one-pixel button feedback '+index);
@@ -111,7 +111,7 @@ try{
     await card.locator('.sales-capability-art').tap();await pause(mobile);
     check((await transform(card)).y===0,'touch body tap never leaves sticky card lift '+index);
     equal(new URL(mobile.url()).pathname,'/','touch body tap never turns article into navigation '+index);
-    const button=card.locator('button');await focusByKeyboard(mobile,button);
+    const button=card.locator('a');await focusByKeyboard(mobile,button);
     check((await transform(card)).y===0,'coarse-pointer keyboard focus does not retain hover lift '+index);
     check(await button.evaluate(e=>getComputedStyle(e).outlineStyle!=='none'),'coarse-pointer keyboard still has visible focus '+index);
     await button.tap();await mobile.waitForURL(base+routePaths[index]);equal(new URL(mobile.url()).pathname,routePaths[index],'touch CTA keeps exact route '+index);await home(mobile);
@@ -121,7 +121,7 @@ try{
   const reduced=await context({reducedMotion:'reduce'}),still=await reduced.newPage();await home(still);
   check(await still.evaluate(()=>matchMedia('(prefers-reduced-motion:reduce)').matches),'reduced-motion preference is enabled');
   for(let index=0;index<3;index++){
-    const card=still.locator('.sales-platform-case').nth(index),button=card.locator('button');
+    const card=still.locator('.sales-platform-case').nth(index),button=card.locator('a');
     await card.hover({position:{x:30,y:30}});await pause(still);
     check((await transform(card)).raw==='none'&&(await transform(card)).transition==='0s','reduced-motion card hover has no translation or transition '+index);
     await pressBody(still,card);check((await transform(card)).raw==='none','reduced-motion content press has no translation '+index);await still.mouse.up();

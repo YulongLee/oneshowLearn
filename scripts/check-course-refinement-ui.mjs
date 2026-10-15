@@ -51,7 +51,7 @@ const stage=insert("INSERT INTO practice_project_stages(project_id,title,status)
 const projectLesson=insert("INSERT INTO learning_lessons(title,config,status) VALUES('隔离项目课时',?,'published')",[JSON.stringify({...fixtureConfig,isDemoMedia:false})]);
 const projectPlacement=insert("INSERT INTO lesson_placements(lesson_id,stage_id,status) VALUES(?,?,'published')",[projectLesson,stage]);
 run('INSERT INTO project_runs(user_id,project_id) VALUES(?,?)',[paid.id,project]);
-const app=createApp(),client=path.resolve('dist/client');app.use(express.static(client));app.get('/{*route}',(_q,res)=>res.sendFile(path.join(client,'index.html')));
+const app=createApp({publicDocuments:false}),client=path.resolve('dist/client');app.use(express.static(client));app.get('/{*route}',(_q,res)=>res.sendFile(path.join(client,'index.html')));
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
 const base=`http://127.0.0.1:${server.address().port}`,browser=await chromium.launch({headless:true});
 const errors=[],aiRequests=[],externalRequests=[],blockedFonts=[];let checks=0;

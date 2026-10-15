@@ -1,0 +1,31 @@
+/Users/liyulong/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+{
+  "start_url": "https://oneshowlearn.com/",
+  "domain": "oneshowlearn.com",
+  "pages_crawled": 1,
+  "total_internal_links": 0,
+  "unique_pages_found": 0,
+  "max_depth_reached": 0,
+  "pages": {
+    "https://oneshowlearn.com/": {
+      "outgoing_links": 0,
+      "incoming_links": 0
+    }
+  },
+  "anchor_texts": {},
+  "link_distribution": {
+    "min": 0,
+    "max": 0,
+    "avg": 0.0
+  },
+  "orphan_candidates": [],
+  "nofollow_links": [],
+  "issues": [
+    "\u26a0\ufe0f 1 page(s) have fewer than 3 internal links"
+  ],
+  "recommendations": [
+    "Increase internal linking \u2014 aim for 3-5 relevant links per 1000 words"
+  ],
+  "error": null
+}

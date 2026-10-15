@@ -108,7 +108,7 @@ try{
     }
   }
   await page.setViewportSize({width:1440,height:1000});await clearPointer(page);
-  const pathButton=page.locator('.sales-roadmap-actions>button');
+  const pathButton=page.locator('.sales-roadmap-actions>a');
   check(await pathButton.evaluate(e=>e.getBoundingClientRect().height>=44),'existing course-route CTA retains a touch-sized target');
   await pathButton.focus();await page.keyboard.press('Tab');await page.keyboard.press('Shift+Tab');check(await pathButton.evaluate(e=>e===document.activeElement&&e.matches(':focus-visible')),'course-route CTA remains reachable by real keyboard focus');
   await page.keyboard.press('Enter');await page.waitForURL(base+'/paths');equal(new URL(page.url()).pathname,'/paths','keyboard CTA keeps the original /paths destination');await home(page);
@@ -128,8 +128,8 @@ try{
   equal(await cms.locator('h1').innerText(),'作者保留的首页标题','authored CMS heading remains unchanged');equal(await cms.locator('.sales-lead').innerText(),'作者保留的首页介绍','authored CMS description remains unchanged');
   equal(await cms.locator('.sales-case-card:not(.sales-platform-case) .sales-case-copy h3').allTextContents(),['AI 面试助手','AI Agent 自动化工作流'],'both published CMS project identities remain unchanged');
   equal(await cms.locator('.sales-case-card:not(.sales-platform-case) .sales-phase-background').count(),0,'roadmap scenes never replace CMS project covers');
-  await cms.locator('.sales-roadmap-actions>button').click();await cms.waitForURL(base+'/paths');equal(new URL(cms.url()).pathname,'/paths','authored CMS does not alter the existing course-route destination');await home(cms);
-  await cms.locator('.sales-hero-buttons button').first().click();await cms.waitForURL(base+'/resources');equal(new URL(cms.url()).pathname,'/resources','authored CMS main action is retained');await home(cms);await cms.locator('.sales-hero-buttons button').last().click();await cms.waitForURL(base+'/community');equal(new URL(cms.url()).pathname,'/community','authored CMS secondary action is retained');await authored.close();
+  await cms.locator('.sales-roadmap-actions>a').click();await cms.waitForURL(base+'/paths');equal(new URL(cms.url()).pathname,'/paths','authored CMS does not alter the existing course-route destination');await home(cms);
+  await cms.locator('.sales-hero-buttons a').first().click();await cms.waitForURL(base+'/resources');equal(new URL(cms.url()).pathname,'/resources','authored CMS main action is retained');await home(cms);await cms.locator('.sales-hero-buttons a').last().click();await cms.waitForURL(base+'/community');equal(new URL(cms.url()).pathname,'/community','authored CMS secondary action is retained');await authored.close();
   equal(errors,[],'zero browser errors');equal(external,[],'zero external/provider requests');equal(writes,[],'zero write requests');
   console.log('PASS '+checks+' isolated roadmap checks: five decoded scenes, preserved ordered route/copy, centered fixed connectors, 320–2560px, mobile timeline, failure geometry, keyboard/reduced motion and CMS; GET/HEAD only.');
 }finally{await browser.close();}

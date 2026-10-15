@@ -19,7 +19,7 @@ const {savePaymentConfig,paymentConfiguration}=await import('../server/payment-c
 savePaymentConfig(admin,0,{settings:{...paymentConfiguration().settings,productId:product,priceCents:49900,originalPriceCents:99900},secrets:{}});
 const buffer=Buffer.from('%PDF-1.4 isolated UI'),asset=add("INSERT INTO assets(filename,original_name,mime_type,size_bytes,url,uploaded_by) VALUES('fixture.pdf','隔离教学课件.pdf','application/pdf',?,'',?)",[buffer.length,admin.id]);run('UPDATE assets SET url=? WHERE id=?',['/api/materials/'+asset,asset]);mkdirSync(dir+'/uploads-private');writeFileSync(dir+'/uploads-private/fixture.pdf',buffer);
 let providerCalls=0;const provider={async submit(_name,id){providerCalls++;return {batchId:'batch-'+id,uploadUrl:'https://mineru.oss-cn-shanghai.aliyuncs.com/isolated'};},async upload(_url,stream){for await(const _ of stream){}},async poll(){providerCalls++;return {state:'review',body:'# 隔离教学内容\n文档经过审核后可作为课程资料。'};}};
-const app=createApp({mineruProvider:provider});app.use(express.static(path.resolve('dist/client')));app.get('/{*route}',(_req,res)=>res.sendFile(path.resolve('dist/client/index.html')));
+const app=createApp({mineruProvider:provider,publicDocuments:false});app.use(express.static(path.resolve('dist/client')));app.get('/{*route}',(_req,res)=>res.sendFile(path.resolve('dist/client/index.html')));
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base='http://127.0.0.1:'+server.address().port;
 const browser=await chromium.launch({headless:true}),errors=[],external=[],output=path.resolve('artifacts/commercial-completion');mkdirSync(output,{recursive:true});let checks=0;
 const check=(v,label)=>{assert.ok(v,label);checks++;};

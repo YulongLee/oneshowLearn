@@ -23,7 +23,7 @@ const add=(step,type,title,preview=0,status='published')=>insert('INSERT INTO co
 const prompt=add(chapters[1],'prompt','隔离开发 Prompt'),template=add(chapters[0],'template','隔离 PRD 模板'),checklist=add(chapters[2],'checklist','隔离上线检查清单'),code=add(chapters[1],'code','隔离项目源码'),skill=add(chapters[1],'document','隔离 Skill 技能包'),video=add(chapters[2],'video','隔离部署视频');
 const draft=add(chapters[0],'document','不能公开的草稿',0,'draft');
 run("INSERT INTO entitlements(user_id,pack_id,status,starts_at) VALUES(?,?,'active','2000-01-01')",[owner.id,pack]);
-const app=createApp(),client=path.resolve('dist/client');app.use(express.static(client));app.get('/{*route}',(_q,res)=>res.sendFile(path.join(client,'index.html')));
+const app=createApp({publicDocuments:false}),client=path.resolve('dist/client');app.use(express.static(client));app.get('/{*route}',(_q,res)=>res.sendFile(path.join(client,'index.html')));
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
 const base=`http://127.0.0.1:${server.address().port}`,browser=await chromium.launch({headless:true}),errors=[],external=[],requests=[];let checks=0;
 const check=(ok,label)=>{assert.ok(ok,label);checks++;};

@@ -16,7 +16,7 @@ const {createApp}=await import('../server/index.mjs');
 const aId=Number(run("INSERT INTO users(email,password_hash,name,role,email_verified) VALUES('learner@example.invalid','unused','学习测试','learner',1)").lastInsertRowid);
 run("INSERT INTO orders(order_no,user_id,status,amount_cents) VALUES('BROWSER-PAID',?,'paid',49900)",[aId]);
 const learner=signUser(row('SELECT * FROM users WHERE id=?',[aId])),owner=signUser(row("SELECT * FROM users WHERE role='admin' LIMIT 1"));
-const app=createApp(),client=path.resolve('dist/client');app.use(express.static(client));app.get('/{*route}',(_q,res)=>res.sendFile(path.join(client,'index.html')));
+const app=createApp({publicDocuments:false}),client=path.resolve('dist/client');app.use(express.static(client));app.get('/{*route}',(_q,res)=>res.sendFile(path.join(client,'index.html')));
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
 const base=`http://127.0.0.1:${server.address().port}`,browser=await chromium.launch({headless:true});
 const errors=[];let checks=0;

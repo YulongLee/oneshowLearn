@@ -48,7 +48,7 @@ const assertOffer=async({price,saving=null,original=null,label})=>{
 };
 try{
   await home('¥499');await assertOffer({price:'¥499',saving:'¥4,500',original:'¥4,999',label:'499 / 4999'});
-  equal(await page.locator('.sales-hero-buttons button').count(),1,'default hero exposes only one primary action');
+  equal(await page.locator('.sales-hero-buttons a').count(),1,'default hero exposes only one primary action');
   check((await page.locator('.sales-hero-buttons').innerText()).includes('立即开始学习'),'default primary label remains 立即开始学习');
   check(!(await page.locator('.sales-hero-buttons').innerText()).includes('试看'),'hero no longer competes with a secondary preview CTA');
   check((await page.locator('.sales-bottom-preview').innerText()).includes(homepagePreviewText(course)),'footer preserves real preview scope');
@@ -62,7 +62,7 @@ try{
   for(const width of [320,390,600,768,1000,1024,1180,1440,1920,2560]){
     await page.setViewportSize({width,height:1000});await page.locator('.sales-bottom').scrollIntoViewIfNeeded();await page.evaluate(()=>document.fonts.ready);
     check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'page remains within viewport '+width);
-    check(await page.locator('.sales-price-card').evaluate(e=>{const b=e.getBoundingClientRect();return e.scrollWidth<=e.clientWidth+1&&[...e.querySelectorAll('.sales-offer-heading,.sales-price-slot,strong,del,p,button')].every(n=>{const r=n.getBoundingClientRect();return n.scrollWidth<=n.clientWidth+1&&r.left>=b.left-1&&r.right<=b.right+1;});}),'price, original, saving and controls do not clip '+width);
+    check(await page.locator('.sales-price-card').evaluate(e=>{const b=e.getBoundingClientRect();return e.scrollWidth<=e.clientWidth+1&&[...e.querySelectorAll('.sales-offer-heading,.sales-price-slot,strong,del,p,a')].every(n=>{const r=n.getBoundingClientRect();return n.scrollWidth<=n.clientWidth+1&&r.left>=b.left-1&&r.right<=b.right+1;});}),'price, original, saving and controls do not clip '+width);
     check(await page.locator('.sales-price-slot strong').evaluate(e=>{const s=getComputedStyle(e);return parseFloat(s.fontSize)>=36&&s.visibility==='visible'&&s.opacity==='1'&&s.filter==='none';}),'sale price has clear large sharp hierarchy '+width);
     check(await page.locator('.sales-price-slot del').evaluate(e=>{const s=getComputedStyle(e);return parseFloat(s.fontSize)>=13&&s.visibility==='visible'&&s.opacity==='1'&&s.textDecorationLine.includes('line-through');}),'original price remains readable and struck through '+width);
     check(await page.locator('.sales-saving').evaluate(e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return s.visibility==='visible'&&s.opacity==='1'&&parseFloat(s.fontSize)>=12&&r.width>60&&r.height>=14;}),'saving text remains visible and readable '+width);
@@ -83,13 +83,13 @@ try{
       const price=e.querySelector('.sales-price-slot strong'),original=e.querySelector('del'),saving=e.querySelector('.sales-saving');
       return worstContrast(price)>=3&&worstContrast(original)>=4.5&&worstContrast(saving)>=4.5;
     }),'sale, original and saving meet conservative purple-gradient text contrast '+width);
-    check(await page.locator('.sales-price-card button').evaluateAll(els=>els.length===2&&els.every(e=>e.getBoundingClientRect().height>=44)),'purchase and preview maintain usable targets '+width);
+    check(await page.locator('.sales-price-card a').evaluateAll(els=>els.length===2&&els.every(e=>e.getBoundingClientRect().height>=44)),'purchase and preview maintain usable targets '+width);
     const purchase=page.locator('.sales-price-card .sales-button');await purchase.focus();
     check(await purchase.evaluate(e=>document.activeElement===e&&getComputedStyle(e).outlineStyle!=='none'&&parseFloat(getComputedStyle(e).outlineWidth)>=2),'purchase keeps visible keyboard focus '+width);
     if([320,390,1180,1440,2560].includes(width))await page.locator('.sales-bottom').screenshot({path:path.join(out,'promotion-'+width+'.png')});
   }
   await page.setViewportSize({width:1440,height:1000});
-  await page.locator('.sales-hero-buttons button').click();await page.waitForURL(base+'/membership');check(true,'single hero action uses existing purchase route');
+  await page.locator('.sales-hero-buttons a').click();await page.waitForURL(base+'/membership');check(true,'single hero action uses existing purchase route');
   await home('¥499');await page.locator('.sales-price-card .sales-button').click();await page.waitForURL(base+'/membership');check(true,'promotion uses existing purchase route without creating an order');
   await home('¥499');await page.locator('.sales-bottom-preview').click();await page.waitForURL(base+course.previewPath);check(true,'footer preview reaches the exact offered lesson');
   await home('¥499');await page.locator('.sales-instructor-preview').click();await page.waitForURL(base+course.previewPath);check(true,'instructor preview reaches the exact offered lesson');
@@ -123,10 +123,10 @@ try{
   await assertOffer({price:'¥299',saving:'¥1,700',original:'¥1,999',label:'explicit retry restores current offer'});
   cms={title:'作者保留的首页标题',description:'作者保留的介绍',ctaLabel:'作者入口',ctaPath:'/resources',secondaryLabel:'作者次入口',secondaryPath:'/community',footerTitle:'作者结尾标题',footerDescription:'作者结尾介绍'};
   await home('¥299');equal(await page.locator('h1').innerText(),cms.title,'authored CMS heading retained');
-  equal(await page.locator('.sales-hero-buttons button').count(),2,'authored CMS secondary CTA is not erased');
-  check((await page.locator('.sales-hero-buttons button').last().innerText()).includes(cms.secondaryLabel),'authored secondary label retained');
-  await page.locator('.sales-hero-buttons button').last().click();await page.waitForURL(base+'/community');check(true,'authored CMS secondary destination retained');
-  await home('¥299');await page.locator('.sales-hero-buttons button').first().click();await page.waitForURL(base+'/resources');check(true,'authored CMS primary destination retained');
+  equal(await page.locator('.sales-hero-buttons a').count(),2,'authored CMS secondary CTA is not erased');
+  check((await page.locator('.sales-hero-buttons a').last().innerText()).includes(cms.secondaryLabel),'authored secondary label retained');
+  await page.locator('.sales-hero-buttons a').last().click();await page.waitForURL(base+'/community');check(true,'authored CMS secondary destination retained');
+  await home('¥299');await page.locator('.sales-hero-buttons a').first().click();await page.waitForURL(base+'/resources');check(true,'authored CMS primary destination retained');
   await home('¥299');await page.locator('.sales-price-card .sales-button').click();await page.waitForURL(base+'/resources');check(true,'authored CMS footer purchase destination retained');
   await home('¥299');await page.locator('.sales-bottom-preview').click();await page.waitForURL(base+'/community');check(true,'authored CMS footer secondary destination retained');
   check(reads.includes('/api/commerce/offer')&&reads.includes('/api/learning/entry'),'offer and preview information are genuine API reads');

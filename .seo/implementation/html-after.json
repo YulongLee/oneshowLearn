@@ -1,0 +1,512 @@
+{
+  "title": "OneShowLearn\uff5cAI \u4ea7\u54c1\u5b9e\u6218\u5b66\u4e60\u4e0e AI OPC \u8bfe\u7a0b",
+  "meta_description": "OneShowLearn \u7531 OneShowAiLab \u51fa\u54c1\uff0c\u56f4\u7ed5\u4ea7\u54c1\u673a\u4f1a\u3001AI \u5f00\u53d1\u3001\u4e0a\u7ebf\u3001\u5546\u4e1a\u5316\u4e0e\u8fd0\u8425\u589e\u957f\uff0c\u7cfb\u7edf\u5b66\u4e60\u628a\u60f3\u6cd5\u53d8\u6210\u4ea7\u54c1\u7684\u65b9\u6cd5\u3002",
+  "meta_robots": "index, follow, max-image-preview:large",
+  "x_robots_tag": null,
+  "canonical": "https://seo.example.invalid/",
+  "lang": "zh-CN",
+  "charset": "UTF-8",
+  "viewport": "width=device-width, initial-scale=1.0",
+  "favicon": "https://seo.example.invalid/assets/oneshowlearn-symbol-CZh74vAm.svg",
+  "h1": [
+    "SEO\u516c\u5f00\u9996\u9875 & \u5b89\u5168\u6d4b\u8bd5"
+  ],
+  "h2": [
+    "\u4f60\u73b0\u5728\uff0c\u6b63\u5904\u5728\u54ea\u4e2a\u9636\u6bb5\uff1f",
+    "\u4e0d\u53ea\u662f\u8bfe\u7a0b\uff0c\u4e5f\u662f\u4f60\u7684\u4ea7\u54c1\u5b66\u4e60\u7a7a\u95f4",
+    "\u4ece\u60f3\u6cd5\u5230\u4e0a\u7ebf\uff0c\u4e00\u6761\u5b8c\u6574\u7684\u5b66\u4e60\u8def\u5f84",
+    "\u4e0d\u53ea\u5b66 AI \u5de5\u5177\uff0c\u66f4\u8981\u5b66\u4f1a\u505a\u4ea7\u54c1\u3002",
+    "\u5b66\u5230\u54ea\u91cc\uff0c\u95ee\u9898\u5c31\u5728\u54ea\u91cc\u89e3\u51b3",
+    "\u4e00\u6b21\u8d2d\u4e70\uff0c\u7cfb\u7edf\u5b66\u4e60",
+    "\u8d2d\u4e70\u524d\uff0c\u4f60\u53ef\u80fd\u60f3\u4e86\u89e3",
+    "SEO\u516c\u5f00\u8bfe\u7a0b\u5165\u53e3"
+  ],
+  "h3": [
+    "\u6709\u60f3\u6cd5\uff0c\u5374\u4e0d\u77e5\u9053\u5148\u9a8c\u8bc1\u4ec0\u4e48",
+    "\u60f3\u7528 AI\uff0c\u628a\u5f00\u53d1\u6548\u7387\u771f\u6b63\u63d0\u8d77\u6765",
+    "\u4ea7\u54c1\u5df2\u5728\u624b\u4e0a\uff0c\u5dee\u4e0a\u7ebf\u4e0e\u5546\u4e1a\u5316",
+    "\u628a\u77e5\u8bc6\u548c\u52a8\u624b\u5b9e\u8df5\uff0c\u653e\u5728\u4e00\u8d77",
+    "\u9047\u5230\u96be\u70b9\uff0c\u4e0d\u5fc5\u4e00\u4e2a\u4eba\u5361\u4f4f",
+    "\u8ba9\u5b66\u4e60\uff0c\u7559\u4e0b\u81ea\u5df1\u7684\u4f5c\u54c1",
+    "\u4ea7\u54c1\u4e0e\u673a\u4f1a",
+    "AI \u4ea7\u54c1\u5f00\u53d1",
+    "\u4e0a\u7ebf\u4e0e\u5408\u89c4",
+    "\u6536\u6b3e\u4e0e\u5546\u4e1a\u5316",
+    "\u8fd0\u8425\u4e0e\u589e\u957f",
+    "Cody\u8001\u5e08OneShowAiLab \u521b\u59cb\u4eba",
+    "\u89e3\u91ca\u8bfe\u7a0b\u96be\u70b9",
+    "\u6574\u7406\u5b66\u4e60\u8981\u70b9",
+    "\u8ba8\u8bba\u5b9e\u8df5\u601d\u8def",
+    "\u9009\u62e9\u6b63\u5728\u5b66\u4e60\u7684\u8bfe\u7a0b",
+    "\u63d0\u51fa\u4e00\u4e2a\u5177\u4f53\u7684\u95ee\u9898",
+    "\u67e5\u770b\u53c2\u8003\u6765\u6e90\uff0c\u56de\u5230\u5b9e\u8df5",
+    "\u7cfb\u7edf\u8bfe\u7a0b",
+    "\u914d\u5957\u8d44\u6599\u4e0e\u6a21\u677f",
+    "AI \u5bfc\u5e08 \u00b7 \u8bfe\u7a0b\u7b54\u7591",
+    "\u5b66\u4e60\u4ea4\u6d41\u5165\u53e3"
+  ],
+  "h4": [],
+  "h5": [],
+  "h6": [],
+  "images": [
+    {
+      "src": "data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%20fill='none'%3e%3cdefs%3e%3clinearGradient%20id='ring'%20x1='30'%20y1='10'%20x2='68'%20y2='94'%20gradientUnits='userSpaceOnUse'%3e%3cstop%20stop-color='%23929EFF'/%3e%3cstop%20offset='.34'%20stop-color='%234B36FF'/%3e%3cstop%20offset='.7'%20stop-color='%235915F5'/%3e%3cstop%20offset='1'%20stop-color='%23C295FF'/%3e%3c/linearGradient%3e%3clinearGradient%20id='spark'%20x1='80'%20y1='2'%20x2='80'%20y2='44'%20gradientUnits='userSpaceOnUse'%3e%3cstop%20stop-color='%23B494FF'/%3e%3cstop%20offset='.44'%20stop-color='%234833FF'/%3e%3cstop%20offset='.7'%20stop-color='%236230FF'/%3e%3cstop%20offset='1'%20stop-color='%23BD91FF'/%3e%3c/linearGradient%3e%3c/defs%3e%3cpath%20d='M54%2012.9C56.6%2013.6%2057.4%2015.2%2056.6%2017.6L53.1%2027.7C52.5%2029.5%2050.7%2030.3%2048.8%2029.8A27%2027%200%201%200%2069.9%2058.1C70.1%2055.9%2071.3%2054.8%2073.4%2054.8H82.8C85.1%2054.8%2086.4%2056.2%2086.2%2058.5A43%2043%200%201%201%2054%2012.9Z'%20fill='url(%23ring)'/%3e%3cpath%20d='M78.3%203.6C79.2%201%2082%201%2082.9%203.6C86.5%2015.4%2089.5%2018.3%2099%2021.6C101.2%2022.4%20101.2%2025.1%2099%2025.9C88.7%2029.5%2086.1%2032.8%2082.9%2044C82.1%2046.6%2079.3%2046.6%2078.5%2044C75.2%2032.6%2072.2%2029.4%2061.5%2025.9C59.1%2025.1%2059.1%2022.4%2061.5%2021.6C71.8%2018.2%2075.1%2014.7%2078.3%203.6Z'%20fill='url(%23spark)'%20transform='translate(-2%200)'/%3e%3c/svg%3e",
+      "alt": "",
+      "width": null,
+      "height": null,
+      "is_responsive_fill": false,
+      "loading": null
+    },
+    {
+      "src": "https://seo.example.invalid/assets/oneshowlearn-hero-optimized-BmBhwVN1.webp",
+      "alt": "\u5b66\u4e60\u8005\u4f7f\u7528\u7535\u8111\u5b9e\u8df5 AI \u9879\u76ee",
+      "width": "1536",
+      "height": "1024",
+      "is_responsive_fill": false,
+      "loading": null
+    },
+    {
+      "src": "https://seo.example.invalid/assets/homepage-audience-idea-soft-v1-C9KF8fAl.webp",
+      "alt": "",
+      "width": "1536",
+      "height": "1024",
+      "is_responsive_fill": false,
+      "loading": "lazy"
+    },
+    {
+      "src": "https://seo.example.invalid/assets/homepage-audience-build-soft-v1-BsvK4nVz.webp",
+      "alt": "",
+      "width": "1536",
+      "height": "1024",
+      "is_responsive_fill": false,
+      "loading": "lazy"
+    },
+    {
+      "src": "https://seo.example.invalid/assets/homepage-audience-launch-soft-v1-DmHcrPKC.webp",
+      "alt": "",
+      "width": "1536",
+      "height": "1024",
+      "is_responsive_fill": false,
+      "loading": "lazy"
+    },
+    {
+      "src": "https://seo.example.invalid/assets/homepage-capability-courses-soft-v1-BhVWVP80.webp",
+      "alt": "",
+      "width": "1536",
+      "height": "1024",
+      "is_responsive_fill": false,
+      "loading": "lazy"
+    },
+    {
+      "src": "https://seo.example.invalid/assets/homepage-capability-ai-soft-v1-CA8tXgcO.webp",
+      "alt": "",
+      "width": "1536",
+      "height": "1024",
+      "is_responsive_fill": false,
+      "loading": "lazy"
+    },
+    {
+      "src": "https://seo.example.invalid/assets/homepage-capability-practice-soft-v1-DPADNhUG.webp",
+      "alt": "",
+      "width": "1536",
+      "height": "1024",
+      "is_responsive_fill": false,
+      "loading": "lazy"
+    },
+    {
+      "src": "https://seo.example.invalid/assets/homepage-roadmap-opportunity-soft-v1-DiZTisIV.webp",
+      "alt": "",
+      "width": "1024",
+      "height": "1536",
+      "is_responsive_fill": false,
+      "loading": "lazy"
+    },
+    {
+      "src": "https://seo.example.invalid/assets/homepage-roadmap-development-soft-v1-DP72OVjo.webp",
+      "alt": "",
+      "width": "1024",
+      "height": "1536",
+      "is_responsive_fill": false,
+      "loading": "lazy"
+    },
+    {
+      "src": "https://seo.example.invalid/assets/homepage-roadmap-launch-soft-v1-BhWhT5rF.webp",
+      "alt": "",
+      "width": "1024",
+      "height": "1536",
+      "is_responsive_fill": false,
+      "loading": "lazy"
+    },
+    {
+      "src": "https://seo.example.invalid/assets/homepage-roadmap-commerce-soft-v1-BBqc5UJF.webp",
+      "alt": "",
+      "width": "1024",
+      "height": "1536",
+      "is_responsive_fill": false,
+      "loading": "lazy"
+    },
+    {
+      "src": "https://seo.example.invalid/assets/homepage-roadmap-growth-soft-v1-DsTejdLM.webp",
+      "alt": "",
+      "width": "1024",
+      "height": "1536",
+      "is_responsive_fill": false,
+      "loading": "lazy"
+    },
+    {
+      "src": "https://seo.example.invalid/assets/yulong-lee-instructor-lavender-v2-B3xM3UUJ.webp",
+      "alt": "Cody\u8001\u5e08\u4eba\u7269\u5f62\u8c61\uff0c\u80cc\u666f\u7ecf AI \u5408\u6210",
+      "width": "1536",
+      "height": "1024",
+      "is_responsive_fill": false,
+      "loading": "lazy"
+    },
+    {
+      "src": "data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%20fill='none'%3e%3cdefs%3e%3clinearGradient%20id='ring'%20x1='30'%20y1='10'%20x2='68'%20y2='94'%20gradientUnits='userSpaceOnUse'%3e%3cstop%20stop-color='%23929EFF'/%3e%3cstop%20offset='.34'%20stop-color='%234B36FF'/%3e%3cstop%20offset='.7'%20stop-color='%235915F5'/%3e%3cstop%20offset='1'%20stop-color='%23C295FF'/%3e%3c/linearGradient%3e%3clinearGradient%20id='spark'%20x1='80'%20y1='2'%20x2='80'%20y2='44'%20gradientUnits='userSpaceOnUse'%3e%3cstop%20stop-color='%23B494FF'/%3e%3cstop%20offset='.44'%20stop-color='%234833FF'/%3e%3cstop%20offset='.7'%20stop-color='%236230FF'/%3e%3cstop%20offset='1'%20stop-color='%23BD91FF'/%3e%3c/linearGradient%3e%3c/defs%3e%3cpath%20d='M54%2012.9C56.6%2013.6%2057.4%2015.2%2056.6%2017.6L53.1%2027.7C52.5%2029.5%2050.7%2030.3%2048.8%2029.8A27%2027%200%201%200%2069.9%2058.1C70.1%2055.9%2071.3%2054.8%2073.4%2054.8H82.8C85.1%2054.8%2086.4%2056.2%2086.2%2058.5A43%2043%200%201%201%2054%2012.9Z'%20fill='url(%23ring)'/%3e%3cpath%20d='M78.3%203.6C79.2%201%2082%201%2082.9%203.6C86.5%2015.4%2089.5%2018.3%2099%2021.6C101.2%2022.4%20101.2%2025.1%2099%2025.9C88.7%2029.5%2086.1%2032.8%2082.9%2044C82.1%2046.6%2079.3%2046.6%2078.5%2044C75.2%2032.6%2072.2%2029.4%2061.5%2025.9C59.1%2025.1%2059.1%2022.4%2061.5%2021.6C71.8%2018.2%2075.1%2014.7%2078.3%203.6Z'%20fill='url(%23spark)'%20transform='translate(-2%200)'/%3e%3c/svg%3e",
+      "alt": "",
+      "width": null,
+      "height": null,
+      "is_responsive_fill": false,
+      "loading": null
+    }
+  ],
+  "links": {
+    "internal": [
+      {
+        "href": "https://seo.example.invalid/",
+        "text": "OneShowLearnLearn \u00b7 Build \u00b7 Grow",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/",
+        "text": "\u9996\u9875",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/login",
+        "text": "\u767b\u5f55",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/membership",
+        "text": "\u8bfe\u7a0b\u4e0e\u4ef7\u683c",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/membership",
+        "text": "\u7acb\u5373\u5f00\u59cb\u5b66\u4e60",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/projects",
+        "text": "\u63a2\u7d22\u5b9e\u6218\u9879\u76ee",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/opc",
+        "text": "\u67e5\u770b\u5b66\u4e60\u8bfe\u7a0b",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/tutor",
+        "text": "\u4e86\u89e3 AI \u5bfc\u5e08",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/achievements",
+        "text": "\u63a2\u7d22\u6210\u679c\u7a7a\u95f4",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/paths",
+        "text": "\u67e5\u770b\u5b8c\u6574\u8bfe\u7a0b\u4f53\u7cfb",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/learn/seo-public-course/lessons/1",
+        "text": "\u514d\u8d39\u8bd5\u770b1 \u8282",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/tutor",
+        "text": "\u8fdb\u5165 AI \u5bfc\u5e08",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/membership",
+        "text": "\u67e5\u770b\u8bfe\u7a0b\u4e0e\u6743\u76ca",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/legal/purchase",
+        "text": "\u9605\u8bfb\u8d2d\u4e70\u8bf4\u660e",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/legal/purchase",
+        "text": "\u67e5\u770b\u8d2d\u4e70\u4e0e\u66f4\u65b0\u8bf4\u660e",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/support",
+        "text": "\u5e2e\u52a9\u4e0e\u552e\u540e",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/membership",
+        "text": "\u7acb\u5373\u5f00\u59cb\u5b66\u4e60",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/learn/seo-public-course/lessons/1",
+        "text": "\u514d\u8d39\u8bd5\u770b1 \u8282",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/",
+        "text": "OneShowLearnLearn \u00b7 Build \u00b7 Grow",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/",
+        "text": "\u9996\u9875",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/projects",
+        "text": "\u5b9e\u6218\u6848\u4f8b",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/community",
+        "text": "\u5b66\u4e60\u793e\u533a",
+        "rel": []
+      },
+      {
+        "href": "https://seo.example.invalid/legal/terms",
+        "text": "\u7528\u6237\u534f\u8bae",
+        "rel": [
+          "noopener",
+          "noreferrer"
+        ]
+      },
+      {
+        "href": "https://seo.example.invalid/legal/privacy",
+        "text": "\u9690\u79c1\u8bf4\u660e",
+        "rel": [
+          "noopener",
+          "noreferrer"
+        ]
+      },
+      {
+        "href": "https://seo.example.invalid/legal/purchase",
+        "text": "\u8d2d\u4e70\u8bf4\u660e",
+        "rel": [
+          "noopener",
+          "noreferrer"
+        ]
+      },
+      {
+        "href": "https://seo.example.invalid/support",
+        "text": "\u5e2e\u52a9\u4e0e\u552e\u540e",
+        "rel": [
+          "noopener",
+          "noreferrer"
+        ]
+      }
+    ],
+    "external": [
+      {
+        "href": "https://beian.miit.gov.cn/",
+        "text": "\u6d59ICP\u59072026052190\u53f7-4",
+        "rel": [
+          "noopener",
+          "noreferrer"
+        ]
+      },
+      {
+        "href": "https://beian.mps.gov.cn/#/query/webSearch?code=33010602014974",
+        "text": "\u6d59\u516c\u7f51\u5b89\u590733010602014974\u53f7",
+        "rel": [
+          "noopener",
+          "noreferrer"
+        ]
+      }
+    ]
+  },
+  "pagination": {
+    "prev": null,
+    "next": null
+  },
+  "resource_hints": {
+    "preload": [
+      {
+        "href": "https://seo.example.invalid/assets/oneshowlearn-hero-optimized-BmBhwVN1.webp",
+        "as": "image",
+        "type": null,
+        "crossorigin": null
+      }
+    ],
+    "preconnect": [],
+    "dns-prefetch": [],
+    "prefetch": [],
+    "prerender": []
+  },
+  "schema": [
+    {
+      "@type": "Unknown",
+      "@types": [
+        "Unknown"
+      ],
+      "@id": null,
+      "@context": "https://schema.org",
+      "status": "active",
+      "note": "",
+      "has_context": true,
+      "has_type": false,
+      "from_graph": false,
+      "raw": {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://seo.example.invalid/#organization",
+            "name": "OneShowAiLab",
+            "url": "https://seo.example.invalid/",
+            "logo": "https://seo.example.invalid/assets/oneshowlearn-symbol-CZh74vAm.svg"
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://seo.example.invalid/#website",
+            "name": "OneShowLearn",
+            "url": "https://seo.example.invalid/",
+            "inLanguage": "zh-CN",
+            "publisher": {
+              "@id": "https://seo.example.invalid/#organization"
+            }
+          },
+          {
+            "@type": "WebPage",
+            "@id": "https://seo.example.invalid/#webpage",
+            "url": "https://seo.example.invalid/",
+            "name": "OneShowLearn\uff5cAI \u4ea7\u54c1\u5b9e\u6218\u5b66\u4e60\u4e0e AI OPC \u8bfe\u7a0b",
+            "description": "OneShowLearn \u7531 OneShowAiLab \u51fa\u54c1\uff0c\u56f4\u7ed5\u4ea7\u54c1\u673a\u4f1a\u3001AI \u5f00\u53d1\u3001\u4e0a\u7ebf\u3001\u5546\u4e1a\u5316\u4e0e\u8fd0\u8425\u589e\u957f\uff0c\u7cfb\u7edf\u5b66\u4e60\u628a\u60f3\u6cd5\u53d8\u6210\u4ea7\u54c1\u7684\u65b9\u6cd5\u3002",
+            "inLanguage": "zh-CN",
+            "isPartOf": {
+              "@id": "https://seo.example.invalid/#website"
+            }
+          },
+          {
+            "@type": "Person",
+            "@id": "https://seo.example.invalid/#instructor-cody",
+            "name": "Cody\u8001\u5e08",
+            "description": "OneShowAiLab \u521b\u59cb\u4eba\uff0c10 \u5e74\u4ee5\u4e0a AI \u7b97\u6cd5\u884c\u4e1a\u7ecf\u9a8c\uff0c\u5927\u6a21\u578b\u7b97\u6cd5\u4e13\u5bb6\u3002"
+          }
+        ]
+      }
+    },
+    {
+      "@type": "Organization",
+      "@types": [
+        "Organization"
+      ],
+      "@id": "https://seo.example.invalid/#organization",
+      "@context": "https://schema.org",
+      "status": "active",
+      "note": "",
+      "has_context": true,
+      "has_type": true,
+      "from_graph": true,
+      "raw": {
+        "@type": "Organization",
+        "@id": "https://seo.example.invalid/#organization",
+        "name": "OneShowAiLab",
+        "url": "https://seo.example.invalid/",
+        "logo": "https://seo.example.invalid/assets/oneshowlearn-symbol-CZh74vAm.svg"
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@types": [
+        "WebSite"
+      ],
+      "@id": "https://seo.example.invalid/#website",
+      "@context": "https://schema.org",
+      "status": "active",
+      "note": "",
+      "has_context": true,
+      "has_type": true,
+      "from_graph": true,
+      "raw": {
+        "@type": "WebSite",
+        "@id": "https://seo.example.invalid/#website",
+        "name": "OneShowLearn",
+        "url": "https://seo.example.invalid/",
+        "inLanguage": "zh-CN",
+        "publisher": {
+          "@id": "https://seo.example.invalid/#organization"
+        }
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@types": [
+        "WebPage"
+      ],
+      "@id": "https://seo.example.invalid/#webpage",
+      "@context": "https://schema.org",
+      "status": "active",
+      "note": "",
+      "has_context": true,
+      "has_type": true,
+      "from_graph": true,
+      "raw": {
+        "@type": "WebPage",
+        "@id": "https://seo.example.invalid/#webpage",
+        "url": "https://seo.example.invalid/",
+        "name": "OneShowLearn\uff5cAI \u4ea7\u54c1\u5b9e\u6218\u5b66\u4e60\u4e0e AI OPC \u8bfe\u7a0b",
+        "description": "OneShowLearn \u7531 OneShowAiLab \u51fa\u54c1\uff0c\u56f4\u7ed5\u4ea7\u54c1\u673a\u4f1a\u3001AI \u5f00\u53d1\u3001\u4e0a\u7ebf\u3001\u5546\u4e1a\u5316\u4e0e\u8fd0\u8425\u589e\u957f\uff0c\u7cfb\u7edf\u5b66\u4e60\u628a\u60f3\u6cd5\u53d8\u6210\u4ea7\u54c1\u7684\u65b9\u6cd5\u3002",
+        "inLanguage": "zh-CN",
+        "isPartOf": {
+          "@id": "https://seo.example.invalid/#website"
+        }
+      }
+    },
+    {
+      "@type": "Person",
+      "@types": [
+        "Person"
+      ],
+      "@id": "https://seo.example.invalid/#instructor-cody",
+      "@context": "https://schema.org",
+      "status": "active",
+      "note": "",
+      "has_context": true,
+      "has_type": true,
+      "from_graph": true,
+      "raw": {
+        "@type": "Person",
+        "@id": "https://seo.example.invalid/#instructor-cody",
+        "name": "Cody\u8001\u5e08",
+        "description": "OneShowAiLab \u521b\u59cb\u4eba\uff0c10 \u5e74\u4ee5\u4e0a AI \u7b97\u6cd5\u884c\u4e1a\u7ecf\u9a8c\uff0c\u5927\u6a21\u578b\u7b97\u6cd5\u4e13\u5bb6\u3002"
+      }
+    }
+  ],
+  "open_graph": {
+    "og:type": "website",
+    "og:locale": "zh_CN",
+    "og:site_name": "OneShowLearn",
+    "og:title": "OneShowLearn\uff5cAI \u4ea7\u54c1\u5b9e\u6218\u5b66\u4e60\u4e0e AI OPC \u8bfe\u7a0b",
+    "og:description": "OneShowLearn \u7531 OneShowAiLab \u51fa\u54c1\uff0c\u56f4\u7ed5\u4ea7\u54c1\u673a\u4f1a\u3001AI \u5f00\u53d1\u3001\u4e0a\u7ebf\u3001\u5546\u4e1a\u5316\u4e0e\u8fd0\u8425\u589e\u957f\uff0c\u7cfb\u7edf\u5b66\u4e60\u628a\u60f3\u6cd5\u53d8\u6210\u4ea7\u54c1\u7684\u65b9\u6cd5\u3002",
+    "og:url": "https://seo.example.invalid/",
+    "og:image": "https://seo.example.invalid/assets/oneshowlearn-hero-optimized-BmBhwVN1.webp"
+  },
+  "twitter_card": {
+    "twitter:card": "summary",
+    "twitter:title": "OneShowLearn\uff5cAI \u4ea7\u54c1\u5b9e\u6218\u5b66\u4e60\u4e0e AI OPC \u8bfe\u7a0b",
+    "twitter:description": "OneShowLearn \u7531 OneShowAiLab \u51fa\u54c1\uff0c\u56f4\u7ed5\u4ea7\u54c1\u673a\u4f1a\u3001AI \u5f00\u53d1\u3001\u4e0a\u7ebf\u3001\u5546\u4e1a\u5316\u4e0e\u8fd0\u8425\u589e\u957f\uff0c\u7cfb\u7edf\u5b66\u4e60\u628a\u60f3\u6cd5\u53d8\u6210\u4ea7\u54c1\u7684\u65b9\u6cd5\u3002",
+    "twitter:image": "https://seo.example.invalid/assets/oneshowlearn-hero-optimized-BmBhwVN1.webp"
+  },
+  "word_count": 331,
+  "hreflang": []
+}

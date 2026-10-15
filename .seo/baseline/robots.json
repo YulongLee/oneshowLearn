@@ -1,0 +1,27 @@
+/Users/liyulong/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+{
+  "url": "https://oneshowlearn.com/robots.txt",
+  "status": 200,
+  "user_agents": {},
+  "sitemaps": [],
+  "crawl_delays": {},
+  "ai_crawler_status": {
+    "GPTBot": "not managed (allowed by default)",
+    "ChatGPT-User": "not managed (allowed by default)",
+    "ClaudeBot": "not managed (allowed by default)",
+    "PerplexityBot": "not managed (allowed by default)",
+    "Google-Extended": "not managed (allowed by default)",
+    "Applebot-Extended": "not managed (allowed by default)",
+    "Bytespider": "not managed (allowed by default)",
+    "CCBot": "not managed (allowed by default)",
+    "anthropic-ai": "not managed (allowed by default)",
+    "FacebookBot": "not managed (allowed by default)",
+    "Amazonbot": "not managed (allowed by default)"
+  },
+  "issues": [
+    "\u26a0\ufe0f 11 AI crawlers not explicitly managed: GPTBot, ChatGPT-User, ClaudeBot, PerplexityBot, Google-Extended",
+    "\u26a0\ufe0f No Sitemap directive found in robots.txt"
+  ],
+  "error": null
+}

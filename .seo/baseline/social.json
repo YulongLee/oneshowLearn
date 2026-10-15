@@ -1,0 +1,39 @@
+/Users/liyulong/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+{
+  "url": "https://oneshowlearn.com/",
+  "score": 0,
+  "og_tags": {},
+  "twitter_tags": {},
+  "og_present": [],
+  "og_missing": [
+    "og:title",
+    "og:description",
+    "og:image",
+    "og:url",
+    "og:type"
+  ],
+  "twitter_present": [],
+  "twitter_missing": [
+    "twitter:card"
+  ],
+  "issues": [
+    "\ud83d\udd34 Missing required: og:title",
+    "\ud83d\udd34 Missing required: og:description",
+    "\ud83d\udd34 Missing required: og:image",
+    "\ud83d\udd34 Missing required: og:url",
+    "\ud83d\udd34 Missing required: og:type",
+    "\u26a0\ufe0f Missing: twitter:card"
+  ],
+  "recommendations": [
+    "Add Open Graph tags for rich social media previews on Facebook, LinkedIn, etc.",
+    "Add Twitter Card tags for rich previews on X (Twitter)"
+  ],
+  "preview": {
+    "title": "OneShowLearn \u00e2\u0080\u0094 AI \u00e5\u00ba\u0094\u00e7\u0094\u00a8\u00e5\u00ad\u00a6\u00e4\u00b9\u00a0\u00e5\u00b9\u00b3\u00e5\u008f\u00b0",
+    "description": null,
+    "image": null,
+    "site_name": ""
+  },
+  "error": null
+}

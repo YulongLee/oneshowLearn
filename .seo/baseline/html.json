@@ -1,0 +1,40 @@
+/Users/liyulong/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+{
+  "title": "OneShowLearn \u00e2\u0080\u0094 AI \u00e5\u00ba\u0094\u00e7\u0094\u00a8\u00e5\u00ad\u00a6\u00e4\u00b9\u00a0\u00e5\u00b9\u00b3\u00e5\u008f\u00b0",
+  "meta_description": "OneShowLearn \u00e2\u0080\u0094 \u00e5\u00ad\u00a6 AI\u00e3\u0080\u0081\u00e7\u0094\u00a8 AI\u00e3\u0080\u0081\u00e6\u009e\u0084\u00e5\u00bb\u00ba\u00e5\u00b9\u00b6\u00e5\u008f\u0091\u00e5\u00b8\u0083 AI \u00e4\u00ba\u00a7\u00e5\u0093\u0081\u00e3\u0080\u0082",
+  "meta_robots": null,
+  "x_robots_tag": null,
+  "canonical": null,
+  "lang": "zh-CN",
+  "charset": "UTF-8",
+  "viewport": "width=device-width, initial-scale=1.0",
+  "favicon": "https://oneshowlearn.com/assets/oneshowlearn-symbol-CZh74vAm.svg",
+  "h1": [],
+  "h2": [],
+  "h3": [],
+  "h4": [],
+  "h5": [],
+  "h6": [],
+  "images": [],
+  "links": {
+    "internal": [],
+    "external": []
+  },
+  "pagination": {
+    "prev": null,
+    "next": null
+  },
+  "resource_hints": {
+    "preload": [],
+    "preconnect": [],
+    "dns-prefetch": [],
+    "prefetch": [],
+    "prerender": []
+  },
+  "schema": [],
+  "open_graph": {},
+  "twitter_card": {},
+  "word_count": 8,
+  "hreflang": []
+}

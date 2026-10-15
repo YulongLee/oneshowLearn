@@ -44,7 +44,7 @@ for(const [i,title] of ['[演示] AI 面试助手','[演示] AI 工具聚合站'
 run('INSERT INTO project_runs(user_id,project_id) VALUES(?,?)',[returning.id,projects[1]]);
 const date=new Date().toISOString();
 run('INSERT INTO workspace_state(user_id,state_json) VALUES(?,?)',[returning.id,JSON.stringify({tasks:[],notes:[],favorites:[],checkIns:[],achievements:[{id:'personal-product',title:'我的隔离记账产品',description:'私人产品进展，不属于其他账号。',type:'product',stage:'building',url:'',tags:[],createdAt:date,updatedAt:date}]})]);
-const app=createApp(),client=path.resolve('dist/client');app.use(express.static(client));app.get('/{*route}',(_q,res)=>res.sendFile(path.join(client,'index.html')));
+const app=createApp({publicDocuments:false}),client=path.resolve('dist/client');app.use(express.static(client));app.get('/{*route}',(_q,res)=>res.sendFile(path.join(client,'index.html')));
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
 const base=`http://127.0.0.1:${server.address().port}`,browser=await chromium.launch({headless:true});
 const errors=[],requests=[];let checks=0;

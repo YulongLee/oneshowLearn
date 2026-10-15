@@ -47,7 +47,7 @@ const adapter={provider:'isolated-fake',model:'isolated-model',webSearch:false,g
  return '请提供完整报错和复现步骤，这是通用建议。';
 }};
 courseAIService.configure(adapter);
-const app=createApp(),client=path.resolve('dist/client');app.use(express.static(client));app.get('/{*route}',(_q,res)=>res.sendFile(path.join(client,'index.html')));
+const app=createApp({publicDocuments:false}),client=path.resolve('dist/client');app.use(express.static(client));app.get('/{*route}',(_q,res)=>res.sendFile(path.join(client,'index.html')));
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
 const base=`http://127.0.0.1:${server.address().port}`,browser=await chromium.launch({headless:true});
 const check=(ok,label)=>{assert.ok(ok,label);checks++;};

@@ -42,10 +42,10 @@ test('homepage discount never invents promotions for absent, free, non-discounte
 test('homepage default hero has one action while authored CMS secondary actions and real previews remain available',()=>{
   const source=readFileSync(new URL('../src/PublicHomepage.jsx',import.meta.url),'utf8');
   const hero=source.slice(source.indexOf('<div className="sales-hero-buttons">'),source.indexOf('<div className="sales-hero-promises"'));
-  assert.match(hero,/!bundledPreview&&<button/);
-  assert.match(hero,/onClick=\{\(\)=>go\(site\.secondaryPath\)\}/);
-  assert.match(source,/className="sales-bottom-preview" onClick=\{\(\)=>go\(bundledPreview\?previewPath:site\.secondaryPath\)\}/);
-  assert.match(source,/onPreview=\{\(\)=>go\(bundledPreview\?previewPath:site\.secondaryPath\)\}/);
+  assert.match(hero,/!bundledPreview&&<SeoLink/);
+  assert.match(hero,/href=\{site\.secondaryPath\} navigate=\{go\}/);
+  assert.match(source,/className="sales-bottom-preview" href=\{bundledPreview\?previewPath:site\.secondaryPath\} navigate=\{go\}/);
+  assert.match(source,/onPreview=\{go\} previewPath=\{bundledPreview\?previewPath:site\.secondaryPath\}/);
   assert.match(source,/heroPurchaseLabel=.*立即开始学习/);
 });
 test('homepage promotion and inclusion FAQ derive from the live offer without frozen price or artificial urgency',()=>{
@@ -102,7 +102,7 @@ test('platform capability scene backgrounds stay local, bounded and decorative',
   assert.match(component,/alt=""/);assert.match(component,/aria-hidden="true"/);
   assert.match(component,/loading="lazy"/);assert.match(component,/decoding="async"/);
   assert.match(component,/width="1536" height="1024"/);
-  assert.match(component,/feature\.items\.map/);assert.match(component,/navigate\(feature\.path\)/);
+  assert.match(component,/feature\.items\.map/);assert.match(component,/href=\{feature\.path\} navigate=\{navigate\}/);
   assert.match(css,/\.sales-capability-background\s*\{[^}]*position:absolute/);
   assert.match(css,/\.sales-capability-background\s*\{[^}]*object-fit:cover/);
   assert.match(css,/\.sales-capability-background\s*\{[^}]*pointer-events:none/);
@@ -114,17 +114,17 @@ test('platform capability feedback stays scoped, keyboard-accessible and motion-
   const component=source.slice(source.indexOf('function PlatformExample('),source.indexOf('function ',source.indexOf('function PlatformExample(')+1));
   assert.match(component,/<article className="sales-case-card sales-platform-case">/);
   assert.doesNotMatch(component,/<article[^>]*(?:onClick|tabIndex|role=)/);
-  assert.equal((component.match(/<button/g)||[]).length,1);
-  assert.match(component,/<button onClick=\{\(\)=>navigate\(feature\.path\)\}/);
+  assert.equal((component.match(/<SeoLink/g)||[]).length,1);
+  assert.match(component,/<SeoLink href=\{feature\.path\} navigate=\{navigate\}/);
   assert.match(css,/\.sales-platform-case\s*\{[^}]*transition:[^}]*transform\s+\.18s[^}]*box-shadow\s+\.18s[^}]*border-color\s+\.18s/);
   assert.match(css,/@media\s*\(hover:\s*hover\)\s*and\s*\(pointer:\s*fine\)\s*\{\s*\.sales-platform-case:hover\s*,\s*\.sales-platform-case:focus-within\s*\{[^}]*transform:\s*translateY\(-3px\)/);
   assert.match(css,/\.sales-platform-case:active\s*\{[^}]*transform:\s*translateY\(-1px\)/);
-  assert.match(css,/\.sales-platform-case\s+[^{}]*button:active\s*\{[^}]*transform:\s*translateY\(1px\)/);
-  assert.match(css,/\.sales-platform-case\s+[^{}]*button:focus-visible\s*\{[^}]*outline:[^}]*outline-offset:/);
+  assert.match(css,/\.sales-platform-case\s+[^{}]*a:active\s*\{[^}]*transform:\s*translateY\(1px\)/);
+  assert.match(css,/\.sales-platform-case\s+[^{}]*a:focus-visible\s*\{[^}]*outline:[^}]*outline-offset:/);
   assert.doesNotMatch(css,/\.sales-platform-case\s*\{[^}]*cursor:\s*pointer/);
   assert.doesNotMatch(css,/\.sales-case-card:(?:hover|focus-within|active)\s*\{/);
   const reduced=css.slice(css.indexOf('@media(prefers-reduced-motion:reduce)'));
-  assert.match(reduced,/\.sales-platform-case\s*,\s*\.sales-platform-case\s+[^{}]*button\s*\{[^}]*transform:\s*none\s*!important/);
+  assert.match(reduced,/\.sales-platform-case\s*,\s*\.sales-platform-case\s+[^{}]*a\s*\{[^}]*transform:\s*none\s*!important/);
   assert.match(reduced,/transition:\s*none\s*!important/);
 });
 test('audience stages add only bounded decorative backgrounds with a white failure fallback',()=>{
@@ -198,7 +198,7 @@ test('five-phase roadmap adds bounded decorative scenes without changing the lea
   assert.match(roadmap,/<li className=\{`sales-phase \$\{tone\}`\} key=\{title\}><div className="sales-phase-card"><PhaseBackground src=\{background\}\/>/);
   assert.match(roadmap,/<h3>\{title\}<\/h3><ul>\{items\.map/);
   assert.match(roadmap,/<\/ul><\/div>\{i<4&&<ArrowRight className="sales-phase-arrow"[^>]*aria-hidden="true"/);
-  assert.match(roadmap,/onClick=\{\(\)=>go\('\/paths'\)\}/);
+  assert.match(roadmap,/<SeoLink href="\/paths" navigate=\{go\}/);
   assert.doesNotMatch(roadmap,/<(?:li|div)[^>]*(?:onClick|tabIndex|role=)/,'stage content is not turned into new interaction');
   const phases=source.slice(source.indexOf('const phases=['),source.indexOf('const POLICE_RECORD_NUMBER='));
   for(const preserved of ['产品与机会','AI 产品开发','上线与合规','收款与商业化','运营与增长','发现市场机会','用户需求分析','产品定位与规划','用 Codex 高效开发','产品架构设计','快速构建 MVP','域名与服务器','备案与数据合规','发布上线流程','微信 / 支付宝接入','海外支付方案','定价策略与商业模式','SEO / GEO 优化','内容与社群推广','数据分析与迭代'])assert.ok(phases.includes(preserved),'roadmap copy retained: '+preserved);
@@ -218,7 +218,7 @@ test('five-phase roadmap adds bounded decorative scenes without changing the lea
 test('homepage preserves backend configuration and has no fabricated testimonials or totals',()=>{
   const source=readFileSync(new URL('../src/PublicHomepage.jsx',import.meta.url),'utf8');
   assert.match(source,/sharedRead\('\/commerce\/offer',\{force:true\}\)/);
-  assert.match(source,/useSitePage\('public',configuration\)/);
+  assert.match(source,/useSitePage\('public',configuration,initialData\?\.site\)/);
   assert.match(source,/id="roadmap"/);assert.match(source,/id="hot-courses"/);
   assert.doesNotMatch(source,/10,000|10000|学员真实反馈|STUDENT VOICES|免费试听前2节/);
 });
@@ -307,7 +307,8 @@ test('instructor section leads with learner value and exact scoped preview inste
   const src=readFileSync(new URL('../src/PublicHomepage.jsx',import.meta.url),'utf8');
   const css=readFileSync(new URL('../src/homepage.css',import.meta.url),'utf8');
   assert.match(src,/不只学 AI 工具/);assert.match(src,/sales-instructor-method/);
-  assert.match(src,/onPreview=\{\(\)=>go\(bundledPreview\?previewPath:site.secondaryPath\)\}/);
+  assert.match(src,/onPreview=\{go\} previewPath=\{bundledPreview\?previewPath:site\.secondaryPath\}/);
+  assert.match(src,/className="sales-instructor-preview" href=\{previewPath\} navigate=\{onPreview\}/);
   assert.match(src,/背景经 AI 合成/);assert.doesNotMatch(src,/sales-instructor-experience|不止学会一个工具/);
   assert.match(css,/\.sales-instructor-photo img[^}]*object-fit:cover/);
   assert.match(css,/\.sales-instructor-copy h2[^}]*clamp/);

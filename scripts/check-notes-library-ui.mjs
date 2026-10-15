@@ -37,7 +37,7 @@ const ids=new Map(personal.map(n=>[n.id,crypto.randomUUID()]));
 for(const n of personal){n.id=ids.get(n.id);n.updatedAt=(n.updatedAt||'2026-10-03')+'T00:00:00Z';if(n.createdAt)n.createdAt+='T00:00:00Z';if(n.deletedAt)n.deletedAt+='T00:00:00Z';}
 const state=notes=>({tasks:[],notes,favorites:[],checkIns:[]});
  run('INSERT INTO workspace_state(user_id,state_json) VALUES(?,?)',[owner.id,JSON.stringify(state(personal))]);run('INSERT INTO workspace_state(user_id,state_json) VALUES(?,?)',[other.id,JSON.stringify(state([{id:crypto.randomUUID(),title:'另一账号的个人记录',body:'仅其他账号可见',tags:[],updatedAt:'2026-10-04T00:00:00Z'}]))]);
-const app=createApp(),client=path.resolve('dist/client');app.use(express.static(client));app.get('/{*route}',(_q,res)=>res.sendFile(path.join(client,'index.html')));
+const app=createApp({publicDocuments:false}),client=path.resolve('dist/client');app.use(express.static(client));app.get('/{*route}',(_q,res)=>res.sendFile(path.join(client,'index.html')));
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base=`http://127.0.0.1:${server.address().port}`;
 const browser=await chromium.launch({headless:true}),errors=[],external=[],writes=[];let checks=0;
 const check=(ok,label)=>{assert.ok(ok,label);checks++;};const output=path.resolve('artifacts/notes-library');mkdirSync(output,{recursive:true});

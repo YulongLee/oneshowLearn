@@ -1,0 +1,117 @@
+{
+  "findings": [
+    {
+      "id": "SEO-02",
+      "area": "crawler-files",
+      "severity": "Critical",
+      "confidence": "Confirmed",
+      "finding": "robots.txt and sitemap.xml return the ordinary SPA HTML document instead of crawler-file content",
+      "evidence": "live GET returns 200 text/html with the same empty root; robots.json has no Sitemap directive",
+      "impact": "Invalid sitemap and no reliable crawler navigation",
+      "fix": "Read-only typed robots/XML sitemap endpoints from real published course URLs",
+      "sources": []
+    },
+    {
+      "id": "SEO-01",
+      "area": "rendering",
+      "severity": "Warning",
+      "confidence": "Confirmed",
+      "finding": "Public homepage response contains an empty root and no readable main content before JavaScript rendering",
+      "evidence": "homepage-live.html: 625 bytes; html.json h1/body/internal links absent",
+      "impact": "Search extraction depends on deferred JS rendering; non-JS readers lack the actual public information",
+      "fix": "Same-component anonymous SSR for actual public homepage and course pages",
+      "sources": []
+    },
+    {
+      "id": "SEO-03",
+      "area": "http-status",
+      "severity": "Warning",
+      "confidence": "Confirmed",
+      "finding": "Nonexistent ordinary page returns 200 identical homepage shell",
+      "evidence": "technical agent live unknown route + Nginx try_files fallback + Sites worker unrestricted fallback",
+      "impact": "Soft-404 risk and unnecessary duplicate URL discovery",
+      "fix": "Explicit known-route/status model, actual unknown 404, DB failure 503, exclude API/assets/uploads",
+      "sources": []
+    },
+    {
+      "id": "SEO-04",
+      "area": "metadata",
+      "severity": "Warning",
+      "confidence": "Confirmed",
+      "finding": "No per-route canonical, social preview or real entity JSON-LD exists in raw pages",
+      "evidence": "index.html raw head + social.json and html.json",
+      "impact": "Ambiguous canonical page/entity/preview information",
+      "fix": "Shared server/client metadata with exact valid course dimensions and actual current price",
+      "sources": []
+    },
+    {
+      "id": "SEO-05",
+      "area": "internal-links",
+      "severity": "Warning",
+      "confidence": "Confirmed",
+      "finding": "Public cross-page navigation and preview destinations are button-only JavaScript handlers",
+      "evidence": "PublicHomepage.jsx/CourseOffer.jsx navigation onClick; links.json zero discoverable links",
+      "impact": "Destinations not independently crawlable or available without JS",
+      "fix": "Native a href with existing draft-aware SPA navigation and keyboard/modifier semantics",
+      "sources": []
+    },
+    {
+      "id": "SEO-06",
+      "area": "privacy-boundary",
+      "severity": "Warning",
+      "confidence": "Confirmed",
+      "finding": "Account/workspace/private-record routes inherit public homepage metadata without noindex",
+      "evidence": "all old routes use identical index.html; no robots header/meta",
+      "impact": "Private-route shell duplicates can be indexed; authentication still protects actual records",
+      "fix": "Explicit noindex shell and remove public schema on SPA private navigation; never export authorized materials",
+      "sources": []
+    },
+    {
+      "id": "GEO-01",
+      "area": "entity-content",
+      "severity": "Warning",
+      "confidence": "Confirmed",
+      "finding": "Public publisher naming varies between OneShowAILab and owner-approved OneShowAiLab, and AI OPC lacks a self-contained plain-text definition",
+      "evidence": "homepage-model.js instructor identity + PublicHomepage.jsx caption and FAQ",
+      "impact": "Weaker entity consistency and standalone extraction",
+      "fix": "Owner-approved consistent brand/instructor identity and a concise existing visible FAQ definition",
+      "sources": []
+    },
+    {
+      "id": "SEO-09",
+      "area": "measurement",
+      "severity": "Info",
+      "confidence": "Confirmed",
+      "finding": "First-party search/traffic metrics unavailable and PageSpeed API returned 429",
+      "evidence": "provider-readiness.json presence flags; pagespeed.json performance_score:null",
+      "impact": "Cannot claim rankings, penalties, organic conversion or measured field CWV",
+      "fix": "Keep unknown/null metrics; connect owner-selected measurement later, no tracking activation in this request",
+      "sources": []
+    },
+    {
+      "id": "SEO-07",
+      "area": "performance",
+      "severity": "Pass",
+      "confidence": "Confirmed",
+      "finding": "Existing homepage assets have WebP, explicit sizing, lazy secondary artwork and strict bundle limits",
+      "evidence": "source image width/height/loading/fetchPriority + performance regressions",
+      "impact": "Keep existing visual/performance protections while adding readable public HTML",
+      "fix": "Preserve approved layout and budgets, load actual lazy course CSS in SSR",
+      "sources": []
+    },
+    {
+      "id": "SEO-08",
+      "area": "canonical-host",
+      "severity": "Pass",
+      "confidence": "Confirmed",
+      "finding": "HTTP and www already redirect to the HTTPS apex origin",
+      "evidence": "redirects.json verified two 301 chains",
+      "impact": "No host duplication repair needed",
+      "fix": "Retain original TLS/domain redirect setup",
+      "sources": []
+    }
+  ],
+  "dropped": [],
+  "raw_count": 10,
+  "verified_count": 10
+}

@@ -24,7 +24,7 @@ const state={tasks:[],notes:[],favorites:[],checkIns:[],achievements:[]};
 run('INSERT INTO workspace_state(user_id,state_json) VALUES(?,?)',[owner.id,JSON.stringify(state)]);
 const privateBefore=JSON.stringify(row('SELECT * FROM workspace_state WHERE user_id=?',[owner.id]));
 const {profileFor}=await import('../server/account-profile.mjs');
-const app=createApp(),client=path.resolve('dist/client');app.use(express.static(client));app.get('/{*route}',(_q,res)=>res.sendFile(path.join(client,'index.html')));
+const app=createApp({publicDocuments:false}),client=path.resolve('dist/client');app.use(express.static(client));app.get('/{*route}',(_q,res)=>res.sendFile(path.join(client,'index.html')));
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base='http://127.0.0.1:'+server.address().port;
 const browser=await chromium.launch({headless:true}),errors=[],writes=[],external=[];let checks=0;
 const check=(ok,label)=>{assert.ok(ok,label);checks++;},out=path.resolve('artifacts/account-refinement');mkdirSync(out,{recursive:true});

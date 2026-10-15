@@ -1,0 +1,31 @@
+/Users/liyulong/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+{
+  "url": "https://oneshowlearn.com/llms.txt",
+  "full_url": "https://oneshowlearn.com/llms-full.txt",
+  "exists": true,
+  "full_exists": true,
+  "status": 200,
+  "full_status": 200,
+  "parsed": {
+    "title": null,
+    "description": null,
+    "sections": [],
+    "links": []
+  },
+  "quality": {
+    "score": 5,
+    "issues": [
+      "\u26a0\ufe0f First line should be a title (# Site Name)",
+      "\u26a0\ufe0f Missing title",
+      "\u26a0\ufe0f Missing description (> blockquote)",
+      "\u26a0\ufe0f No links found"
+    ],
+    "suggestions": [
+      "Add a description: > Brief site description",
+      "Add sections (## Section Name) to organize content",
+      "Add key page links: - [Page Title](URL): Description"
+    ]
+  },
+  "error": null
+}

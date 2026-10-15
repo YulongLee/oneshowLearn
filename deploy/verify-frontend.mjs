@@ -5,6 +5,7 @@ import {createHash} from 'node:crypto';
 import path from 'node:path';
 
 const root = path.resolve(process.argv[2]);
+if(readFileSync(path.join(root,'index.html'),'utf8').includes('name="document-rendering" content="public-ssr-v1"'))throw Error('Use route-specific public document acceptance for an SSR release, not identical entry hashes');
 const base = 'https://oneshowlearn.com';
 const hash = data => createHash('sha256').update(data).digest('hex');
 const request = route => fetch(base + route, {signal:AbortSignal.timeout(20000)});

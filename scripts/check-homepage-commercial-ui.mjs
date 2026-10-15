@@ -36,7 +36,7 @@ for(const [i,p] of [
  const id=add('INSERT INTO practice_projects(slug,title,description,category,cover_url,status,sort_order) VALUES(?,?,?,?,?,?,?)',[p.slug,p.title,p.description,p.category,p.cover,i===3?'draft':'published',i]);
  run('INSERT INTO practice_project_courses(project_id,pack_id) VALUES(?,?)',[id,pack]);
 }
-const app=createApp(),client=path.resolve('dist/client');
+const app=createApp({publicDocuments:false}),client=path.resolve('dist/client');
 app.use('/assets',express.static(path.resolve('public/assets')));
 app.use(express.static(client));app.get('/{*route}',(_q,res)=>res.sendFile(path.join(client,'index.html')));
 const preview=process.argv.includes('--serve'),server=app.listen(preview?4186:0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
@@ -76,14 +76,14 @@ if(preview){
   check((await delivery.innerText()).includes('40 节使用演示素材'),'actual outstanding delivery shown in purchase FAQ');await delivery.locator('summary').click();
   check(!(await p.locator('.sales-page').innerText()).includes('PRIVATE_PROJECT_BODY'),'draft project never appears');
   check(await p.locator('.sales-price-slot strong').innerText()==='¥499','authoritative price');
-  check(await p.locator('.sales-hero-buttons button').count()===1,'default hero has one clear learning action');
+  check(await p.locator('.sales-hero-buttons a').count()===1,'default hero has one clear learning action');
   check(await p.locator('.sales-bottom-preview').innerText().then(s=>s.includes('免费试看前 2 节')),'retained preview count from actual metadata');
-  await p.locator('.sales-links').getByRole('button',{name:'AI 导师',exact:true}).click();
+  await p.locator('.sales-links').getByRole('link',{name:'AI 导师',exact:true}).click();
   check(await p.evaluate(()=>document.activeElement.id==='home-tutor'),'anchor transfers keyboard focus to tutor section');
   const faq=p.locator('.sales-faq details').first();await faq.locator('summary').focus();await p.keyboard.press('Enter');
   check(await faq.getAttribute('open')!==null,'native FAQ opens with Enter');await p.keyboard.press('Enter');check(await faq.getAttribute('open')===null,'native FAQ closes with Enter');
-  const search=p.getByLabel('搜索课程',{exact:true});await search.fill('AI OPC');await p.locator('.sales-search-results>button').first().waitFor();
-  check(await p.locator('.sales-search-results>button').count()===1,'search reads published course catalogue');
+  const search=p.getByLabel('搜索课程',{exact:true});await search.fill('AI OPC');await p.locator('.sales-search-results>a').first().waitFor();
+  check(await p.locator('.sales-search-results>a').count()===1,'search reads published course catalogue');
   await p.keyboard.press('Escape');check(await p.locator('.sales-search-results').count()===0,'Escape closes search');
   await search.fill('');await p.keyboard.press('Escape');
   for(const width of [320,390,600,768,1000,1024,1180,1280,1440,1920,2560]){
@@ -96,7 +96,7 @@ if(preview){
    check(await p.locator('.sales-hero-rail strong').evaluateAll(els=>els.length===4&&els.every(e=>e.scrollWidth<=e.clientWidth+1)),'all four capability labels fit '+width);
    check(await p.evaluate(()=>document.querySelector('.sales-hero-rail').getBoundingClientRect().bottom+7<=document.querySelector('.sales-audience').getBoundingClientRect().top),'capability rail clears following section '+width);
    check(await p.locator('.sales-hero-callouts').evaluate(e=>{if(!e.getClientRects().length)return true;const growth=e.querySelector('.sales-hero-growth').getBoundingClientRect(),note=e.querySelector('.sales-hero-note').getBoundingClientRect(),title=document.querySelector('h1').getBoundingClientRect();return note.top-growth.bottom>=20&&Math.min(growth.left,note.left)>title.right;}),'helper cards stay separated from title and each other '+width);
-   check(await p.locator('.sales-hero-buttons button').evaluateAll(els=>els.every(e=>e.getBoundingClientRect().height>=44)),'touch targets '+width);
+   check(await p.locator('.sales-hero-buttons a').evaluateAll(els=>els.every(e=>e.getBoundingClientRect().height>=44)),'touch targets '+width);
    check(await p.locator('.sales-instructor-copy').evaluate(e=>e.scrollWidth<=e.clientWidth+1),'instructor value and biography fit '+width);
    check(await p.locator('.sales-instructor-photo').evaluate(e=>e.getBoundingClientRect().height>=280),'portrait reserves stable space '+width);
    if([390,1440].includes(width)){await p.locator('.sales-instructor-profile').scrollIntoViewIfNeeded();await p.locator('.sales-instructor-photo img').evaluate(e=>e.decode());await p.locator('.sales-instructor-profile').screenshot({path:path.join(out,'instructor-v2-'+width+'.png')});}
@@ -104,20 +104,20 @@ if(preview){
    if([390,1180,1440,2560].includes(width)){await p.evaluate(()=>scrollTo(0,0));await p.locator('.sales-hero-image').evaluate(e=>e.decode());const rail=await p.locator('.sales-hero-rail').boundingBox();await p.screenshot({path:path.join(out,'hero-first-'+width+'.png'),clip:{x:0,y:0,width,height:Math.min(1000,Math.ceil(rail.y+rail.height+24))}});}
   }
   await p.setViewportSize({width:390,height:800});await p.getByRole('button',{name:'打开导航'}).click();check(await p.locator('.sales-links').isVisible(),'mobile navigation opens');
-  await p.locator('.sales-links').getByRole('button',{name:'课程体系',exact:true}).click();check(!await p.locator('.sales-links').isVisible(),'mobile anchor closes drawer');
+  await p.locator('.sales-links').getByRole('link',{name:'课程体系',exact:true}).click();check(!await p.locator('.sales-links').isVisible(),'mobile anchor closes drawer');
   await p.setViewportSize({width:1440,height:1000});await p.locator('.sales-bottom-preview').click();await p.waitForURL(base+'/learn/'+curriculum.slug+'/lessons/'+placements[0]);
   check(true,'preview opens exact actual lesson without selecting an unrelated course');
-  await p.goto(base+'/');await ready();await p.locator('.sales-hero-buttons button').first().click();await p.waitForURL(base+'/membership');check(true,'purchase opens existing shared sales flow');
+  await p.goto(base+'/');await ready();await p.locator('.sales-hero-buttons a').first().click();await p.waitForURL(base+'/membership');check(true,'purchase opens existing shared sales flow');
   await p.goto(base+'/');await ready();await p.locator('.sales-instructor-preview').click();await p.waitForURL(base+'/learn/'+curriculum.slug+'/lessons/'+placements[0]);check(true,'instructor preview opens exact authorized lesson');
-  await p.goto(base+'/');await ready();await p.locator('.sales-case-copy').getByRole('button',{name:'查看项目详情'}).first().click();await p.waitForURL(base+'/projects/homepage-interview');check(true,'project opens read-only details');check(row('SELECT COUNT(*) n FROM project_runs').n===0,'project details never create runs');
-  await p.goto(base+'/');await ready();await p.locator('.sales-tutor-guide').getByRole('button',{name:'进入 AI 导师'}).click();await p.waitForURL(base+'/tutor');check(true,'AI entry opens tutor without sending a question');
+  await p.goto(base+'/');await ready();await p.locator('.sales-case-copy').getByRole('link',{name:'查看项目详情'}).first().click();await p.waitForURL(base+'/projects/homepage-interview');check(true,'project opens read-only details');check(row('SELECT COUNT(*) n FROM project_runs').n===0,'project details never create runs');
+  await p.goto(base+'/');await ready();await p.locator('.sales-tutor-guide').getByRole('link',{name:'进入 AI 导师'}).click();await p.waitForURL(base+'/tutor');check(true,'AI entry opens tutor without sending a question');
   await c.route('**/api/commerce/offer',r=>r.fulfill({status:503,json:{error:'隔离价格读取失败'}}));await p.goto(base+'/');await p.getByText('课程或价格信息暂未完整读取。',{exact:false}).waitFor();
   check(!(await p.locator('.sales-price-slot strong').innerText()).includes('499'),'failed price never fabricated from marketing copy');
   check(!(await p.locator('.sales-bottom-preview').innerText()).includes('前 2'),'unknown offer does not claim a preview scope');
   await c.unroute('**/api/commerce/offer');await p.getByRole('button',{name:'重新读取',exact:true}).click();await ready();check(await p.locator('.sales-price-slot strong').innerText()==='¥499','metadata retry restores server price and course');
   await c.route('**/api/site/pages/public',async r=>{const response=await r.fetch();const d=await response.json();return r.fulfill({json:{...d,title:'自定义首页标题',description:'作者维护的介绍',ctaLabel:'作者入口',ctaPath:'/resources',secondaryLabel:'作者次入口',secondaryPath:'/community',footerTitle:'作者结尾标题',footerDescription:'作者结尾介绍',projects:[]}});});
   await p.goto(base+'/');await p.getByRole('heading',{name:'自定义首页标题',exact:true}).waitFor();check((await p.locator('.sales-lead').innerText())==='作者维护的介绍','custom authored CMS copy retained');
-  check(await p.locator('.sales-hero-buttons button').last().innerText().then(s=>s.includes('作者次入口')),'custom secondary label retained');
+  check(await p.locator('.sales-hero-buttons a').last().innerText().then(s=>s.includes('作者次入口')),'custom secondary label retained');
   check(await p.locator('.sales-start').innerText().then(s=>s.includes('作者入口')),'custom navigation purchase label retained');
   check(await p.locator('.sales-price-card .sales-button').innerText().then(s=>s.includes('作者入口')),'custom final CTA label retained');
   check(await p.locator('.sales-platform-case').count()===3,'empty formal catalogue presents only actual platform capabilities');
@@ -149,13 +149,13 @@ if(preview){
   await p.waitForFunction(()=>[...document.querySelectorAll('.sales-capability-background')].every(e=>e.complete&&e.naturalWidth===0));
   check(JSON.stringify(await sceneCardSize())===JSON.stringify(withScenes),'failed background images retain exact card dimensions');
   check(await art.locator(':scope>strong').evaluateAll(els=>els.length===3&&els.every(e=>{const s=getComputedStyle(e);return e.getClientRects().length&&s.filter==='none'&&s.visibility==='visible'&&s.opacity==='1';})),'failed scenes leave all foreground titles visible and sharp');
-  check(await p.locator('.sales-platform-case .sales-case-copy button').evaluateAll(els=>els.length===3&&els.every(e=>e.getClientRects().length&&e.getBoundingClientRect().height>=44)),'failed scenes preserve three usable capability destinations');
+  check(await p.locator('.sales-platform-case .sales-case-copy a').evaluateAll(els=>els.length===3&&els.every(e=>e.getClientRects().length&&e.getBoundingClientRect().height>=44)),'failed scenes preserve three usable capability destinations');
   for(const url of sceneUrls)await c.unroute(url);
   for(const [index,destination] of ['/opc','/tutor','/achievements'].entries()){
-   await p.locator('.sales-platform-case .sales-case-copy button').nth(index).click();await p.waitForURL(base+destination);check(true,'capability scene preserves destination '+destination);
+   await p.locator('.sales-platform-case .sales-case-copy a').nth(index).click();await p.waitForURL(base+destination);check(true,'capability scene preserves destination '+destination);
    await p.goto(base+'/');await p.locator('.sales-platform-case').nth(2).waitFor();
   }
-  await p.locator('.sales-hero-buttons button').first().click();await p.waitForURL(base+'/resources');check(true,'custom CMS purchase destination retained');
+  await p.locator('.sales-hero-buttons a').first().click();await p.waitForURL(base+'/resources');check(true,'custom CMS purchase destination retained');
   await c.unroute('**/api/site/pages/public');
   await c.route('**/api/learning/entry',r=>r.fulfill({status:503,json:{error:'隔离目录读取失败'}}));await p.goto(base+'/');
   await p.getByText('课程或价格信息暂未完整读取。',{exact:false}).waitFor();

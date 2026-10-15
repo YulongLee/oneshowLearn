@@ -4,6 +4,7 @@
 !package-lock.json
 !index.html
 !vite.config.mjs
+!vite.public.config.mjs
 !Dockerfile
 !.dockerignore
 !src/
@@ -14,6 +15,7 @@
 !scripts/prepare-sites-build.mjs
 !scripts/prepare-opc-curriculum.mjs
 !scripts/check-operations.mjs
+!scripts/check-public-seo-ui.mjs
 !worker/
 !worker/index.js
 !.openai/
@@ -29,6 +31,8 @@
 !deploy/check-commercial-refinement.mjs
 !deploy/package-commercial-refinement.mjs
 !deploy/update-commercial-refinement.sh
+!deploy/check-public-seo-release.mjs
+!deploy/update-public-seo.sh
 !deploy/nginx-oneshowlearn.conf
 !deploy/nginx-oneshowlearn-https.conf
 !deploy/nginx-oneshowlearn-app.conf

@@ -35,8 +35,12 @@ try {
  ops('deploy','--directory',a,'--api',api,'--web',web,'--bootstrap');
  console.log('Isolated empty installation started');
  let response=await http(a,'/api/ready');check(response.ok,'database readiness');check(response.headers.get('cache-control')==='no-store','readiness never cached');check((await response.json()).service==='oneshowlearn-api','correct application');
- response=await http(a,'/');check(response.ok&&(await response.text()).includes('id="root"'),'compiled homepage served');
- for(const route of ['/app','/courses','/notes','/account','/tutor']){response=await http(a,route);check(response.ok&&(await response.text()).includes('id="root"'),'SPA entry '+route);}
+ response=await http(a,'/');const publicHtml=await response.text();check(response.ok&&publicHtml.includes('id="root"'),'compiled homepage served');
+ check(publicHtml.includes('<h1')&&publicHtml.includes('public-bootstrap')&&publicHtml.includes('application/ld+json'),'actual Nginx serves same-component public SSR, not the static empty shell');
+ check(response.headers.get('x-robots-tag')?.startsWith('index, follow'),'public document index policy crosses the real proxy');
+ for(const route of ['/app','/courses','/notes','/account','/tutor']){response=await http(a,route);check(response.ok&&(await response.text()).includes('id="root"'),'SPA entry '+route);check(response.headers.get('x-robots-tag')?.includes('noindex'),'private document indexing boundary '+route);}
+ for(const [route,mime] of [['/robots.txt','text/plain'],['/sitemap.xml','application/xml'],['/llms.txt','text/plain']]){response=await http(a,route);const body=await response.text();check(response.ok&&response.headers.get('content-type')?.includes(mime)&&!body.includes('id="root"'),'real proxy typed crawler file '+route);}
+ for(const route of ['/portable-unknown-seo','/index.html','/course-offer?course=missing-public-course','/assets/absent-public.js','/api/public-missing']){response=await http(a,route);check(response.status===404,'real proxy missing route '+route);}
  for(const route of ['/api/auth/me','/api/me/workspace','/api/admin/orders']){response=await http(a,route);check([401,403].includes(response.status),'anonymous private gate '+route);}
  const ids=compose(a,'ps','-q').trim().split(/\s+/),containers=JSON.parse(exec(['docker','inspect',...ids]));
  check(containers.every(c=>c.HostConfig.ReadonlyRootfs),'read-only code containers');

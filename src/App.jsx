@@ -916,7 +916,7 @@ function LearnerWorkspace({ route: rawRoute, navigate, notify }) {
   );
 }
 
-export function App() {
+export function App({publicBootstrap=null}) {
   const [route, navigate, navigationStatus] = useRoute();
   const [toast, setToast] = useState("");
   const notify = (text) => setToast(text);
@@ -927,9 +927,9 @@ export function App() {
   }, [toast]);
 
   let content;
-  if (route === "/") content = <PublicHomepage navigate={navigate} />;
+  if (route === "/") content = <PublicHomepage navigate={navigate} initialData={publicBootstrap?.kind==='home'?publicBootstrap:undefined} />;
   else if (/^\/legal\/(terms|privacy|purchase)\/?$/.test(route)) content = <LegalPage kind={route.split('/')[2]} navigate={navigate}/>;
-  else if (route === '/course-offer' || route === '/course-offer/') content = <CourseOfferPage navigate={navigate} notify={notify}/>;
+  else if (route === '/course-offer' || route === '/course-offer/') content = <CourseOfferPage navigate={navigate} notify={notify} initialData={publicBootstrap?.kind==='course'?publicBootstrap:undefined}/>;
   else if (
     route === "/login" ||
     route === "/register" ||

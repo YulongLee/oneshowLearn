@@ -7,6 +7,9 @@ site=/var/www/oneshowlearn/dist/client
 [[ "$staging" == /tmp/oneshowlearn-platforms-* && -d "$staging" && ! -L "$staging" ]] || exit 1
 test -f "$site/index.html"
 test -f "$staging/client/index.html"
+if grep -q 'name="document-rendering" content="public-ssr-v1"' "$staging/client/index.html"; then
+  echo 'Public SEO documents require a paired backend/render/template/proxy release; frontend-only publication refused.' >&2; exit 1
+fi
 test -d "$staging/client/assets"
 if find "$staging/client" -type l -print -quit | grep -q .; then
   echo 'Release must not contain symbolic links'; exit 1

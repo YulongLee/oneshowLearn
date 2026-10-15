@@ -1,0 +1,60 @@
+/Users/liyulong/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+[
+  {
+    "url": "http://oneshowlearn.com/",
+    "final_url": "https://oneshowlearn.com/",
+    "chain": [
+      {
+        "step": 1,
+        "url": "http://oneshowlearn.com/",
+        "status": 301,
+        "time_ms": 56,
+        "redirect_to": "https://oneshowlearn.com/",
+        "redirect_type": "permanent (301)"
+      },
+      {
+        "step": 2,
+        "url": "https://oneshowlearn.com/",
+        "status": 200,
+        "time_ms": 73,
+        "final": true
+      }
+    ],
+    "total_hops": 1,
+    "total_time_ms": 129,
+    "has_loop": false,
+    "has_mixed_protocol": true,
+    "issues": [
+      "\u26a0\ufe0f Mixed HTTP/HTTPS in redirect chain"
+    ],
+    "error": null
+  },
+  {
+    "url": "https://www.oneshowlearn.com/",
+    "final_url": "https://oneshowlearn.com/",
+    "chain": [
+      {
+        "step": 1,
+        "url": "https://www.oneshowlearn.com/",
+        "status": 301,
+        "time_ms": 63,
+        "redirect_to": "https://oneshowlearn.com/",
+        "redirect_type": "permanent (301)"
+      },
+      {
+        "step": 2,
+        "url": "https://oneshowlearn.com/",
+        "status": 200,
+        "time_ms": 73,
+        "final": true
+      }
+    ],
+    "total_hops": 1,
+    "total_time_ms": 136,
+    "has_loop": false,
+    "has_mixed_protocol": false,
+    "issues": [],
+    "error": null
+  }
+]

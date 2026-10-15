@@ -1,0 +1,93 @@
+{
+  "skills_dir": "/Users/liyulong/.codex/skills",
+  "skills": {
+    "seo": true,
+    "seo-project-setup": true,
+    "keyword-research": true,
+    "keyword-clustering": true,
+    "competitor-analysis": true,
+    "competitive-landscape": true,
+    "link-prospecting": true,
+    "search-console": true,
+    "google-analytics": true,
+    "content-strategy": true,
+    "seo-content-brief": true,
+    "content-gap-analysis": true,
+    "write-blog": true,
+    "write-landing": true,
+    "page-cro": true,
+    "ab-test-setup": true
+  },
+  "all_required_skills_installed": true,
+  "mcp_servers": [
+    "code-review",
+    "codex_app",
+    "computer-use",
+    "cowart_mcp",
+    "cua_repl",
+    "node_repl",
+    "openaiDeveloperDocs",
+    "openseo"
+  ],
+  "openseo_mcp_configured": true,
+  "openseo_data_ready": true,
+  "providers": {
+    "openseo_data": {
+      "configured": false,
+      "required_variables": [
+        "DATAFORSEO_LOGIN",
+        "DATAFORSEO_PASSWORD"
+      ],
+      "present_variables": []
+    },
+    "google_oauth": {
+      "configured": false,
+      "required_variables": [
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET"
+      ],
+      "present_variables": []
+    },
+    "search_console": {
+      "configured": false,
+      "required_variables": [
+        "GSC_ACCESS_TOKEN",
+        "GSC_SITE_URL"
+      ],
+      "present_variables": []
+    },
+    "ga4": {
+      "configured": false,
+      "required_variables": [
+        "GA_ACCESS_TOKEN",
+        "GA4_PROPERTY_ID"
+      ],
+      "present_variables": []
+    },
+    "semrush": {
+      "configured": false,
+      "required_variables": [
+        "SEMRUSH_API_KEY"
+      ],
+      "present_variables": []
+    },
+    "ahrefs": {
+      "configured": false,
+      "required_variables": [
+        "AHREFS_API_TOKEN"
+      ],
+      "present_variables": []
+    },
+    "serpapi": {
+      "configured": false,
+      "required_variables": [
+        "SERPAPI_API_KEY"
+      ],
+      "present_variables": []
+    }
+  },
+  "notes": [
+    "Credential values are never displayed.",
+    "Missing providers limit live data but do not prevent baseline audits."
+  ]
+}

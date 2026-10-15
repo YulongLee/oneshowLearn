@@ -15,7 +15,7 @@ const user=(name,role='learner')=>{const id=insert('INSERT INTO users(email,pass
 const owner=user('隔离课程学员'),other=user('隔离未购学员'),admin=user('隔离编辑','admin');
 const pathId=insert("INSERT INTO learning_paths(slug,title,status) VALUES('editorial','隔离路径','published')"),pack=insert("INSERT INTO project_packs(path_id,slug,title,status) VALUES(?,'editorial','隔离课程','published')",[pathId]);
 run("INSERT INTO entitlements(user_id,pack_id,status,starts_at) VALUES(?,?,'active','2000-01-01')",[owner.id,pack]);
-const app=createApp(),client=path.resolve('dist/client'),png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jE5kAAAAASUVORK5CYII=','base64');
+const app=createApp({publicDocuments:false}),client=path.resolve('dist/client'),png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jE5kAAAAASUVORK5CYII=','base64');
 app.get('/assets/community-test.png',(_q,res)=>res.type('png').send(png));app.use(express.static(client));app.get('/{*route}',(_q,res)=>res.sendFile(path.join(client,'index.html')));
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base=`http://127.0.0.1:${server.address().port}`;
 const form=new FormData();form.append('file',new Blob([png],{type:'image/png'}),'isolated-qr.png');const upload=await fetch(base+'/api/admin/cms/assets',{method:'POST',headers:{Authorization:'Bearer '+admin.token},body:form});assert.equal(upload.status,201);const qr=await upload.json();

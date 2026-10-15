@@ -260,5 +260,5 @@ test('public search uses published catalog and community navigation is accurate'
   const page=source('PublicHomepage.jsx');
   assert.match(page,/api\('\/catalog\/workspace'\)/);
   assert.match(page,/aria-label="课程搜索结果"/);
-  assert.match(page,/navigate\(['"]\/community['"]\)\}>学习社区/);
+  assert.match(page,/<SeoLink href="\/community" navigate=\{go\}>学习社区/);
 });

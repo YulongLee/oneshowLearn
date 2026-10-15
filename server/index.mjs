@@ -5,6 +5,7 @@ import cors from "cors";
 import express from "express";
 import { z } from "zod";
 import { config } from "./config.mjs";
+import {publicDocumentMiddleware} from './public-seo.mjs';
 import { db, row, rows, run } from "./db.mjs";
 import { optionalAuth, requireAdmin, requireAuth } from "./auth.mjs";
 import { accountRouter, accountAdminRouter } from "./account-routes.mjs";
@@ -75,7 +76,7 @@ function packDetails(pack, user) {
   return { ...pack, entitled: Boolean(entitled), steps };
 }
 
-export function createApp({loginProviders,assetStorage,mineruProvider} = {}) {
+export function createApp({loginProviders,assetStorage,mineruProvider,publicDocuments} = {}) {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", config.trustProxy);
@@ -199,6 +200,7 @@ export function createApp({loginProviders,assetStorage,mineruProvider} = {}) {
   app.get("/api/admin/orders", (req,res)=>{const page=listPage(req.query);res.set('Cache-Control','private, no-store').json({items:rows(`SELECT o.*,u.email,u.name,pc.provider online_provider,GROUP_CONCAT(oi.title,'、') item_titles FROM orders o JOIN users u ON u.id=o.user_id LEFT JOIN order_items oi ON oi.order_id=o.id LEFT JOIN payment_checkouts pc ON pc.order_id=o.id WHERE instr(lower(o.order_no),lower(?))>0 GROUP BY o.id ORDER BY o.id DESC LIMIT ? OFFSET ?`,[page.q,page.limit,page.offset]),total:row('SELECT COUNT(*) n FROM orders WHERE instr(lower(order_no),lower(?))>0',[page.q]).n,...page});});
   app.post("/api/admin/orders/:id/mark-paid", markOrderPaid);
 
+  if(publicDocuments!==false)app.use(publicDocumentMiddleware(publicDocuments));
   app.use((error, _req, res, _next) => {
     if (error instanceof AccountError) {
       if (error.retryAfter) res.set("Retry-After", String(error.retryAfter));

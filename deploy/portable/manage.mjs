@@ -72,6 +72,9 @@ function treeHash(directory,hash=createHash('sha256')) {
 }
 function releaseSourceHash() {
   const hash=createHash('sha256');
+  hash.update('vite.public.config.mjs\0').update(readFileSync(path.join(sourceRoot,'vite.public.config.mjs')));
+  hash.update('scripts/check-public-seo-ui.mjs\0').update(readFileSync(path.join(sourceRoot,'scripts/check-public-seo-ui.mjs')));
+  for(const name of ['deploy/check-public-seo-release.mjs','deploy/update-public-seo.sh'])hash.update(name+'\0').update(readFileSync(path.join(sourceRoot,name)));
   for(const name of ['src','server','deploy/portable','worker','.openai','tests'])treeHash(path.join(sourceRoot,name),hash);
   for(const name of ['package.json','package-lock.json','Dockerfile','.dockerignore','index.html','vite.config.mjs','scripts/prepare-sites-build.mjs','scripts/prepare-opc-curriculum.mjs','deploy/import-demo-materials.mjs','deploy/publish-demo-projects.mjs','deploy/import-opc-curriculum.mjs','docs/curriculum/ai-opc-20261001.json','.github/workflows/ci.yml'])hash.update(name+'\0').update(readFileSync(path.join(sourceRoot,name)));
   for(const name of ['scripts/check-operations.mjs','deploy/configure-mineru.mjs','deploy/update-commercial-completion.sh','deploy/nginx-oneshowlearn.conf','deploy/nginx-oneshowlearn-https.conf','deploy/nginx-oneshowlearn-app.conf'])hash.update(name+'\0').update(readFileSync(path.join(sourceRoot,name)));

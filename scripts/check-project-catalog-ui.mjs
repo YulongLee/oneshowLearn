@@ -22,7 +22,7 @@ for(const [i,title] of ['【演示】AI 面试助手','【演示】AI 工具聚�
  run('INSERT INTO practice_project_settings(project_id,category_id,tech_stack,difficulty,estimated_minutes,audience,access_type,is_recommended) VALUES(?,?,?,?,?,?,?,?)',[id,categories[i],JSON.stringify(['React','隔离技术'+i]),i+1,90,'隔离适合人群 '+i,i===3?'paid':i===4?'membership':'free',i===1?1:0]);
  if(i!==4){const stage=insert("INSERT INTO practice_project_stages(project_id,title,status) VALUES(?,'隔离阶段','published')",[id]);const lesson=insert("INSERT INTO learning_lessons(title,config,status) VALUES(?,?,'published')",['隔离课时 '+i,JSON.stringify({isDemoMedia:i!==2})]);placements.push(insert("INSERT INTO lesson_placements(lesson_id,stage_id,is_preview,status) VALUES(?,?,1,'published')",[lesson,stage]));}
 }
-const app=createApp(),client=path.resolve('dist/client');app.get('/fixture-custom.webp',(_q,res)=>res.sendFile(path.resolve('src/assets/project-mobile-cover-v1.webp')));app.use(express.static(client));app.get('/{*route}',(_q,res)=>res.sendFile(path.join(client,'index.html')));
+const app=createApp({publicDocuments:false}),client=path.resolve('dist/client');app.get('/fixture-custom.webp',(_q,res)=>res.sendFile(path.resolve('src/assets/project-mobile-cover-v1.webp')));app.use(express.static(client));app.get('/{*route}',(_q,res)=>res.sendFile(path.join(client,'index.html')));
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
 const base=`http://127.0.0.1:${server.address().port}`,browser=await chromium.launch({headless:true});
 run('UPDATE practice_projects SET cover_url=? WHERE id=?',[base+'/fixture-custom.webp',ids[2]]);

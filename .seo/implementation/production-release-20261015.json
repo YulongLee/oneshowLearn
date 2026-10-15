@@ -1,0 +1,21 @@
+{
+  "format": "oneshowlearn-public-seo-published-summary-v1",
+  "site": "https://oneshowlearn.com/",
+  "acceptedAt": "2026-10-15T05:11:52.379Z",
+  "implementationCommit": "13837477fd4f2cb512ed15b9c00e67bbbccf14b1",
+  "ci": {"id": 38683652344, "conclusion": "success", "url": "https://github.com/YulongLee/oneshowLearn/actions/runs/38683652344"},
+  "stage": "/tmp/oneshowlearn-seo-i6zcD1",
+  "releaseManifestSha256": "24188e78a33b4f163e3c775936f90c59c34e39e3e60030b0f7fb061838f075ad",
+  "archiveSha256": "7ccaf9a80038430e5e7bd5b8bd1490586260d54b7e7820c09e01dc1bf346d6eb",
+  "entrySha256": "c7a8ca3759b3605ac6a661f44680ee48223ce4fb3801cca8f78e550ef6d570e9",
+  "checks": {"localAllFileTestsPassed": 617, "localExplicitIntegrationSkip": 1, "actualNginxDedicatedPassed": 3, "isolatedBrowserSuites": 17, "isolatedBrowserChecks": 2038, "portableDeployment": 65, "copyApiSsr": 65, "copyBrowser": 307, "liveApi": 65, "liveHttps": 65, "liveSeoBrowser": 307, "livePromotionRoadmapBrowser": 190, "liveAnonymousBrowser": 32, "exactHttpsAssets": 156},
+  "linuxNode22ByteParity": {"clientFiles": 158, "renderFiles": 17, "allBytesEqual": true},
+  "initialBundleBytes": {"js": 345988, "css": 159937, "budgetsUnchanged": true},
+  "backup": {"path": "/var/backups/oneshowlearn/seo-SuBcDODq", "filesVerified": 19841, "receiptSha256": "5d700d7771627e5d8261e6993be6051df87ef22d49321e60fa4e6a37669f7a9a", "manifestSha256": "2bf282cfa78e986e36bd683212848a67a6592b40d01e8b71b356b0f255af68c7", "finalMarkerVerified": true},
+  "guards": {"copyTablesUnchanged": 76, "protectedLiveTablesUnchanged": 73, "exactSchemaUnchanged": true, "runtimeFilesUnchanged": 17556, "oldAssetEntriesRetained": 2167, "privateEnvironmentChanged": false, "dependenciesChanged": false, "otherServicesChanged": false, "pricingChanged": false, "cmsChanged": false, "oldDatabaseRestored": false, "providerOperations": 0, "browserWrites": 0, "finalTransportRetries": 0},
+  "service": {"applicationPid": 2699761, "automaticRestarts": 0, "active": true, "nginxMasterPid": 543821},
+  "attempts": {"first": "OFL.txt proxy routing failure; paired code rollback, data retained", "second": "undetermined transient outer fetch transport failure; paired code rollback, later all156 exact hashes and independent Node/curl/Chromium samples passed", "final": "fresh stage, complete acceptance and sealed receipt passed"},
+  "searchPlatformSubmission": false,
+  "telemetryActivated": false,
+  "rankingIndexingAiCitationEffect": null
+}

@@ -5,5 +5,6 @@
   "providers": [],
   "metrics": {"clicks": null, "impressions": null, "ctr": null, "average_position": null, "organic_sessions": null, "organic_conversions": null, "indexed_pages": null},
   "keyword_groups": [],
-  "limitations": ["captured_at records the audit checkpoint, not an analytics sample", "No connected first-party Search Console/GA4 data or keyword-volume provider", "PageSpeed API returned 429; performance_score and real-user CWV unavailable", "Local implementation acceptance is not a production ranking or AI-citation measurement", "No production publication, search-platform submission or telemetry activation in this request"]
+  "publication": {"accepted_at": "2026-10-15T05:11:52.379Z", "commit": "13837477fd4f2cb512ed15b9c00e67bbbccf14b1", "ci_run": 38683652344},
+  "limitations": ["captured_at records the audit checkpoint, not an analytics sample", "No connected first-party Search Console/GA4 data or keyword-volume provider", "PageSpeed API returned 429; performance_score and real-user CWV unavailable", "Successful production acceptance is not a ranking, indexing or AI-citation measurement", "No search-platform submission or telemetry activation in this request"]
 }

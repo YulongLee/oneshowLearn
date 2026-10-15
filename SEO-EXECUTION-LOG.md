@@ -1,6 +1,6 @@
 # OneShowLearn SEO / GEO 执行记录
 
-日期：2026-10-15；目标：https://oneshowlearn.com/。这是本地开发/验收记录，不是生产发布记录。
+日期：2026-10-15；目标：https://oneshowlearn.com/。本地开发、失败尝试和最终生产发布分开记录；最终已上线，见文末回执。
 
 ## 基线
 
@@ -49,3 +49,19 @@
 正式 stage `/tmp/oneshowlearn-seo-lA1fj9` 的配套代码/API/SSR/HTTPS 检查通过，但外层全 156 资产验收发现 `assets/dmsans-OFL.txt` 被新通用网页代理送入后端 404。外层保护在最终回执前自动回退代码、render、入口、manifest 和代理；备份 `/var/backups/oneshowlearn/seo-6deevOf8` 保留，旧首页入口恢复为 `b4a3524e02e793a446a914fbc48c24e33862c76c02cf479cd359732ed0dc8073`，本次不计成功发布。无旧数据库/环境/依赖回灌，其他三项服务身份不变。恢复后的精确 73 表/结构、17,556 runtime 文件、全部旧资产及环境/Node/配置守卫通过。
 
 已补两套代理的精确 `/assets/` 高优先级静态位置（不把所有 txt 当静态，robots/sitemap/llms 仍动态），实际 Nginx 专项 3/3 覆盖两套模板及两份许可证准确内容、缺失 txt 404、认证/文档边界；portable 验收增加真实许可证检查。恢复器取消无必要 lock 重写，并在原子切换前保留原文件 uid/gid/mode，包含 600/640/644 实测。首次回退只改变了两份包清单的文件模式，内容未变；已依据一致备份及逐文件 cmp 恢复原模式，完整守卫再次通过。最终回执现在还强制验证 CI、浏览器、全资产及零写/零供应商证明后才原子解除保护。新鲜修复版须重新提交、验证、演练、配对发布和验收，不复用上次 stage 或已回退发布的接受状态。
+
+## 最终配套上线完成
+
+实现 `13837477fd4f2cb512ed15b9c00e67bbbccf14b1` 已推送 origin/main。[完整 CI 38683652344](https://github.com/YulongLee/oneshowLearn/actions/runs/38683652344) 全部 success，包含安装、依赖审计、工程/业务、17 组浏览器、配对镜像、真实认证代理及部署/恢复检查。最新全单测文件运行 617 通过、0 失败，1 个显式 Nginx 集成 skip 由真实专项 3/3 另行覆盖；不要把工程或嵌套菜单子检查再次相加。官方 registry 审计零漏洞，依赖锁哈希不变。
+
+新增实际部署测试发现 Docker 构建未包含既有 public 素材，已补 15 个逐文件白名单输入，public 纳入 source hash；不开放 public 通配或私人目录。最终独立 portable 65 项通过，Linux Node22 的 158 个 client/17 个 render 文件与发布包逐字节/SHA256 一致，JS345,988/CSS159,937 字节仍满足原预算。
+
+第二次 stage `/tmp/oneshowlearn-seo-nxb3xR` 通过配套 API/HTTPS 后，外层资源读取发生 `fetch failed`，保护再次恢复原代码而未回灌数据，备份 `/var/backups/oneshowlearn/seo-HuKyyVQd` 保留。随后同样 6 并发全 156 资源及独立 Node/curl/Chromium 抽样精确哈希全部通过；未复现，不能猜测具体网络根因。仅给临时发布校验加入最多两次明确连接中断退避重试，HTTP、重定向、429、TLS 证书及内容不符仍立即失败；5 个独立单测通过。本次失败不是最终验收。
+
+最终使用全新 stage `/tmp/oneshowlearn-seo-i6zcD1`，257 个清单文件、156 个资产、17 个 render 文件；清单 SHA256 `24188e78a33b4f163e3c775936f90c59c34e39e3e60030b0f7fb061838f075ad`，压缩包 SHA256 `7ccaf9a80038430e5e7bd5b8bd1490586260d54b7e7820c09e01dc1bf346d6eb`。provider-blocked production-copy 65 项 API/SSR 与 307 项实际浏览器检查通过，副本关闭后完整 76 表及结构相同、零写入/供应商；既有 legacy 启动过程在另一个副本被验证结构与数据中性，线上环境不变。
+
+维护及无活跃任务确认后，仅切换五个审定 server 模块、package scripts、render/client/manifest 与精确静态/文档代理；沿用 systemd，只重启 OneShowLearn 并 reload Nginx。线上 API/HTTPS 各 65 项、全部 156 资源精确哈希、307 SEO +190 首页优惠/路线 +32 匿名浏览器检查通过（529 浏览器项），覆盖无 JS、真实 CMS/课程/报价、320–2560px、私人 noindex/鉴权、正确 MIME/404 与实际图片解码。最终运行零响应覆盖/写入/供应商请求，未触发 transport 重试。桌面/手机及无 JS 实际截图已复核，批准的布局、文案和商业行为保留。
+
+最终一致 root-only 备份 `/var/backups/oneshowlearn/seo-SuBcDODq`，回执时间 `2026-10-15T05:11:52.379Z`；19,841 备份文件及完整备份数据/结构通过核验。receipt SHA256 `5d700d7771627e5d8261e6993be6051df87ef22d49321e60fa4e6a37669f7a9a`，备份清单 `2bf282cfa78e986e36bd683212848a67a6592b40d01e8b71b356b0f255af68c7`，最后原子 final marker 通过后才解除本次外层恢复保护。旧入口 `b4a3524e…` → 新入口 `c7a8ca37…`。完整 73 业务表值/结构、17,556 runtime 文件、环境/密钥/Node/site/lock、2,167 个旧资产条目和其他三项服务身份均保留；只排除三张指定瞬时 auth/lease 表。OneShowLearn PID2699761/NRestarts0，Nginx master543821 不变。
+
+没有 schema、依赖升级、环境、CMS、价格、用户记录、支付/模型等供应商能力激活、Docker 线上接管、旧数据库恢复、站长提交、追踪或清理操作。原工作区 94 个变更文件已与可用 Git 副本精确一致，原 File Provider Git 元数据未改。公开可提交的验收摘要见 `.seo/implementation/production-release-20261015.json`；运行日志与截图留在 ignored artifacts。收录、排名、流量和 AI 引用效果仍未知，不能把上线通过等同于搜索效果保证。

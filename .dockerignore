@@ -33,6 +33,8 @@
 !scripts/prepare-opc-curriculum.mjs
 !scripts/check-operations.mjs
 !scripts/check-public-seo-ui.mjs
+!scripts/check-auth-commercial-ui.mjs
+!scripts/run-browser-checks.mjs
 !worker/
 !worker/index.js
 !.openai/

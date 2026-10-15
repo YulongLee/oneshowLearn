@@ -40,12 +40,61 @@ function fixture(t){
   const run=()=>spawnSync(process.execPath,['--input-type=module','-',stage,app,snippet],{input:validation,encoding:'utf8'});
   return {folder,stage,app,put,manifest,run};
 }
+function pairedFixture(t){
+  const f=fixture(t);
+  for(const name of modules)f.put(f.app,'server/'+name+'.mjs','export const prior = '+JSON.stringify(name)+';\n');
+  f.put(f.app,'dist/client/index.html','<meta name="document-rendering" content="public-ssr-v1"><div id="root"></div>');
+  f.put(f.app,'dist/client/.vite/manifest.json','{"isolated":"prior-client-manifest"}');
+  const renderNames=['public-render.mjs','assets/old-entry.js','assets/nested/old-style.css','assets/old-font-OFL.txt'];
+  for(const name of renderNames)f.put(f.app,'dist/render/'+name,'// isolated previous renderer: '+name+'\n');
+  const serverPaths=readdirSync(path.join(f.app,'server')).filter(name=>name.endsWith('.mjs')).map(name=>f.app+'/server/'+name);
+  const renderPaths=renderNames.map(name=>f.app+'/dist/render/'+name),manifestPath=f.app+'/dist/client/.vite/manifest.json';
+  const guardPaths=[...serverPaths,manifestPath,...renderPaths],live=readFileSync(path.join(f.stage,'live.sha256'),'utf8');
+  f.put(f.stage,'live.sha256',live+guardPaths.map(name=>'0'.repeat(64)+'  '+name+'\n').join(''));f.manifest();
+  const omitGuard=target=>{const file=path.join(f.stage,'live.sha256');writeFileSync(file,readFileSync(file,'utf8').split('\n').filter(line=>!line.endsWith('  '+target)).join('\n'));f.manifest();};
+  const addGuard=target=>{const file=path.join(f.stage,'live.sha256');writeFileSync(file,readFileSync(file,'utf8')+'0'.repeat(64)+'  '+target+'\n');f.manifest();};
+  return {...f,serverPaths,renderPaths,manifestPath,omitGuard,addGuard};
+}
 
 test('paired public-document updater parses as Bash and has an isolated executable input validator',()=>{
   assert.ok(validation);const result=spawnSync('bash',['-n','deploy/update-public-seo.sh'],{encoding:'utf8'});assert.equal(result.status,0,result.stderr);
 });
 test('reviewed package scripts, five modules, matching lock and complete paired inputs are accepted',t=>{
   const f=fixture(t),result=f.run();assert.equal(result.status,0,result.stderr);
+});
+test('a subsequent paired SSR release requires the complete prior renderer, client manifest and server guards',t=>{
+  const f=pairedFixture(t),result=f.run();assert.equal(result.status,0,result.stderr);
+});
+test('a prior SSR renderer cannot lose any original server, renderer or client-manifest guard',async t=>{
+  const entries=[...modules.map(name=>'server/'+name+'.mjs'),'server/unchanged.mjs','dist/client/.vite/manifest.json','dist/render/public-render.mjs','dist/render/assets/old-entry.js','dist/render/assets/nested/old-style.css','dist/render/assets/old-font-OFL.txt'];
+  for(const relative of entries)await t.test(relative,t=>{const f=pairedFixture(t);f.omitGuard(f.app+'/'+relative);assert.notEqual(f.run().status,0,'Missing prior pair guard: '+relative);});
+});
+test('a prior SSR renderer requires its actual entry and client manifest, not merely manifest target names',async t=>{
+  for(const relative of ['dist/client/index.html','dist/render/public-render.mjs','dist/client/.vite/manifest.json'])await t.test(relative,t=>{
+    const f=pairedFixture(t);rmSync(path.join(f.app,relative));assert.notEqual(f.run().status,0,'Missing original pair input: '+relative);
+  });
+  await t.test('missing entire renderer with a retained SSR template',t=>{const f=pairedFixture(t);rmSync(path.join(f.app,'dist/render'),{recursive:true});assert.notEqual(f.run().status,0,'An existing SSR template cannot be treated as a legacy static-only release');});
+  await t.test('existing renderer with a static-only template',t=>{const f=pairedFixture(t);f.put(f.app,'dist/client/index.html','<div id="root"></div>');assert.notEqual(f.run().status,0,'The complete existing pair must identify itself as SSR');});
+});
+test('prior renderer guards cannot name unobserved render files or unrelated filesystem targets',async t=>{
+  for(const relative of ['dist/render/assets/not-present.js','dist/render/not-reviewed.mjs','data/oneshowlearn.db'])await t.test(relative,t=>{
+    const f=pairedFixture(t);f.addGuard(f.app+'/'+relative);assert.notEqual(f.run().status,0,'Not an actual reviewed original render path: '+relative);
+  });
+});
+test('prior renderer collection rejects private, hidden, malformed and unapproved paths before publication',async t=>{
+  for(const relative of ['.env','private.pem','extra.mjs','assets/.env','assets/private.key','assets/data.sqlite','assets/._old.js','assets/.hidden/entry.js','assets/bad name.js','assets/bad\nname.js','assets/bad$name.js','assets/unapproved.mjs','assets/../outside.js','unapproved/entry.js'])await t.test(JSON.stringify(relative),t=>{
+    const f=pairedFixture(t);f.put(f.app,'dist/render/'+relative,'ISOLATED_NOT_A_VALID_PUBLIC_RENDER_INPUT');assert.notEqual(f.run().status,0,'Unsafe prior renderer input must not be silently omitted: '+relative);
+  });
+  for(const relative of ['private.pem','extra.mjs','assets/private.key','assets/.hidden/entry.js'])await t.test('explicit guard cannot authorize '+relative,t=>{const f=pairedFixture(t);f.put(f.app,'dist/render/'+relative,'ISOLATED_NOT_A_VALID_PUBLIC_RENDER_INPUT');f.addGuard(f.app+'/dist/render/'+relative);assert.notEqual(f.run().status,0,'An explicit hash cannot authorize an unsafe renderer input');});
+  for(const relative of ['.hidden','assets/.hidden','assets/bad name'])await t.test('empty directory '+relative,t=>{const f=pairedFixture(t);mkdirSync(path.join(f.app,'dist/render',relative),{recursive:true});assert.notEqual(f.run().status,0,'Unsafe prior renderer directory: '+relative);});
+});
+test('prior renderer and client-manifest inputs cannot be replaced with symlinks or non-files',async t=>{
+  await t.test('linked asset file',t=>{const f=pairedFixture(t),relative='dist/render/assets/linked.js';symlinkSync(path.join(f.app,'package.json'),path.join(f.app,relative));assert.notEqual(f.run().status,0);});
+  await t.test('linked asset directory',t=>{const f=pairedFixture(t);symlinkSync(path.join(f.app,'server'),path.join(f.app,'dist/render/assets/linked'));assert.notEqual(f.run().status,0);});
+  await t.test('linked renderer root',t=>{const f=pairedFixture(t),root=path.join(f.app,'dist/render');rmSync(root,{recursive:true});symlinkSync(path.join(f.app,'server'),root);assert.notEqual(f.run().status,0);});
+  await t.test('linked client manifest',t=>{const f=pairedFixture(t);rmSync(f.manifestPath);symlinkSync(path.join(f.app,'package.json'),f.manifestPath);assert.notEqual(f.run().status,0);});
+  await t.test('linked client template',t=>{const f=pairedFixture(t),file=path.join(f.app,'dist/client/index.html');rmSync(file);symlinkSync(path.join(f.stage,'client/index.html'),file);assert.notEqual(f.run().status,0);});
+  for(const relative of ['dist/render/public-render.mjs','dist/client/.vite/manifest.json'])await t.test('directory at '+relative,t=>{const f=pairedFixture(t),file=path.join(f.app,relative);rmSync(file);mkdirSync(file);assert.notEqual(f.run().status,0);});
 });
 test('tampered, omitted and additional manifest inputs fail closed',async t=>{
   await t.test('changed client bytes',t=>{const f=fixture(t);f.put(f.stage,'client/assets/index-hash.js','tampered');assert.notEqual(f.run().status,0);});
@@ -72,6 +121,7 @@ test('document writes, weakened authentication limits and wrong maintenance hash
   await t.test('document mutation bypass',t=>{const f=fixture(t),file=path.join(f.stage,'nginx-app.conf');writeFileSync(file,readFileSync(file,'utf8').replace('if ($request_method !~ ^(GET|HEAD)$) { return 405; }',''));f.manifest();assert.notEqual(f.run().status,0);});
   await t.test('mixed-case GET callback bypass',t=>{const f=fixture(t),file=path.join(f.stage,'nginx-app.conf');writeFileSync(file,readFileSync(file,'utf8').replace('if ($uri ~* ^/(api|uploads)(/|$)) { return 404; }',''));f.manifest();assert.notEqual(f.run().status,0);});
   await t.test('wrong authentication zone',t=>{const f=fixture(t),file=path.join(f.stage,'nginx-app.conf');writeFileSync(file,readFileSync(file,'utf8').replace('oneshowlearn_auth_write_v2','bypassed'));f.manifest();assert.notEqual(f.run().status,0);});
+  for(const [name,from,to] of [['weakened authentication write budget','burst=10 nodelay','burst=999 nodelay'],['weakened authentication read budget','burst=30 nodelay','burst=999 nodelay'],['removed authentication status','limit_req_status 429;','']])await t.test(name,t=>{const f=fixture(t),file=path.join(f.stage,'nginx-app.conf');writeFileSync(file,readFileSync(file,'utf8').replace(from,to));f.manifest();assert.notEqual(f.run().status,0);});
   await t.test('maintenance hash differs from reviewed maintenance snippet',t=>{const f=fixture(t);f.put(f.stage,'maintenance.sha256','0'.repeat(64)+'  '+snippet+'\n');f.manifest();assert.notEqual(f.run().status,0);});
 });
 test('public assets require the exact isolated static prefix, without document or filesystem leaks',async t=>{

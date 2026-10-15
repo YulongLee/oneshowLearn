@@ -66,9 +66,9 @@ export function UserAuthCard({ navigate, onSuccess, onClose, initialMode = "logi
   const heading = ({ login: isAdmin ? "登录管理平台" : "登录用户平台", register: "创建学习账号", forgot: "找回登录密码", reset: "设置新密码", verify: "输入邮箱验证码" })[mode];
   const copy = mode === "login" ? (isAdmin ? "管理课程资料、用户与订单。仅管理员及内容编辑可进入。" : "继续你的课程、项目与学习进度。管理员也可在这里学习。") : mode === "register" ? "先验证你的邮箱，购买记录和学习成果会保存在账号中。" : mode === "forgot" ? "输入注册邮箱，通过验证码重置密码。" : `请查看 ${form.email} 的收件箱及垃圾邮件，验证码 10 分钟内有效。`;
   const buttonText = busy ? "请稍候…" : ({ login: `进入${platformInfo.label}`, register: "发送注册验证码", forgot: "发送重置验证码", reset: "确认重置密码", verify: "验证并完成注册" })[mode];
-  return <section className={`user-auth-card ${polished?'auth-polished-card':''}`}>
+  return <section className={`user-auth-card ${polished?'auth-polished-card':''}`} data-auth-mode={polished?mode:undefined}>
     {onClose && <button className="auth-close" onClick={onClose} aria-label="关闭"><X size={20} /></button>}
-    <div className="auth-brand"><BrandIdentity/></div>{!polished&&<div className="auth-platform-label">{platformInfo.label}</div>}<h1>{heading}</h1><p>{mode==='login'&&!isAdmin?'继续你的 AI 学习与产品创作之旅。':copy}</p>
+    {!polished&&<><div className="auth-brand"><BrandIdentity/></div><div className="auth-platform-label">{platformInfo.label}</div></>}<h1>{heading}</h1><p>{mode==='login'&&!isAdmin?'继续你的 AI 学习与产品创作之旅。':copy}</p>
     {mode==='login'&&!isAdmin&&<div className="auth-methods" aria-label="选择登录方式">{[['email','邮箱登录'],['phone','手机验证码登录']].map(([id,label])=><button key={id} type="button" aria-pressed={channel===id} disabled={busy} onClick={()=>{setChannel(id);setShowPassword(false);setError('');setNotice('');}}>{polished&&(id==='email'?<EnvelopeSimple size={20}/>:<DeviceMobile size={20}/>)}{label}</button>)}</div>}
     {mode==='login'&&!isAdmin&&channel!=='email'?<ExternalLogin key={channel} channel={channel} capabilities={capabilities} onComplete={complete}/>:<>
     {blocked && <p className="auth-error" role="status">{!capabilities ? "正在检查邮件服务…" : capabilities.unavailable ? "暂时无法连接账号服务，请刷新重试。" : "邮箱服务暂未开放，请稍后再试或联系管理员。"}</p>}
@@ -94,7 +94,7 @@ export function UserAuthCard({ navigate, onSuccess, onClose, initialMode = "logi
 
 export function AuthPage({ navigate, initialMode = "login", platform = "user" }) {
   const isAdmin = platform === "admin";
-  if (!isAdmin) return <main className="user-auth-page auth-commercial"><div className="auth-form-column"><button className="auth-home" onClick={()=>navigate('/')}><ArrowLeft size={17}/>返回首页</button><UserAuthCard key={platform} navigate={navigate} initialMode={initialMode} platform={platform} presentation="commercial" onPlatformSwitch={()=>navigate(getPlatform('admin').login)}/><footer className="auth-column-footer">OneShowLearn · Learn · Build · Grow<br/><span>让学习有方向，让想法有作品。</span></footer></div><AuthShowcase/></main>;
+  if (!isAdmin) return <main className="user-auth-page auth-commercial"><div className="auth-form-column"><header className="auth-page-header"><div className="auth-page-brand"><BrandIdentity/></div><button className="auth-home" onClick={()=>navigate('/')}><ArrowLeft size={17}/>返回首页</button></header><UserAuthCard key={platform} navigate={navigate} initialMode={initialMode} platform={platform} presentation="commercial" onPlatformSwitch={()=>navigate(getPlatform('admin').login)}/></div><AuthShowcase/></main>;
   return <main className="user-auth-page"><button className="auth-home" onClick={() => navigate("/")}><ArrowLeft size={17} />返回首页</button><UserAuthCard key={platform} navigate={navigate} initialMode={initialMode} platform={platform} onPlatformSwitch={() => navigate(getPlatform(isAdmin ? "user" : "admin").login)} /><aside><span>{isAdmin ? "OneShowLearn · 管理平台" : "Practice First · 用户平台"}</span><h2>{isAdmin ? <>专注内容，<br />服务学习者，<br />经营你的产品。</> : <>学会 AI，<br />用好 AI，<br />做出你的 AI 产品。</>}</h2><p>{isAdmin ? "同一账号，两个平台。管理者也可以随时切换到用户平台，学习课程与体验产品。" : "一个账号保存你的项目包、学习进度、成果与购买记录。"}</p></aside></main>;
 }
 

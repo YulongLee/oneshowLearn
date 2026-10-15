@@ -237,7 +237,7 @@ if find "$stage" -type l -print -quit | grep -q .; then exit 1; fi
 if find "$stage" -name '._*' -print -quit | grep -q .; then exit 1; fi
 [[ ! -e "$stage/rehearsal" && ! -e "$next_render" && ! -e "$previous_render" ]] || exit 1
 "$node" --input-type=module - "$stage" "$app" "$snippet" <<'NODE'
-import assert from 'node:assert/strict';import {readdirSync,lstatSync,readFileSync} from 'node:fs';import path from 'node:path';import {createHash} from 'node:crypto';
+import assert from 'node:assert/strict';import {readdirSync,lstatSync,readFileSync,existsSync} from 'node:fs';import path from 'node:path';import {createHash} from 'node:crypto';
 const [stage,app,snippet]=process.argv.slice(2),required=['package.json','package-lock.json','nginx-app.conf','nginx-maintenance.conf','live.sha256','maintenance.sha256','client/index.html','client/.vite/manifest.json','render/public-render.mjs','deploy/update-public-seo.sh','deploy/check-public-seo-release.mjs','deploy/portable/database-tools.mjs'];
 const publicAsset=/^(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_][A-Za-z0-9_.-]*\.(?:js|css|png|jpe?g|gif|svg|webp|ico|woff2?|txt)$/;
 const allowed=name=>required.includes(name)||/^server\/[a-z0-9-]+\.mjs$/.test(name)||
@@ -250,14 +250,24 @@ assert.deepEqual(listed.sort(),files.filter(name=>name!=='release.sha256').sort(
 const modules=['index','payment-configuration','public-seo','public-seo-data','public-seo-model'];for(const name of modules)assert.ok(listed.includes('server/'+name+'.mjs'));
 const old=JSON.parse(readFileSync(app+'/package.json')),next=JSON.parse(readFileSync(stage+'/package.json'));delete old.scripts;delete next.scripts;assert.deepEqual(next,old,'Only package scripts may change');assert.equal(Buffer.compare(readFileSync(app+'/package-lock.json'),readFileSync(stage+'/package-lock.json')),0,'Lock must remain byte-identical');
 for(const name of readdirSync(stage+'/server'))if(!modules.includes(name.replace(/\.mjs$/,'')))assert.equal(Buffer.compare(readFileSync(stage+'/server/'+name),readFileSync(app+'/server/'+name)),0,'Unreviewed server difference: '+name);
-const allowedLive=new Set(readdirSync(app+'/server').filter(name=>/^[a-z0-9-]+\.mjs$/.test(name)).map(name=>app+'/server/'+name).concat([
+const oldIndex=app+'/dist/client/index.html',oldRender=app+'/dist/render',oldClientManifest=app+'/dist/client/.vite/manifest.json',oldRenderPaths=[];
+const alreadySsr=existsSync(oldRender)||existsSync(oldIndex)&&/name="document-rendering" content="public-ssr-v1"/.test(readFileSync(oldIndex,'utf8'));
+if(alreadySsr){
+  for(const file of [oldIndex,oldClientManifest])assert.ok(existsSync(file)&&lstatSync(file).isFile()&&!lstatSync(file).isSymbolicLink(),'Existing SSR pair requires an ordinary original template and client manifest');
+  assert.match(readFileSync(oldIndex,'utf8'),/name="document-rendering" content="public-ssr-v1"/,'Existing renderer belongs to an SSR template');
+  assert.ok(existsSync(oldRender)&&lstatSync(oldRender).isDirectory()&&!lstatSync(oldRender).isSymbolicLink(),'Existing SSR renderer directory required');
+  const visit=(directory,prefix='')=>{for(const name of readdirSync(directory)){const relative=prefix+name,file=path.join(directory,name),stat=lstatSync(file);assert.ok(!stat.isSymbolicLink(),'No linked old SSR inputs');if(stat.isDirectory()){assert.ok(relative==='assets'||relative.startsWith('assets/')&&relative.split('/').every(part=>/^[A-Za-z0-9_-]+$/.test(part)),'Only ordinary old render asset directories');visit(file,relative+'/');}else{assert.ok(stat.isFile()&&(relative==='public-render.mjs'||relative.startsWith('assets/')&&publicAsset.test(relative.slice('assets/'.length))),'Only reviewed old renderer files');oldRenderPaths.push(file);}}};
+  visit(oldRender);assert.ok(oldRenderPaths.includes(oldRender+'/public-render.mjs'),'Original SSR entry required');
+}
+const oldServerPaths=readdirSync(app+'/server').filter(name=>/^[a-z0-9-]+\.mjs$/.test(name)).map(name=>app+'/server/'+name);
+const allowedLive=new Set(oldServerPaths.concat(oldRenderPaths,[
   app+'/package.json',app+'/package-lock.json',app+'/dist/client/index.html',app+'/dist/client/.vite/manifest.json',
   '/etc/oneshowlearn/oneshowlearn.env','/etc/systemd/system/oneshowlearn.service',snippet,
   ...['oneshowlearn','default','oneshowseo','pocketledger'].map(name=>'/etc/nginx/sites-available/'+name)]));
 const liveNames=[];for(const line of readFileSync(stage+'/live.sha256','utf8').trim().split('\n')){
   const m=/^([a-f0-9]{64})  (\/[A-Za-z0-9_./-]+)$/.exec(line);assert.ok(m&&allowedLive.has(m[2]),'Unapproved live guard target');assert.ok(!liveNames.includes(m[2]));liveNames.push(m[2]);
 }
-for(const name of [app+'/package.json',app+'/package-lock.json',app+'/dist/client/index.html','/etc/oneshowlearn/oneshowlearn.env','/etc/systemd/system/oneshowlearn.service',snippet])assert.ok(liveNames.includes(name),'Missing original live guard');
+for(const name of [app+'/package.json',app+'/package-lock.json',app+'/dist/client/index.html','/etc/oneshowlearn/oneshowlearn.env','/etc/systemd/system/oneshowlearn.service',snippet,...(alreadySsr?[oldClientManifest,...oldRenderPaths,...oldServerPaths]:[])])assert.ok(liveNames.includes(name),'Missing original live guard');
 const maintenance=/^([a-f0-9]{64})  ([^\r\n]+)\n?$/.exec(readFileSync(stage+'/maintenance.sha256','utf8'));assert.ok(maintenance);assert.equal(maintenance[2],snippet);assert.equal(createHash('sha256').update(readFileSync(stage+'/nginx-maintenance.conf')).digest('hex'),maintenance[1]);
 assert.match(readFileSync(stage+'/client/index.html','utf8'),/name="document-rendering" content="public-ssr-v1"/);
 const proxy=readFileSync(stage+'/nginx-app.conf','utf8');assert.match(proxy,/location \/ \{/);assert.match(proxy,/\$request_method !~ \^\(GET\|HEAD\)\$/);assert.match(proxy,/return 405/);assert.match(proxy,/if \(\$uri ~\* \^\/\(api\|uploads\)\(\/\|\$\)\) \{ return 404; \}/);assert.match(proxy,/zone=oneshowlearn_auth_write_v2 burst=10 nodelay/);assert.match(proxy,/zone=oneshowlearn_auth_read burst=30 nodelay/);assert.match(proxy,/limit_req_status 429/);

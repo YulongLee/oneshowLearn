@@ -53,6 +53,7 @@ location ~* \\.js$ {
   const maintenance=original.replace(/(location (?:\^~ \/(?:api\/(?:auth\/)?|uploads\/)|\/) \{)/g,'$1\n    add_header Retry-After 30 always;\n    return 503;');
   return {original,next,maintenance};
 }
+const maintenanceFor=source=>source.replace(/(location (?:\^~ \/(?:api\/(?:auth\/)?|uploads\/)|\/) \{)/g,'$1\n    add_header Retry-After 30 always;\n    return 503;');
 
 test('public SEO release database guard includes sqlite_sequence and exact schemas',t=>{
   const f=fixture(t),before=databaseState(f.file);assert.ok(Object.hasOwn(before.tables,'sqlite_sequence'));
@@ -125,4 +126,60 @@ test('proxy pairing accepts only the reviewed document change and exact closed m
   for(const changed of changes)assert.throws(()=>assertProxyPair(p.original,changed,p.maintenance));
   for(const wrong of [p.original,p.maintenance.replaceAll('return 503','return 502'),p.maintenance+'\n# unreviewed extra'])
     assert.throws(()=>assertProxyPair(p.original,p.next,wrong));
+});
+test('an already-paired SSR proxy can be retained byte-for-byte with its own closed maintenance transform',()=>{
+  const {next,original}=proxies();assert.doesNotThrow(()=>assertProxyPair(next,next,maintenanceFor(next)));
+  assert.throws(()=>assertProxyPair(original,original,maintenanceFor(original)),'An unchanged legacy static proxy is not an SSR pair');
+});
+test('identical proxy bytes never excuse missing, duplicated or unsafe public asset routing',async t=>{
+  const {next}=proxies();
+  for(const [name,asset] of [
+    ['missing public prefix',''],
+    ['prefix widened without trailing slash',publicAssetLocation.replace('/assets/ {','/assets {')],
+    ['duplicate public prefix',publicAssetLocation+'\n'+publicAssetLocation],
+    ['private filesystem alias',publicAssetLocation.replace('try_files $uri =404;','alias /isolated/private/;')],
+    ['private filesystem root',publicAssetLocation.replace('try_files $uri =404;','root /isolated/private;\n    try_files $uri =404;')],
+    ['asset proxy bypass',publicAssetLocation.replace('try_files $uri =404;','proxy_pass http://127.0.0.1:8791;')],
+    ['missing asset document fallback',publicAssetLocation.replace('try_files $uri =404;','try_files $uri /index.html;')],
+  ])await t.test(name,()=>{const unsafe=next.replace(publicAssetLocation,asset);assert.throws(()=>assertProxyPair(unsafe,unsafe,maintenanceFor(unsafe)));});
+});
+test('identical proxy bytes never excuse unsafe document or authentication policy',async t=>{
+  const {next}=proxies();
+  for(const [name,from,to] of [
+    ['document writes','if ($request_method !~ ^(GET|HEAD)$) { return 405; }',''],
+    ['mixed-case API/upload bypass','if ($uri ~* ^/(api|uploads)(/|$)) { return 404; }',''],
+    ['cookie forwarding','proxy_set_header Cookie "";',''],
+    ['authorization forwarding','proxy_set_header Authorization "";',''],
+    ['document index fallback','proxy_set_header Cookie "";','proxy_set_header Cookie "";\n    try_files $uri /index.html;'],
+    ['external document upstream','proxy_pass http://127.0.0.1:8791;\n    proxy_set_header Cookie','proxy_pass https://external.example.invalid;\n    proxy_set_header Cookie'],
+    ['missing write authentication limit','limit_req zone=oneshowlearn_auth_write_v2 burst=10 nodelay;',''],
+    ['missing read authentication limit','limit_req zone=oneshowlearn_auth_read burst=30 nodelay;',''],
+    ['weakened write authentication budget','burst=10 nodelay','burst=999 nodelay'],
+    ['weakened read authentication budget','burst=30 nodelay','burst=999 nodelay'],
+    ['missing authentication rejection status','limit_req_status 429;',''],
+    ['renamed authentication zone','zone=oneshowlearn_auth_write_v2','zone=unreviewed_auth'],
+    ['duplicate authentication limit','limit_req zone=oneshowlearn_auth_read burst=30 nodelay;','limit_req zone=oneshowlearn_auth_read burst=30 nodelay;\n    limit_req zone=oneshowlearn_auth_read burst=30 nodelay;'],
+  ])await t.test(name,()=>{
+    const unsafe=next.replace(from,to);
+    assert.throws(()=>assertProxyPair(unsafe,unsafe,maintenanceFor(unsafe)));
+  });
+});
+test('already-paired SSR proxies permit no simultaneous routing or unrelated policy edits',async t=>{
+  const {next}=proxies();
+  for(const [name,changed] of [
+    ['document timeout',next.replace('proxy_set_header Cookie "";','proxy_set_header Cookie "";\n    proxy_read_timeout 60s;')],
+    ['authentication budget',next.replace('burst=10 nodelay','burst=999 nodelay')],
+    ['API location priority',next.replace('location ^~ /api/ {','location /api/ {')],
+    ['unrelated configuration',next+'\n# unreviewed configuration change\n'],
+  ])await t.test(name,()=>assert.throws(()=>assertProxyPair(next,changed,maintenanceFor(next))));
+});
+test('already-paired SSR maintenance must be the exact closed transform of its current proxy',async t=>{
+  const {next,maintenance}=proxies(),expected=maintenanceFor(next);
+  for(const [name,wrong] of [
+    ['old static maintenance',maintenance],
+    ['documents left open',next],
+    ['wrong rejection status',expected.replaceAll('return 503;','return 502;')],
+    ['one missing closure',expected.replace('    return 503;\n','')],
+    ['unreviewed extra content',expected+'\n# unreviewed extra\n'],
+  ])await t.test(name,()=>assert.throws(()=>assertProxyPair(next,next,wrong)));
 });

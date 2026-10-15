@@ -42,6 +42,6 @@ test('login showcase is clearly illustrative and contains no fictional accounts 
   const css=source('auth-commercial.css');
   assert.match(css,/@media\(max-width:960px\)/);
   assert.match(css,/\.user-auth-page.auth-commercial>\.auth-showcase \{ display:none; \}/);
-  assert.match(css,/\.auth-commercial.*auth-submit.*min-height:52px/);
+  assert.match(css,/\.auth-commercial.*auth-submit.*min-height:56px/);
   assert.doesNotMatch(css,/(?:^|\n)(?:body|\.ws-sidebar|\.admin-login)\s*\{/);
 });

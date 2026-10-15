@@ -13,10 +13,22 @@ import {onlyLoopbackWebBinding} from '../deploy/portable/container-inspection.mj
 import {mineruEnvironment} from '../deploy/configure-mineru.mjs';
 import {inspectOperations} from '../scripts/check-operations.mjs';
 import {checkDependencyDelta,prepareProxy,patchedVersions} from '../deploy/check-commercial-refinement.mjs';
+import {acceptanceFailureEvidence} from '../scripts/run-acceptance-with-diagnostics.mjs';
 import proxyaddr from 'proxy-addr';
 import nodemailer from 'nodemailer';
 const temp=t=>{const p=realpathSync(mkdtempSync(path.join(tmpdir(),'osl-engineering-unit-')));t.after(()=>rmSync(p,{recursive:true,force:true}));return p;};
 const env=()=>initialEnvironment('https://engineering.example.invalid','owner@example.invalid');
+test('CI diagnostics retain original Playwright stderr instead of only the outer suite failure',()=>{
+ for(const cause of ['page.waitForFunction: Timeout 30000ms exceeded','page.goto: net::ERR_CONNECTION_REFUSED','page.evaluate: actual isolated failure','AssertionError: actual child mismatch']) {
+  const evidence=acceptanceFailureEvidence({status:1,signal:null,stdout:'PASS a fixture with Error: in its title\nPASS prior step',stderr:cause+'\n at checkPublicSeoUi\nError: isolated public-seo browser suite failed (status=1)\n'});
+  assert.ok(evidence.includes(cause));assert.ok(evidence.indexOf(cause)<evidence.indexOf('Error: isolated'));assert.ok(evidence.includes('Child exit status=1'));assert.ok(evidence.includes('PASS prior step'));
+ }
+});
+test('CI diagnostics remain bounded, redact long fixture values and retain empty-output spawn status',()=>{
+ const evidence=acceptanceFailureEvidence({status:1,signal:'SIGTERM',stdout:('fixture line\n').repeat(3000),stderr:('trace line\n').repeat(3000)+'fixture '+'A'.repeat(160)+'\npage.waitForFunction: actual timeout'});
+ assert.ok(evidence.length<=5000);assert.ok(!evidence.includes('A'.repeat(80)));assert.ok(evidence.includes('[long fixture value omitted]'));assert.ok(evidence.includes('actual timeout'));assert.ok(evidence.includes('signal=SIGTERM'));
+ assert.match(acceptanceFailureEvidence({status:null,error:{code:'ENOENT'}}),/code=ENOENT/);
+});
 test('security dependency release accepts only the reviewed versions and obsolete upload removals',()=>{
  const next=JSON.parse(readFileSync('package-lock.json')),old=structuredClone(next);
  old.packages[''].dependencies={...next.packages[''].dependencies,multer:'^2.2.0',nodemailer:'^9.0.5',vite:'6.4.2'};

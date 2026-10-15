@@ -37,6 +37,7 @@
 !scripts/check-sidebar-refinement-ui.mjs
 !scripts/check-workspace-theme-ui.mjs
 !scripts/run-browser-checks.mjs
+!scripts/run-acceptance-with-diagnostics.mjs
 !worker/
 !worker/index.js
 !.openai/

@@ -93,18 +93,31 @@ const gradientContrast=async(locator,label)=>{
 const fit=async(p,label)=>check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'no document overflow '+label);
 const headingSelectors=heading=>[heading==='.pd-hero'?'.pd-catalog .pd-section-heading h2':heading+' h1',heading==='.pd-hero'?'.pd-catalog .pd-section-heading p':heading+' p'];
 const lightReadingStyles=async(p,heading)=>{
-  // Course headings can move into their portal after the route heading appears.
-  // Query and copy both styles in one document turn, never from a detached handle.
-  const snapshot=await p.waitForFunction(selectors=>{
+  // PendingLesson shares the heading selector but is not the real LessonSurface.
+  // Wait for the actual fixture branch and its inline directory before sampling.
+  const snapshot=await p.waitForFunction(({selectors,course})=>{
     const elements=selectors.map(selector=>document.querySelector(selector));
     if(elements.some(element=>!element?.isConnected||element.ownerDocument!==document))return false;
+    if(course){
+      const shell=document.querySelector('.ws-unified-layout'),page=shell?.querySelector('.cl-learning-space > .cr-lesson-page');
+      const header=page?.querySelector('.cl-lesson-heading:not(.cs-pending-heading)'),title=header?.querySelector('h1'),chapter=header?.querySelector('p'),subtitle=title?.nextElementSibling;
+      const navigation=shell?.querySelector('nav[aria-label="学习工作空间导航"]'),directory=page?.querySelector('.cs-directory-slot > .cl-inline-directory');
+      if(!page?.isConnected||!header||elements[0]!==title||elements[1]!==chapter||title.textContent.trim()!=='外观示例课时'||!chapter.matches('.cs-chapter-label')||chapter.textContent.trim()!=='第1章 产品与机会'||subtitle?.tagName!=='P'||subtitle.textContent.trim()!=='保留真实课程交互，仅检查外观')return false;
+      // Both real and pending course branches explicitly useLearningFocus(false).
+      // The final directory is inline, not a portal into the global navigation.
+      if(shell.hasAttribute('data-learning-focused')||!navigation||navigation.hidden||shell.querySelector('.ws-learning-directory-slot')||!directory?.isConnected)return false;
+      const selected=directory.querySelector('.cl-lesson[aria-current="step"] > span[title]'),expanded=directory.querySelector('.cl-chapter-toggle[aria-expanded="true"] strong');
+      if(selected?.getAttribute('title')!=='外观示例课时'||expanded?.textContent.trim()!=='第1章 产品与机会')return false;
+      const s=getComputedStyle(page),contentWidth=page.getBoundingClientRect().width-parseFloat(s.paddingLeft)-parseFloat(s.paddingRight)-parseFloat(s.borderLeftWidth)-parseFloat(s.borderRightWidth),compact=contentWidth<=960;
+      if(directory.hasAttribute('data-compact')!==compact||directory.open===compact)return false;
+    }
     const values=elements.map(element=>{const s=getComputedStyle(element);return{color:s.color,background:s.backgroundColor,fontFamily:s.fontFamily,fontSize:s.fontSize,fontWeight:s.fontWeight,lineHeight:s.lineHeight};});
     return elements.every((element,index)=>element.isConnected&&document.querySelector(selectors[index])===element)&&values.every(value=>Object.values(value).every(part=>typeof part==='string'&&part.trim()!==''))?values:false;
-  },headingSelectors(heading));
+  },{selectors:headingSelectors(heading),course:heading==='.cl-lesson-heading'});
   try{return await snapshot.jsonValue();}finally{await snapshot.dispose();}
 };
 const routeAppearance=async(p,heading,theme,label)=>{
-  await p.locator(heading+' h1').waitFor();await p.waitForTimeout(80);await fit(p,label);
+  await lightReadingStyles(p,heading);await fit(p,label);
   // The project hero sits over actual artwork, not a flat reading panel. Its
   // catalogue heading provides the corresponding known-color reading sample.
   await contrast(p.locator(headingSelectors(heading)[0]).first(),label+' page title');

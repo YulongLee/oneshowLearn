@@ -7,6 +7,7 @@ COPY package.json package-lock.json ./
 RUN node -e "if(process.versions.node.split('.')[0]!=='22'||Number(process.versions.node.split('.')[1])<14)throw Error('Node 22.14+ / 22.x required')" && npm ci --no-audit --no-fund
 COPY index.html vite.config.mjs vite.public.config.mjs ./
 COPY src ./src
+COPY public/assets ./public/assets
 COPY server ./server
 COPY scripts/prepare-sites-build.mjs ./scripts/prepare-sites-build.mjs
 COPY worker/index.js ./worker/index.js

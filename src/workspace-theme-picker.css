@@ -1,0 +1,25 @@
+/* Settings-only appearance choices; thumbnails are decorative, not screenshots. */
+.account-settings .as-theme-preference{padding:0 0 22px;border-bottom:1px solid var(--wt-border,#f0f1f6);min-width:0}
+.account-settings .as-theme-preference+.as-preference{padding-top:22px}
+.as-theme-preference legend{padding:0;font-size:16px;font-weight:600;line-height:1.6}
+.account-settings .as-theme-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;max-width:480px;margin-top:16px}
+.account-settings .as-theme-option{position:relative;display:flex;flex-direction:column;gap:12px;padding:12px;border:1px solid var(--wt-border,#e0e3ed);border-radius:12px;background:var(--wt-surface,#fff);color:var(--wt-text,#272b40);cursor:pointer;min-width:0}
+.account-settings .as-theme-option[data-selected=true]{border-color:var(--wt-accent,#7540ed);background:var(--wt-selected,#f7f3ff);box-shadow:0 0 0 1px var(--wt-accent,#7540ed)}
+.account-settings .as-theme-option:hover{border-color:var(--wt-accent,#9674da)}
+.account-settings .as-theme-option:has(input:focus-visible){outline:3px solid var(--wt-accent,#bda6ff);outline-offset:4px}
+.account-settings .as-theme-option input[type=radio]{position:absolute;z-index:1;top:13px;right:13px;appearance:auto;width:18px;height:18px;min-width:18px;min-height:18px;margin:0;padding:0;accent-color:#8654f4;cursor:pointer}
+.account-settings .as-theme-preview{position:relative;display:grid;grid-template-columns:24px minmax(0,1fr);height:82px;border:1px solid #e1e4ed;border-radius:7px;background:#f7f8fc;overflow:hidden;color:#7350ca}
+.as-theme-preview>i{display:block;background:#ece7f8;border-right:1px solid #ddd6ed}
+.as-theme-preview>span{display:grid;align-content:start;gap:7px;padding:15px 34px 15px 12px}
+.as-theme-preview>span i{display:block;height:6px;border-radius:3px;background:#d8dce8}
+.as-theme-preview>span i:first-child{width:65%;background:#bba7e8}
+.as-theme-preview>svg{position:absolute;right:10px;bottom:10px}
+.account-settings .as-theme-preview-dark{background:#111827;border-color:#3b4b65;color:#c6b3ff}
+.as-theme-preview-dark>i{background:#202d43;border-color:#3b4b65}
+.as-theme-preview-dark>span i{background:#3b4b65}
+.as-theme-preview-dark>span i:first-child{background:#9c83dd}
+.account-settings .as-theme-copy{display:grid;gap:4px;padding-right:18px;min-width:0}
+.as-theme-copy strong{font-size:15px;line-height:1.6;font-weight:600}
+.account-settings .as-theme-copy>span{color:var(--wt-muted,#5f6880);font-size:13px;line-height:1.6}
+.account-settings .as-theme-status{min-height:23px;margin:12px 0 0;font-size:13px;color:var(--wt-muted,#5f6880)}
+@container(max-width:480px){.account-settings .as-theme-options{gap:12px}.account-settings .as-theme-option{padding:10px}.account-settings .as-theme-preview{height:72px}.as-theme-preview>span{padding:13px 30px 13px 9px}}

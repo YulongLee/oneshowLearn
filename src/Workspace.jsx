@@ -1,5 +1,5 @@
 import {BrandIdentity} from './BrandIdentity.jsx';
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowRight, Bell, BookOpenText, Books, CalendarBlank, CaretDown, CaretLeft, CaretRight, ChartBar, Check, CheckCircle, Clock, Crown, Cube, FileText, FolderSimple, Gauge, GearSix, House, List, MagnifyingGlass, MapTrifold, NotePencil, Play, Plus, Robot, SealCheck, Sparkle, SquaresFour, Star, Trophy, UsersThree, X } from "@phosphor-icons/react";
 import { api, getToken, subscribeToSession } from "./api.js";
 import { canManage } from "./platforms.js";
@@ -10,7 +10,9 @@ import {SidebarCourseOffer} from './SidebarCourseOffer.jsx';
 import {WorkspaceAccountMenu} from './WorkspaceAccountMenu.jsx';
 import {useWorkspaceSearch} from './useWorkspaceSearch.js';
 import {WorkspaceNotifications} from './WorkspaceNotifications.jsx';
+import {useWorkspaceTheme} from './useWorkspaceTheme.js';
 import "./workspace.css";
+import './workspace-theme.css';
 
 const emptyState = () => ({ tasks: [], notes: [], favorites: [], checkIns: [] });
 const emptyData = () => ({ user: null, library: [], recommendations: [], recent: null, version: null, state: emptyState(), stats: { completedItems: 0, completedPacks: 0, studyMinutes: null, streakDays: 0 } });
@@ -70,6 +72,12 @@ export function useWorkspaceModel(notify) {
 export function WorkspaceShell({ route, navigate, notify, children, resourceSearch }) {
   const [learningFocused,setLearningFocused]=useState(false),[learningHost,setLearningHost]=useState(null);
   const model = useWorkspaceModel(notify);
+  const {theme}=useWorkspaceTheme();
+  useLayoutEffect(()=>{
+    const root=document.documentElement,previous=root.getAttribute('data-workspace-theme');
+    root.setAttribute('data-workspace-theme',theme);
+    return()=>{if(root.getAttribute('data-workspace-theme')===theme){if(previous===null)root.removeAttribute('data-workspace-theme');else root.setAttribute('data-workspace-theme',previous);}};
+  },[theme]);
   const [menu, setMenu] = useState(false);
   const sidebar=useSidebarLayout();
   const sidebarToggle=useRef(null);
@@ -100,7 +108,7 @@ export function WorkspaceShell({ route, navigate, notify, children, resourceSear
     ["我的", [["/notes", "学习笔记", NotePencil], ["/favorites", "我的收藏", Star], ["/achievements", "我的成果", Trophy], ["/account", "设置中心", GearSix]]],
   ];
   const navItem = ([path, title, Icon]) => <button key={`${path}-${title}`} title={title} aria-label={title} className={selected(path) ? "is-active" : ""} aria-current={selected(path) ? "page" : undefined} onClick={() => go(path)}><Icon size={21} weight={selected(path) ? "fill" : "regular"} /><span>{title}</span></button>;
-  return <LearningLayoutContext.Provider value={{host:learningHost,setFocused:setLearningFocused}}><div className="ws-layout ws-reference-layout ws-unified-layout" data-learning-focused={learningFocused||undefined} data-sidebar={sidebar.mode} data-resizing={sidebar.resizing||undefined} style={{'--sidebar-width':`${sidebar.width}px`}}>
+  return <LearningLayoutContext.Provider value={{host:learningHost,setFocused:setLearningFocused}}><div className="ws-layout ws-reference-layout ws-unified-layout" data-theme={theme} data-learning-focused={learningFocused||undefined} data-sidebar={sidebar.mode} data-resizing={sidebar.resizing||undefined} style={{'--sidebar-width':`${sidebar.width}px`}}>
     {menu && <button className="ws-scrim" aria-label="关闭侧边导航" onClick={() => setMenu(false)} />}
     <div className="ws-sidebar-frame">
     <aside id="workspace-sidebar" className={`ws-sidebar ${menu ? "is-open" : ""}`}>

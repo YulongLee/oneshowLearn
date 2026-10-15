@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { UserCircle, ShieldCheck, SlidersHorizontal, UploadSimple, CheckCircle, SignOut, LockSimple, Receipt, EnvelopeSimple, ArrowRight, Lifebuoy } from '@phosphor-icons/react';
+import { UserCircle, ShieldCheck, SlidersHorizontal, UploadSimple, CheckCircle, SignOut, LockSimple, Receipt, EnvelopeSimple, ArrowRight, Lifebuoy, Sun, Moon } from '@phosphor-icons/react';
 import { api, setToken } from './api.js';
 import { Gate, Modal } from './PersonalShared.jsx';
 // PersonalShared's dialog styles are loaded by the personal-workspace route in
@@ -8,9 +8,12 @@ import { Gate, Modal } from './PersonalShared.jsx';
 import './personal-workspace.css';
 import { PLAYBACK_RATES, playbackRate } from './player-model.js';
 import './account-settings.css';
+import './workspace-theme-picker.css';
 import { LoginBindings } from './ExternalLogin.jsx';
 import {AccountOrders} from './AccountOrders.jsx';
 import {accountSection,accountMenuRequest,profileNameError,profileSaveLabel} from './account-center-model.js';
+import {SIDEBAR_MIN,SIDEBAR_DEFAULT,SIDEBAR_MAX} from './sidebar-preferences.js';
+import {useWorkspaceTheme} from './useWorkspaceTheme.js';
 
 export function AccountSettings({ model, navigate, notify }) {
   return <div className="account-settings"><header className="as-heading"><h1>设置中心</h1><p>管理个人资料、账号安全与订单。</p></header><Gate model={model} navigate={navigate}><Settings key={model.user?.id} model={model} navigate={navigate} notify={notify}/></Gate></div>;
@@ -21,6 +24,8 @@ function Settings({ model, navigate, notify }) {
   const [password,setPassword]=useState({currentPassword:'',newPassword:'',confirm:''});
   const [nameError,setNameError]=useState(''),[profileFailed,setProfileFailed]=useState(false),[profileSaved,setProfileSaved]=useState(false);
   const [rate,setRate]=useState(()=>{try{return playbackRate(localStorage.getItem('osl-playback-rate'));}catch{return 1;}});
+  const {theme,setTheme}=useWorkspaceTheme();
+  const [themeStatus,setThemeStatus]=useState('');
   const bypass=useRef(false),working=useRef(false),alive=useRef(true),fileInput=useRef(null);
   const dirty=Boolean(saved&&draft&&['name','bio','avatar'].some(key=>saved[key]!==draft[key]));
   const passwordDirty=Object.values(password).some(Boolean);
@@ -59,6 +64,7 @@ function Settings({ model, navigate, notify }) {
   };
   const logout=async()=>{if(working.current)return;working.current=true;setBusy(true);setError('');try{if(logoutConfirm==='all')await api('/auth/logout',{method:'POST'});bypass.current=true;setToken('');navigate('/login');}catch(e){setLogoutConfirm('');setError(e.message);}finally{working.current=false;if(alive.current)setBusy(false);}};
   const preference=next=>{try{localStorage.setItem('osl-playback-rate',String(next));setRate(next);notify('播放速度已保存到当前浏览器');}catch{setError('浏览器未允许保存偏好，请检查存储权限');}};
+  const chooseTheme=next=>{const result=setTheme(next);setThemeStatus(result.saved?'外观偏好已保存，下次打开仍会保留。':'外观已切换。当前浏览器未允许保存，关闭页面后可能恢复默认。');};
   return <div className="as-layout">
     <nav className="as-navigation" aria-label="设置分类">{[['profile','个人资料',UserCircle],['security','登录与安全',ShieldCheck],['preferences','学习偏好',SlidersHorizontal],['orders','我的订单',Receipt]].map(([id,label,Icon])=><button key={id} aria-current={tab===id?'page':undefined} aria-controls={`account-${id}`} disabled={busy} onClick={()=>chooseSection(id)}><Icon size={20}/>{label}{((id==='profile'&&dirty)||(id==='security'&&passwordDirty))&&<span className="as-draft-dot" aria-label="有未保存修改"/>}</button>)}</nav>
     {((dirty&&tab!=='profile')||(passwordDirty&&tab!=='security'))&&<div className="as-draft-notice" role="status"><span>你的未保存输入已保留，离开设置前请先处理。</span><button onClick={()=>chooseSection(dirty?'profile':'security')}>返回编辑<ArrowRight size={15}/></button></div>}
@@ -82,10 +88,11 @@ function Settings({ model, navigate, notify }) {
       </section>
       <section id="account-preferences" aria-label="学习偏好" hidden={tab!=='preferences'}>
         <header className="as-panel-heading"><div><h2>学习偏好</h2><p>以你的节奏学习，用熟悉的方式浏览。</p></div><span className="as-muted-badge">仅当前浏览器</span></header>
+        <fieldset className="as-theme-preference" aria-describedby="account-theme-help"><legend>外观模式</legend><p id="account-theme-help">选择适合你的学习界面，即时生效。</p><div className="as-theme-options">{[['light','浅色','明亮清晰，适合日间学习',Sun],['dark','深色','柔和深色，适合低光环境',Moon]].map(([value,label,description,Icon])=><label className="as-theme-option" data-selected={theme===value} key={value}><input type="radio" name="workspace-theme" value={value} checked={theme===value} onChange={()=>chooseTheme(value)}/><span className={`as-theme-preview as-theme-preview-${value}`} aria-hidden="true"><i/><span><i/><i/><i/></span><Icon size={20}/></span><span className="as-theme-copy"><strong>{label}</strong><span>{description}</span></span></label>)}</div><p className="as-theme-status" role="status">{themeStatus}</p></fieldset>
         <div className="as-preference"><div><h3>默认播放速度</h3><p>下次打开课程或实战项目时生效。</p></div><select aria-label="默认播放速度" value={rate} onChange={e=>preference(playbackRate(e.target.value))}>{PLAYBACK_RATES.map(value=><option key={value} value={value}>{value}×{value===1?'（正常）':''}</option>)}</select></div>
         <div className="as-preference"><div><h3>桌面侧栏</h3><p>手机使用独立抽屉导航，不受此设置影响。</p></div><select aria-label="桌面侧栏显示方式" value={model.sidebar.mode} onChange={e=>model.sidebar.setMode(e.target.value)}><option value="expanded">完整菜单</option><option value="icons">仅显示图标</option><option value="hidden">隐藏侧栏</option></select></div>
-        <div className="as-preference"><div><h3>展开宽度</h3><p>也可以拖动侧栏边缘调整。</p></div><label className="as-width"><input aria-label="侧栏展开宽度" type="range" min={228} max={360} step={1} value={model.sidebar.width} onChange={e=>model.sidebar.resize(Number(e.target.value))}/><output>{model.sidebar.width} px</output></label></div>
-        <footer><span>偏好即时保存，仅在当前浏览器生效。</span><button onClick={()=>{model.sidebar.setMode('expanded');model.sidebar.resize(228);preference(1);}}>恢复默认偏好</button></footer>
+        <div className="as-preference"><div><h3>展开宽度</h3><p>也可以拖动侧栏边缘调整。</p></div><label className="as-width"><input aria-label="侧栏展开宽度" type="range" min={SIDEBAR_MIN} max={SIDEBAR_MAX} step={1} value={model.sidebar.width} onChange={e=>model.sidebar.resize(Number(e.target.value))}/><output>{model.sidebar.width} px</output></label></div>
+        <footer><span>偏好即时保存，仅在当前浏览器生效。</span><button onClick={()=>{model.sidebar.setMode('expanded');model.sidebar.resize(SIDEBAR_DEFAULT);chooseTheme('light');preference(1);}}>恢复默认偏好</button></footer>
       </section>
       <section id="account-orders" aria-label="我的订单" hidden={tab!=='orders'}>{tab==='orders'&&<AccountOrders navigate={navigate}/>}</section>
     </div>

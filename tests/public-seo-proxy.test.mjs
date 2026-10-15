@@ -64,6 +64,15 @@ test('actual isolated Nginx preserves exact public assets and crawler routing wh
     writeFileSync(path.join(directory,configFile),config);
     checked(['run','--detach','--name',name,'--network','none','--read-only','--tmpfs','/var/run','--tmpfs','/var/cache/nginx','--tmpfs','/tmp','--mount','type=bind,source='+directory+',target=/review,readonly',image,'nginx','-c','/review/'+configFile,'-g','daemon off;']);
     checked(['exec',name,'nginx','-t','-c','/review/'+configFile]);
+    // A valid configuration does not prove the detached master has opened its
+    // listener yet. Retry only connection refusal, never HTTP/content failures.
+    for(let attempt=0;;attempt++){
+      const ready=invoke(['exec',name,'wget','-q','-O','-','http://127.0.0.1:8080/']);
+      if(ready.status===0){assert.equal(ready.stdout,'upstream-ok');break;}
+      assert.match(ready.stderr,/can't connect to remote host \(127\.0\.0\.1\): Connection refused/);
+      assert.ok(attempt<49,'Detached Nginx listener did not become ready');
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,100);
+    }
     const get=route=>checked(['exec',name,'wget','-q','-O','-','http://127.0.0.1:8080'+route]).stdout;
     assert.equal(get('/'),'upstream-ok');assert.equal(get('/course-offer?course=actual-course'),'upstream-ok');
     for(const [file,body] of Object.entries(licenses))assert.equal(get('/assets/'+file),body,variant+' exact public license '+file);

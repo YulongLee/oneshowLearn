@@ -2,29 +2,34 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {activeWorkspaceNav,normalizeWorkspaceRoute} from '../src/workspace-navigation.js';
-import {sidebarPreferences,sidebarWidth,readSidebarPreferences,saveSidebarPreferences,SIDEBAR_KEY} from '../src/sidebar-preferences.js';
+import {sidebarPreferences,sidebarWidth,readSidebarPreferences,saveSidebarPreferences,SIDEBAR_KEY,SIDEBAR_MIN,SIDEBAR_DEFAULT,SIDEBAR_MAX} from '../src/sidebar-preferences.js';
 
 test('learner navigation typography stays legible and does not jump on selection',()=>{
   const css=readFileSync(new URL('../src/workspace-shell.css',import.meta.url),'utf8');
-  assert.match(css,/\.ws-unified-layout \.wb-nav-group > button \{[^}]*min-height:48px;[^}]*font-size:16px; line-height:24px/);
-  assert.match(css,/\.ws-unified-layout \.wb-nav-group > button\.is-active \{[^}]*font-size:16px/);
-  assert.match(css,/\.ws-unified-layout \.wb-nav-group > span \{[^}]*font-size:13px;[^}]*color:#59657d/);
-  assert.match(css,/\.ws-unified-layout \.wb-settings>svg \{ width:22px; height:22px/);
-  assert.match(css,/\.ws-unified-layout \.wb-settings \{[^}]*font-size:16px/);
+  assert.match(css,/\.ws-unified-layout \.wb-nav-group > button \{[^}]*min-height:48px;[^}]*padding:12px 14px;[^}]*gap:12px;[^}]*font-size:16px; line-height:24px; font-weight:500/);
+  assert.match(css,/\.wb-nav-group > button \{[^}]*border-radius:10px/);
+  assert.match(css,/\.ws-unified-layout \.wb-nav-group > button\.is-active \{[^}]*background:#f3efff;[^}]*color:#7042ff;[^}]*font-size:16px; font-weight:600/);
+  assert.match(css,/\.ws-unified-layout \.wb-nav-group > span \{[^}]*font-size:12px; line-height:20px; font-weight:500; color:#6b7280/);
+  assert.match(css,/\.ws-unified-layout \.wb-settings>svg \{ width:20px; height:20px/);
+  assert.match(css,/\.ws-unified-layout \.wb-settings \{[^}]*font-size:16px; line-height:24px; font-weight:500/);
+  assert.match(css,/\.ws-unified-layout \.wb-nav-group \{ margin-top:18px/);
+  assert.match(css,/\.ws-layout\.ws-unified-layout \{ grid-template-columns:var\(--sidebar-width,248px\)/);
 });
 
 test('sidebar preferences validate modes, bounds and unavailable storage',()=>{
-  assert.deepEqual(sidebarPreferences(),{mode:'expanded',width:228});
-  assert.deepEqual(sidebarPreferences({mode:'unexpected',width:NaN}),{mode:'expanded',width:228});
-  assert.equal(sidebarWidth(9999),360);assert.equal(sidebarWidth(-1),228);assert.equal(sidebarWidth(300.4),300);assert.equal(sidebarWidth('300'),228);
-  for(const mode of ['expanded','icons','hidden'])assert.equal(sidebarPreferences({mode,width:310}).mode,mode);
+  assert.equal(SIDEBAR_MIN,228);assert.equal(SIDEBAR_DEFAULT,248);assert.equal(SIDEBAR_MAX,360);
+  assert.deepEqual(sidebarPreferences(),{mode:'expanded',width:248});
+  assert.deepEqual(sidebarPreferences({mode:'unexpected',width:NaN}),{mode:'expanded',width:248});
+  assert.equal(sidebarWidth(9999),360);assert.equal(sidebarWidth(-1),228);assert.equal(sidebarWidth(300.4),300);assert.equal(sidebarWidth('300'),248);
+  for(const mode of ['expanded','icons','hidden'])for(const width of [228,248,310,360])assert.deepEqual(sidebarPreferences({mode,width}),{mode,width});
   const previous=globalThis.localStorage;
   try {
     const store=new Map();globalThis.localStorage={getItem:key=>store.get(key),setItem:(key,value)=>store.set(key,value)};
     saveSidebarPreferences({mode:'icons',width:320});assert.deepEqual(readSidebarPreferences(),{mode:'icons',width:320});
-    store.set(SIDEBAR_KEY,'broken');assert.deepEqual(readSidebarPreferences(),{mode:'expanded',width:228});
+    for(const width of [228,360]){saveSidebarPreferences({mode:'expanded',width});assert.deepEqual(readSidebarPreferences(),{mode:'expanded',width});}
+    store.set(SIDEBAR_KEY,'broken');assert.deepEqual(readSidebarPreferences(),{mode:'expanded',width:248});
     globalThis.localStorage={getItem(){throw Error('blocked');},setItem(){throw Error('blocked');}};
-    assert.doesNotThrow(()=>saveSidebarPreferences({mode:'hidden',width:320}));assert.deepEqual(readSidebarPreferences(),{mode:'expanded',width:228});
+    assert.doesNotThrow(()=>saveSidebarPreferences({mode:'hidden',width:320}));assert.deepEqual(readSidebarPreferences(),{mode:'expanded',width:248});
   } finally {if(previous===undefined)delete globalThis.localStorage;else globalThis.localStorage=previous;}
 });
 
@@ -35,6 +40,12 @@ test('sidebar controls retain accessible restore, icon labels and pointer/keyboa
   const hook=readFileSync(new URL('../src/useSidebarLayout.js',import.meta.url),'utf8');
   for(const behavior of ['setPointerCapture','releasePointerCapture','onPointerCancel','onLostPointerCapture','ArrowLeft','ArrowRight','onDoubleClick'])assert.ok(hook.includes(behavior));
   assert.match(hook,/max-width:1000px/);
+  assert.match(hook,/'aria-valuemin':SIDEBAR_MIN/);
+  assert.match(hook,/Home:SIDEBAR_MIN/);
+  assert.match(hook,/Enter:SIDEBAR_DEFAULT/);
+  const settings=readFileSync(new URL('../src/AccountSettings.jsx',import.meta.url),'utf8');
+  assert.match(settings,/min=\{SIDEBAR_MIN\} max=\{SIDEBAR_MAX\}/);
+  assert.match(settings,/model\.sidebar\.resize\(SIDEBAR_DEFAULT\)/);
 });
 
 test('shared navigation handles trailing slashes and nested learner destinations',()=>{

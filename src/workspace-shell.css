@@ -16,12 +16,12 @@
 .ws-reference-layout .ws-brand img { width:36px; height:36px; }
 .ws-reference-layout .ws-brand > span { display:grid; gap:2px; text-align:left; }
 .ws-reference-layout .ws-brand small { color:#63708c; font-size:11px; font-weight:400; letter-spacing:.05px; }
-.ws-reference-layout .ws-sidebar nav { gap:0; }
-.ws-reference-layout .ws-sidebar nav > button, .wb-nav-group > button { display:flex; align-items:center; gap:16px; width:100%; min-height:42px; padding:10px 16px; border:0; border-radius:8px; background:transparent; text-align:left; font-size:14px; color:#27314e; }
+.ws-unified-layout .ws-sidebar nav { gap:0; font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; }
+.ws-reference-layout .ws-sidebar nav > button, .wb-nav-group > button { display:flex; align-items:center; gap:16px; width:100%; min-height:42px; padding:10px 16px; border:0; background:transparent; text-align:left; font-size:14px; color:#27314e; }
 .ws-reference-layout .ws-sidebar nav > button.is-active { background:linear-gradient(110deg,#f0ebff,#f6f2ff); color:var(--wb-violet); font-size:16px; }
 .wb-nav-group { display:grid; gap:1px; margin-top:15px; }
-.wb-nav-group > span { margin:0 16px 7px; color:#63708c; font-size:12px; }
-.wb-nav-group > button:hover { background:#f5f2ff; color:var(--wb-violet); }
+.wb-nav-group > span { margin:0 14px 7px; color:#63708c; font-size:12px; }
+.wb-nav-group > button:hover { background:#f7f6fc; color:#27314e; }
 .wb-nav-group svg { flex-shrink:0; }
 .ws-reference-layout .ws-sidebar-bottom { gap:24px; }
 .wb-access { margin:0 7px; padding:19px 17px 17px; border:1px solid #eeeafe; border-radius:9px; background:linear-gradient(125deg,#f1edff,#f6f5ff); }
@@ -41,7 +41,6 @@
 .ws-reference-layout .ws-icon-button { color:#222d4b; }
 .ws-reference-layout .ws-content { max-width:1840px; padding:20px 17px 22px 25px; }
 .ws-reference-layout .ws-search-results { top:50px; }
-.ws-reference-layout .ws-sidebar nav > button, .wb-nav-group > button { font-size:15px; }
 @media(max-width:1000px) { .ws-reference-layout { grid-template-columns:minmax(0,1fr); } .ws-reference-layout .ws-sidebar { position:fixed; top:0; bottom:0; left:0; width:228px; transform:translateX(-105%); transition:transform .2s; box-shadow:10px 0 50px #18203a16; } .ws-reference-layout .ws-sidebar.is-open { transform:translateX(0); } .ws-reference-layout .ws-mobile-menu { display:inline-grid; flex-shrink:0; } .ws-reference-layout .ws-topbar { gap:14px; padding:0 18px; } .ws-reference-layout .ws-search { flex:1; width:auto; max-width:532px; } .ws-reference-layout .ws-user-actions { gap:10px; } .ws-reference-layout .ws-profile strong { max-width:120px; } .ws-reference-layout .ws-search-results { left:18px; width:min(540px,calc(100vw - 36px)); } }
 @media(max-width:699px) { .ws-reference-layout .ws-topbar { padding:0 13px; gap:10px; } .ws-reference-layout .ws-content { padding:17px 14px; } .ws-reference-layout .ws-profile > span:nth-child(2), .ws-reference-layout .ws-profile > svg, .ws-reference-layout .ws-user-actions > .ws-icon-button, .ws-reference-layout .ws-search kbd { display:none; } .ws-reference-layout .ws-user-actions { gap:0; } .ws-reference-layout .ws-avatar { width:32px; height:32px; } .ws-reference-layout .ws-search { height:34px; } }
 @media(max-width:1000px) {
@@ -53,17 +52,17 @@
 
 /* One geometry contract across all learner pages and all active states. */
 html:has(.ws-unified-layout) { scrollbar-gutter:stable; }
-.ws-layout.ws-unified-layout { grid-template-columns:var(--sidebar-width,228px) minmax(0,1fr); }
+.ws-layout.ws-unified-layout { grid-template-columns:var(--sidebar-width,248px) minmax(0,1fr); }
 .ws-unified-layout .ws-brand { font-size:18px; gap:10px; }
 .ws-unified-layout .ws-sidebar { padding:10px 13px 16px; gap:24px; }
 .ws-unified-layout .ws-sidebar nav > button,
-.ws-unified-layout .wb-nav-group > button { min-height:48px; padding:12px 16px; gap:14px; font-size:16px; line-height:24px; font-weight:500; }
+.ws-unified-layout .wb-nav-group > button { min-height:48px; padding:12px 14px; gap:12px; border-radius:10px; font-size:16px; line-height:24px; font-weight:500; }
 .ws-unified-layout .ws-sidebar nav > button.is-active,
-.ws-unified-layout .wb-nav-group > button.is-active { background:#eee8ff; color:#7042ff; font-size:16px; font-weight:650; }
-.ws-unified-layout .wb-nav-group { margin-top:15px; }
-.ws-unified-layout .wb-nav-group > span { display:block; font-size:13px; line-height:20px; font-weight:500; color:#59657d; }
+.ws-unified-layout .wb-nav-group > button.is-active { background:#f3efff; color:#7042ff; font-size:16px; font-weight:600; }
+.ws-unified-layout .wb-nav-group { margin-top:18px; }
+.ws-unified-layout .wb-nav-group > span { display:block; font-size:12px; line-height:20px; font-weight:500; color:#6b7280; }
 .ws-unified-layout .ws-sidebar nav button>svg,
-.ws-unified-layout .wb-settings>svg { width:22px; height:22px; flex-shrink:0; }
+.ws-unified-layout .wb-settings>svg { width:20px; height:20px; flex-shrink:0; }
 .ws-unified-layout .wb-settings { min-height:48px; padding:12px 29px; font-size:16px; line-height:24px; font-weight:500; }
 .ws-unified-layout .ws-topbar { height:58px; padding:0 24px; }
 .ws-unified-layout .ws-content { width:100%; max-width:1840px; margin-inline:auto; padding:28px clamp(20px,2vw,40px) 40px; container:learner / inline-size; }
@@ -101,9 +100,9 @@ html:has(.ws-unified-layout) { scrollbar-gutter:stable; }
   .ws-unified-layout[data-sidebar="icons"] .wb-settings>span { display:none; }
   .ws-unified-layout[data-sidebar="icons"] nav button,
   .ws-unified-layout[data-sidebar="icons"] .wb-settings,
-  .ws-unified-layout[data-sidebar="icons"] .ws-compact-access { display:flex; justify-content:center; align-items:center; padding:10px; min-height:48px; border:0; border-radius:8px; background:transparent; color:#6551a2; }
-  .ws-unified-layout[data-sidebar="icons"] nav button.is-active { background:#eee8ff; color:#7042ff; }
-  .ws-unified-layout[data-sidebar="icons"] nav button:hover { background:#f4f0ff; }
+  .ws-unified-layout[data-sidebar="icons"] .ws-compact-access { display:flex; justify-content:center; align-items:center; padding:10px; min-height:48px; border:0; border-radius:10px; background:transparent; color:#6551a2; }
+  .ws-unified-layout[data-sidebar="icons"] nav button.is-active { background:#f3efff; color:#7042ff; }
+  .ws-unified-layout[data-sidebar="icons"] nav button:not(.is-active):hover { background:#f7f6fc; }
   .ws-unified-layout[data-sidebar="icons"] .wb-nav-group { margin-top:12px; padding-top:10px; border-top:1px solid #f0eef7; }
 }
 @media(max-width:1000px) {

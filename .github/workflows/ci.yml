@@ -23,7 +23,8 @@ jobs:
       - run: npm run check:engineering
       - run: npm run test:engineering
       # Registry or TLS errors fail this check; never disable certificate validation.
-      - run: npm run check:dependencies
+      - name: Dependency audit with actionable failure diagnostics
+        run: node scripts/run-acceptance-with-diagnostics.mjs check:dependencies
       - name: Business regressions with actionable failure diagnostics
         run: node scripts/run-acceptance-with-diagnostics.mjs test
       - run: npm run build

@@ -8,8 +8,8 @@ export function acceptanceFailureEvidence(result) {
 }
 export function runAcceptance(args=process.argv.slice(2)) {
 const [command,...extra]=args;
-if(!['test','test:browser','test:deployment'].includes(command)||
- (command==='test:deployment' ? extra.length!==2||extra[0]!=='--release'||!/^[a-z0-9][a-z0-9.-]{0,63}$/.test(extra[1]) : extra.length!==0))throw Error('Choose test, test:browser or test:deployment --release NAME');
+if(!['check:dependencies','test','test:browser','test:deployment'].includes(command)||
+ (command==='test:deployment' ? extra.length!==2||extra[0]!=='--release'||!/^[a-z0-9][a-z0-9.-]{0,63}$/.test(extra[1]) : extra.length!==0))throw Error('Choose check:dependencies, test, test:browser or test:deployment --release NAME');
 const result=spawnSync(process.platform==='win32'?'npm.cmd':'npm',['run',command,...(extra.length?['--',...extra]:[])],{encoding:'utf8',maxBuffer:20*1024*1024});
 const text=(result.stdout||'')+(result.stderr||'');process.stdout.write(text);
 if(result.error||result.status!==0) {

@@ -7,6 +7,7 @@ import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 import {DatabaseSync} from 'node:sqlite';
 import {parseEnv} from 'node:util';
+import {runInNewContext} from 'node:vm';
 import {initialEnvironment,parseEnvironment,validateEnvironment} from '../deploy/portable/environment.mjs';
 import {safeDirectory,validateImagePair,verifyBackup} from '../deploy/portable/manage.mjs';
 import {onlyLoopbackWebBinding} from '../deploy/portable/container-inspection.mjs';
@@ -18,6 +19,14 @@ import proxyaddr from 'proxy-addr';
 import nodemailer from 'nodemailer';
 const temp=t=>{const p=realpathSync(mkdtempSync(path.join(tmpdir(),'osl-engineering-unit-')));t.after(()=>rmSync(p,{recursive:true,force:true}));return p;};
 const env=()=>initialEnvironment('https://engineering.example.invalid','owner@example.invalid');
+// Exercise the unchanged runner body with only its child process and host I/O replaced.
+// No npm command, registry request or real process exit is performed by these fixtures.
+const diagnosticRun=(args,result,{platform='linux'}={})=>{
+ const calls=[],writes=[],annotations=[],exits=[],stopped={};
+ const source=readFileSync('scripts/run-acceptance-with-diagnostics.mjs','utf8').replace(/^import .*;\n/gm,'').replaceAll('export function ','function ').replaceAll('import.meta.url',JSON.stringify('file:///isolated-diagnostic-runner.mjs'));
+ try{runInNewContext(source+'\nrunAcceptance(input);',{input:args,spawnSync:(...args)=>{calls.push(args);return result;},process:{argv:[],platform,env:{GITHUB_ACTIONS:'true'},stdout:{write:text=>writes.push(text)},exit:code=>{exits.push(code);throw stopped;}},console:{log:text=>annotations.push(text)}});}catch(error){if(error!==stopped)throw error;}
+ return {calls:JSON.parse(JSON.stringify(calls)),writes,annotations,exits};
+};
 test('CI diagnostics retain original Playwright stderr instead of only the outer suite failure',()=>{
  for(const cause of ['page.waitForFunction: Timeout 30000ms exceeded','page.goto: net::ERR_CONNECTION_REFUSED','page.evaluate: actual isolated failure','AssertionError: actual child mismatch']) {
   const evidence=acceptanceFailureEvidence({status:1,signal:null,stdout:'PASS a fixture with Error: in its title\nPASS prior step',stderr:cause+'\n at checkPublicSeoUi\nError: isolated public-seo browser suite failed (status=1)\n'});
@@ -28,6 +37,24 @@ test('CI diagnostics remain bounded, redact long fixture values and retain empty
  const evidence=acceptanceFailureEvidence({status:1,signal:'SIGTERM',stdout:('fixture line\n').repeat(3000),stderr:('trace line\n').repeat(3000)+'fixture '+'A'.repeat(160)+'\npage.waitForFunction: actual timeout'});
  assert.ok(evidence.length<=5000);assert.ok(!evidence.includes('A'.repeat(80)));assert.ok(evidence.includes('[long fixture value omitted]'));assert.ok(evidence.includes('actual timeout'));assert.ok(evidence.includes('signal=SIGTERM'));
  assert.match(acceptanceFailureEvidence({status:null,error:{code:'ENOENT'}}),/code=ENOENT/);
+});
+test('CI diagnostic commands stay closed, preserve exact npm arguments and never accept audit extras',()=>{
+ for(const [args,argv] of [[['check:dependencies'],['run','check:dependencies']],[['test'],['run','test']],[['test:browser'],['run','test:browser']],[['test:deployment','--release','ci-abc123'],['run','test:deployment','--','--release','ci-abc123']]]){
+  const result=diagnosticRun(args,{status:0,signal:null,stdout:'successful isolated fixture\n',stderr:''});
+  assert.deepEqual(result.calls,[['npm',argv,{encoding:'utf8',maxBuffer:20*1024*1024}]]);assert.deepEqual(result.exits,[]);assert.deepEqual(result.annotations,[]);assert.deepEqual(result.writes,['successful isolated fixture\n']);
+ }
+ assert.equal(diagnosticRun(['check:dependencies'],{status:0},{platform:'win32'}).calls[0][0],'npm.cmd');
+ for(const args of [[],['audit'],['check:dependencies','--'],['check:dependencies','--registry=https://other.invalid'],['check:dependencies','--fetch-retries=1'],['test','--extra'],['test:browser','--extra'],['test:deployment'],['test:deployment','--release','../outside'],['test:deployment','--release','ci-valid','--extra']])assert.throws(()=>diagnosticRun(args,{status:0}),/Choose check:dependencies/);
+ const audit=JSON.parse(readFileSync('package.json','utf8')).scripts['check:dependencies'];
+ assert.equal(audit,'npm audit --audit-level=high --registry=https://registry.npmjs.org --fetch-timeout=15000 --fetch-retries=0');
+});
+test('CI dependency failures annotate bounded stderr first without retrying or changing the original exit',()=>{
+ for(const child of [{status:1,signal:null},{status:7,signal:null},{status:null,signal:'SIGTERM'},{status:null,signal:null,error:{code:'ENOENT'}},{status:0,signal:null,error:{code:'ENOBUFS'}}]){
+  const result={...child,stdout:'audit stdout tail\n',stderr:'isolated cause unknown 25%\r\nfixture '+'A'.repeat(160)+'\n'},observed=diagnosticRun(['check:dependencies'],result);
+  assert.equal(observed.calls.length,1);assert.deepEqual(observed.calls[0][1],['run','check:dependencies']);assert.deepEqual(observed.writes,[result.stdout+result.stderr]);assert.deepEqual(observed.exits,[result.status||1]);
+  const expected='::error title=check:dependencies acceptance failure::'+acceptanceFailureEvidence(result).replaceAll('%','%25').replaceAll('\r','%0D').replaceAll('\n','%0A');
+  assert.deepEqual(observed.annotations,[expected]);assert.ok(observed.annotations[0].indexOf('Original stderr')<observed.annotations[0].indexOf('Last stdout'));assert.ok(observed.annotations[0].includes('25%25%0D%0A'));assert.ok(!observed.annotations[0].includes('A'.repeat(80)));
+ }
 });
 test('security dependency release accepts only the reviewed versions and obsolete upload removals',()=>{
  const next=JSON.parse(readFileSync('package-lock.json')),old=structuredClone(next);
@@ -163,7 +190,7 @@ test('release definitions keep data out of images and production deployment out 
  for(const name of ['scripts/check-operations.mjs','deploy/configure-mineru.mjs','deploy/update-commercial-completion.sh','deploy/nginx-oneshowlearn.conf','deploy/nginx-oneshowlearn-https.conf','deploy/nginx-oneshowlearn-app.conf']){
   assert.ok(docker.includes(name));assert.ok(ignore.split('\n').includes('!'+name));assert.ok(readFileSync('deploy/portable/manage.mjs','utf8').includes("'"+name+"'"),'verification input included in immutable source hash');
  }
- assert.match(workflow,/npm run check:dependencies/);assert.match(workflow,/npm run test:auth-proxy/);
+ assert.match(workflow,/run: node scripts\/run-acceptance-with-diagnostics\.mjs check:dependencies\n/);assert.match(workflow,/npm run test:auth-proxy/);
  assert.ok(workflow.includes('AUTH_PROXY_IMAGE: oneshowlearn-web:ci-${{ github.sha }}'),'proxy uses the actual tagged build, not an optional BuildKit base tag');
  assert.match(workflow,/npm run test:deployment/);assert.doesNotMatch(workflow,/secrets\.|ssh |ops -- deploy/);
  assert.match(readFileSync('deploy/portable/compose.yaml','utf8'),/127\.0\.0\.1:/);assert.match(readFileSync('server/config.mjs','utf8'),/host: process.env.API_HOST \|\| "127.0.0.1"/);

@@ -61,6 +61,12 @@ const context=async(u,options={})=>{
 };
 const ready=async p=>{await p.locator('.tc-course-studio .tc-welcome').waitFor();await p.waitForFunction(()=>!document.querySelector('.tc-course-picker select')?.disabled);};
 const answerReady=async p=>{await p.locator('.tc-message.is-assistant').last().waitFor();await p.getByRole('button',{name:'发送给 AI 导师',exact:true}).waitFor();};
+// A prior answer and a visible (but disabled) Send button do not acknowledge a new turn.
+// Read the current turn, connected composer and its desired draft in one browser snapshot.
+const faqDraftReady=async(p,{question,answers,draft=''})=>p.waitForFunction(({question,answers,draft})=>{
+ const composer=document.querySelector('.tc-composer textarea'),users=[...document.querySelectorAll('.tc-message.is-user')],replies=[...document.querySelectorAll('.tc-message.is-assistant')];
+ return Boolean(composer?.isConnected&&composer.getClientRects().length&&!composer.disabled&&composer.value===draft&&users.length===answers&&users.at(-1)?.textContent===question&&replies.length===answers&&replies.at(-1)?.isConnected&&replies.at(-1)?.textContent.trim()&&!document.querySelector('.tc-pending,.tc-error,.tc-turn-error'));
+},{question,answers,draft});
 try {
  const c=await context(a,{draft:'保留我的真实草稿'}),p=await c.newPage();await p.goto(base+'/tutor');await ready(p);
  await p.waitForFunction(id=>document.querySelector('.tc-course-picker select')?.value===String(id),pack);
@@ -156,7 +162,7 @@ try {
  for(const [width,group] of [[390,TUTOR_FAQ[0]],[1700,TUTOR_FAQ.find(group=>group.id==='general')]]){
   await f.setViewportSize({width,height:1150});await f.locator('.tc-composer textarea').fill('需要保留的另一份草稿');
   await f.getByRole('button',{name:'常见问题',exact:true}).click();await f.getByRole('button',{name:group.title,exact:true}).click();
-  const item=group.questions[0],question=f.getByRole('button',{name:'准备问题：'+item.title,exact:true}),before={requests:requests.length,calls:calls.length,turns:turnCount(),remaining:await allowanceFor(),mode:await f.locator('.tc-learning-scope').getAttribute('class')};
+  const item=group.questions[0],question=f.getByRole('button',{name:'准备问题：'+item.title,exact:true}),before={requests:requests.length,calls:calls.length,turns:turnCount(),remaining:await allowanceFor(),mode:await f.locator('.tc-learning-scope').getAttribute('class'),answers:await f.locator('.tc-message.is-assistant').count()};
   f.once('dialog',dialog=>dialog.dismiss());await question.click();
   check(await f.locator('.tc-composer textarea').inputValue()==='需要保留的另一份草稿','FAQ cancellation keeps the entire existing draft '+width);
   check(await f.locator('.tc-learning-scope').getAttribute('class')===before.mode,'FAQ cancellation keeps the previous answering mode '+width);
@@ -165,11 +171,14 @@ try {
   check(await f.locator('.tc-learning-scope').getAttribute('class').then(value=>value.includes('is-'+group.mode)),'FAQ preparation selects its truthful answering mode '+width);
   check(await f.locator('.tc-composer textarea').evaluate(element=>document.activeElement===element)&&await f.locator('.tc-faq.is-open').count()===0,'FAQ preparation closes disclosure and focuses the draft '+width);
   check(requests.length===before.requests&&calls.length===before.calls&&turnCount()===before.turns&&(await allowanceFor())===before.remaining,'FAQ preparation creates no conversation/turn/provider call or allowance consumption '+width);
-  await f.getByRole('button',{name:'发送给 AI 导师',exact:true}).click();await answerReady(f);
+  await f.getByRole('button',{name:'发送给 AI 导师',exact:true}).click();
+  await faqDraftReady(f,{question:item.question,answers:before.answers+1});
   check(requests.filter(request=>request.url.endsWith('/turns')).at(-1).body.question===item.question,'only explicit Send transmits the prepared FAQ question '+width);
   check(calls.length===before.calls+1&&turnCount()===before.turns+1,'explicit FAQ send creates exactly one turn and one fake provider call '+width);
   check((await allowanceFor())===before.remaining-1,'explicit FAQ send consumes exactly one isolated allowance '+width);
   check(await f.locator('.tc-composer textarea').inputValue()==='','successful explicit FAQ send clears only its sent draft '+width);
+  const nextDraft='发送完成后新写的另一份草稿 '+width;await f.locator('.tc-composer textarea').fill(nextDraft);await f.reload();await faqDraftReady(f,{question:item.question,answers:before.answers+1,draft:nextDraft});
+  check(await f.locator('.tc-composer textarea').inputValue()===nextDraft,'a subsequent unsent draft survives the completed FAQ send and reload '+width);
  }
  await fc.close();
 

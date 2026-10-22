@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
 import {homepageExamples,homepageOffer,homepageDiscount,homepagePresentation,homepageCourse,homepagePreviewText,homepageCommercialProjects,homepageDeliveryText,HOMEPAGE_INSTRUCTOR} from '../src/homepage-model.js';
 import {currentPublicCopy,SITE_DEFAULTS} from '../server/site-defaults.mjs';
 
@@ -86,6 +87,28 @@ test('missing cases use clearly named learning directions, not fabricated produc
   assert.equal(result.projects,false);assert.equal(result.items.length,3);
   assert.ok(result.items.every(item=>item.label==='学习方向'&&item.path.startsWith('/')));
 });
+test('decorative image fallback reconciles early SSR failure and resets only for a changed source',()=>{
+  const source=readFileSync(new URL('../src/PublicHomepage.jsx',import.meta.url),'utf8');
+  const hook=source.slice(source.indexOf('function useDecorativeImageFailure('),source.indexOf('function AudienceBackground('));
+  const ref={current:null};let initialized=false,state,deps,pending;
+  const renderHook=runInNewContext('('+hook+')',{
+    useRef:()=>ref,
+    useState:initial=>{if(!initialized){state=initial;initialized=true;}return [state,next=>{state=typeof next==='function'?next(state):next;}];},
+    useEffect:(effect,next)=>{if(!deps||next.some((value,index)=>value!==deps[index]))pending=effect;deps=next;},
+  });
+  const render=(src,image)=>{const result=renderHook(src);ref.current=image;return result;},flush=()=>{const effect=pending;pending=null;effect?.();};
+  const waiting={complete:false,naturalWidth:0},loaded={complete:true,naturalWidth:1024},failed={complete:true,naturalWidth:0};
+  assert.equal(render('first',waiting).failed,false,'an unstarted lazy image keeps its unchanged initial markup');flush();
+  let image=render('first',waiting);assert.equal(image.failed,false,'incomplete lazy images are not mistaken for failures');image.onError();
+  assert.equal(render('first',null).failed,true,'existing onError still removes a failure after hydration');
+  assert.equal(render('second',failed).failed,false,'a changed capability background receives a fresh initial attempt');flush();
+  assert.equal(render('second',null).failed,true,'an already-settled SSR failure is removed without another error event');
+  assert.equal(render('first',loaded).failed,false,'returning to an earlier source resets the old failed state');flush();
+  assert.equal(render('first',loaded).failed,false,'a valid completed image stays visible');
+  image=render('third',waiting);image.onError();ref.current=null;flush();
+  assert.equal(render('third',null).failed,true,'source-reset reconciliation never clears a fresh onError before its effect');
+  assert.doesNotMatch(hook,/new Image|fetch\(|\.src\s*=|setTimeout|\.decode\(/,'fallback does not retry, replace a source or wait on a timer');
+});
 test('platform capability scene backgrounds stay local, bounded and decorative',()=>{
   const source=readFileSync(new URL('../src/PublicHomepage.jsx',import.meta.url),'utf8');
   const css=readFileSync(new URL('../src/homepage.css',import.meta.url),'utf8');
@@ -97,6 +120,8 @@ test('platform capability scene backgrounds stay local, bounded and decorative',
     assert.equal(data.subarray(0,4).toString(),'RIFF');assert.equal(data.subarray(8,12).toString(),'WEBP');
   }
   const component=source.slice(source.indexOf('function PlatformExample('),source.indexOf('function ',source.indexOf('function PlatformExample(')+1));
+  assert.match(component,/useDecorativeImageFailure\(feature\.background\)/);
+  assert.match(component,/!background\.failed&&<img ref=\{background\.ref\}/);assert.match(component,/onError=\{background\.onError\}/);
   assert.match(component,/className="sales-capability-background"/);
   assert.match(component,/src=\{feature\.background\}/);
   assert.match(component,/alt=""/);assert.match(component,/aria-hidden="true"/);
@@ -147,11 +172,11 @@ test('audience stages add only bounded decorative backgrounds with a white failu
     assert.ok(item.prompt.length>500&&item.prompt.includes('no text'),'full text-free asset prompt retained '+item.name);
   }
   const component=source.slice(source.indexOf('function AudienceBackground('),source.indexOf('function ',source.indexOf('function AudienceBackground(')+1));
-  assert.match(component,/useState\(false\)/);assert.match(component,/failed\s*\?\s*null\s*:/);
+  assert.match(component,/useDecorativeImageFailure\(src\)/);assert.match(component,/failed\s*\?\s*null\s*:/);assert.match(component,/<img ref=\{ref\}/);
   assert.match(component,/className="sales-audience-background"/);assert.match(component,/src=\{src\}/);
   assert.match(component,/alt=""/);assert.match(component,/aria-hidden="true"/);
   assert.match(component,/loading="lazy"/);assert.match(component,/decoding="async"/);
-  assert.match(component,/width="1536" height="1024"/);assert.match(component,/onError=\{\(\)=>setFailed\(true\)\}/);
+  assert.match(component,/width="1536" height="1024"/);assert.match(component,/onError=\{onError\}/);
   const audience=source.slice(source.indexOf('<section className="sales-audience'),source.indexOf('</section>',source.indexOf('<section className="sales-audience')));
   assert.match(audience,/<article[^>]*><AudienceBackground src=\{background\}\/>/);
   assert.doesNotMatch(audience,/<article[^>]*(?:onClick|tabIndex|role=)/);
@@ -187,11 +212,11 @@ test('five-phase roadmap adds bounded decorative scenes without changing the lea
     assert.ok(item.prompt.length>500&&/no text/i.test(item.prompt),'full text-free roadmap prompt retained '+item.name);
   }
   const component=source.slice(source.indexOf('function PhaseBackground('),source.indexOf('function ',source.indexOf('function PhaseBackground(')+1));
-  assert.match(component,/useState\(false\)/);assert.match(component,/failed\s*\?\s*null\s*:/);
+  assert.match(component,/useDecorativeImageFailure\(src\)/);assert.match(component,/failed\s*\?\s*null\s*:/);assert.match(component,/<img ref=\{ref\}/);
   assert.match(component,/className="sales-phase-background"/);assert.match(component,/src=\{src\}/);
   assert.match(component,/alt=""/);assert.match(component,/aria-hidden="true"/);
   assert.match(component,/loading="lazy"/);assert.match(component,/decoding="async"/);
-  assert.match(component,/width="1024" height="1536"/);assert.match(component,/onError=\{\(\)=>setFailed\(true\)\}/);
+  assert.match(component,/width="1024" height="1536"/);assert.match(component,/onError=\{onError\}/);
   const roadmap=source.slice(source.indexOf('<section className="sales-roadmap'),source.indexOf('</section>',source.indexOf('<section className="sales-roadmap')));
   assert.match(roadmap,/<ol className="sales-phase-grid" aria-label="五阶段学习路径">/);
   assert.match(roadmap,/phases\.map\(\(\{[^}]*background/);

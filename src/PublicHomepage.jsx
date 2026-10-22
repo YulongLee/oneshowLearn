@@ -58,13 +58,24 @@ const heroCapabilities=[
   {icon:Users,title:'学习交流'},
 ];
 
+function useDecorativeImageFailure(src) {
+  const image=useRef(null),[failedSrc,setFailedSrc]=useState(null);
+  useEffect(()=>{
+    // SSR images can fail before React attaches onError. Read their settled
+    // state once attached; a new source still gets its original fresh attempt.
+    const element=image.current;
+    if(element?.complete&&element.naturalWidth===0)setFailedSrc(src);
+    else setFailedSrc(current=>current===src?current:null);
+  },[src]);
+  return {ref:image,failed:failedSrc===src,onError:()=>setFailedSrc(src)};
+}
 function AudienceBackground({src}) {
-  const [failed,setFailed]=useState(false);
-  return failed?null:<img className="sales-audience-background" src={src} width="1536" height="1024" alt="" aria-hidden="true" loading="lazy" decoding="async" onError={()=>setFailed(true)}/>;
+  const {ref,failed,onError}=useDecorativeImageFailure(src);
+  return failed?null:<img ref={ref} className="sales-audience-background" src={src} width="1536" height="1024" alt="" aria-hidden="true" loading="lazy" decoding="async" onError={onError}/>;
 }
 function PhaseBackground({src}) {
-  const [failed,setFailed]=useState(false);
-  return failed?null:<img className="sales-phase-background" src={src} width="1024" height="1536" alt="" aria-hidden="true" loading="lazy" decoding="async" onError={()=>setFailed(true)}/>;
+  const {ref,failed,onError}=useDecorativeImageFailure(src);
+  return failed?null:<img ref={ref} className="sales-phase-background" src={src} width="1024" height="1536" alt="" aria-hidden="true" loading="lazy" decoding="async" onError={onError}/>;
 }
 function ExampleArt({item,project}) {
   const [failed,setFailed]=useState(false),[fallbackFailed,setFallbackFailed]=useState(false);
@@ -81,11 +92,10 @@ const platformFeatures=[
 ];
 function PlatformExample({navigate,feature=platformFeatures[0]}) {
   const Icon=feature.icon;
-  const [backgroundFailed,setBackgroundFailed]=useState(false);
-  useEffect(()=>setBackgroundFailed(false),[feature.background]);
+  const background=useDecorativeImageFailure(feature.background);
   return <article className="sales-case-card sales-platform-case">
     <div className={'sales-platform-art sales-capability-art '+feature.tone}>
-      {!backgroundFailed&&<img className="sales-capability-background" src={feature.background} width="1536" height="1024" alt="" aria-hidden="true" loading="lazy" decoding="async" onError={()=>setBackgroundFailed(true)}/>}
+      {!background.failed&&<img ref={background.ref} className="sales-capability-background" src={feature.background} width="1536" height="1024" alt="" aria-hidden="true" loading="lazy" decoding="async" onError={background.onError}/>}
       <span className="sales-art-label">平台功能概览</span>
       <div className="sales-capability-icon"><Icon size={44} weight="duotone"/></div>
       <strong>{feature.label}</strong>

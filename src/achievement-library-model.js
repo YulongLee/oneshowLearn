@@ -30,3 +30,6 @@ export function validateOutcome(value,tags){
 }
 export function saveOutcome(state,item){return {...state,achievements:[item,...(state.achievements||[]).filter(i=>i.id!==item.id)]};}
 export function archiveOutcome(state,id,deletedAt){return {...state,achievements:(state.achievements||[]).map(i=>i.id===id?{...i,deletedAt}:i)};}
+export function outcomeSupplementCount(item={}){
+ return ['sourceProjectId','url','githubUrl','screenshotUrl'].filter(key=>Boolean(item[key])).length+Number(Boolean(item.tags?.length));
+}

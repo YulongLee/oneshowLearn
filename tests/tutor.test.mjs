@@ -22,7 +22,7 @@ test('tutor Enter sends once and retains Ctrl/Command Enter compatibility',()=>{
   const page=readFileSync(new URL('../src/AiTutorChat.jsx',import.meta.url),'utf8');
   assert.match(page,/onKeyDown=\{e=>handleTutorComposerKeyDown\(e,send,composing.current\)\}/);
   assert.match(page,/onCompositionStart=/);assert.match(page,/onCompositionEnd=/);
-  assert.match(page,/if\(!available\|\|busy\|\|!\(quick\?\.question\|\|draft\).trim\(\)\)return/);
+  assert.match(page,/if\(!available\|\|busy\|\|!draft.trim\(\)\)return/);
 });
 test('tutor Shift Enter keeps newlines and other keys are untouched',()=>{
   for(const modifiers of [{shiftKey:true},{shiftKey:true,ctrlKey:true},{shiftKey:true,metaKey:true},{altKey:true},{key:'a'}])
@@ -53,7 +53,7 @@ test('tutor studio preserves sessions and exposes a grounded course picker witho
   assert.match(page,/model.library.map\(p=><option/);
   assert.equal((page.match(/<select /g)||[]).length,1);
   assert.ok(page.indexOf('aria-label="选择课程"')<page.indexOf('className="tc-composer"'));
-  assert.match(page,/courseId:selectedMode==='web'\?null:courseId,includeProduct:selectedMode==='web'\?false:includeProduct/);
+  assert.match(page,/courseId:mode==='web'\?null:courseId,includeProduct:mode==='web'\?false:includeProduct/);
   assert.ok(page.indexOf('aria-label="快捷开始"')>page.indexOf('className="tc-composer"'));
   assert.match(css,/\.tc-studio \[hidden\]\{display:none!important\}/);
   assert.match(css,/\.tc-studio \.tc-faq\.is-open\{display:block\}/);
@@ -145,6 +145,20 @@ test('FAQ shortcuts distinguish grounded questions from general help without sup
       assert.equal(item.answer,undefined);
     }
   }
+});
+
+test('FAQ and starter shortcuts prepare editable drafts without sending or silently replacing input',()=>{
+  const page=readFileSync(new URL('../src/AiTutorChat.jsx',import.meta.url),'utf8');
+  const prepare=page.match(/const selectQuestion = item => \{([\s\S]*?)\n  \};/);
+  assert.ok(prepare,'The actual shared question-preparation handler must be covered');
+  assert.match(prepare[1],/if\(busy\)return/);
+  assert.match(prepare[1],/draft.trim\(\).*item.question.trim\(\).*window.confirm/);
+  assert.match(prepare[1],/setDraft\(item.question\);setMode\(item.mode\);setFaqOpen\(false\);composer.current\?\.focus\(\)/);
+  assert.doesNotMatch(prepare[1],/session\.send|\bapi\(|setCourseId|setIncludeProduct/,'Preparation neither sends nor changes private context');
+  assert.match(page,/onClick=\{\(\)=>selectQuestion\(\{\.\.\.item,mode:group.mode\}\)\}/);
+  assert.match(page,/aria-label=\{`准备问题：\$\{item.title\}`\}/);
+  assert.match(page,/不会发送或计入调用额度/);
+  assert.doesNotMatch(page,/quick\?\.|直接提问：|点击即发送给 AI/);
 });
 
 test('tutor context is chosen only from current account library',()=>{

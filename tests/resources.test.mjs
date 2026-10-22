@@ -40,7 +40,9 @@ test('resource purpose/action labels do not promise phantom downloads, unlocked 
 });
 test('resource design keeps actual reader and safe scoped styles without importing mock catalogue examples',()=>{
  const page=readFileSync(new URL('../src/ResourceCenter.jsx',import.meta.url),'utf8'),css=readFileSync(new URL('../src/resource-library-refinement.css',import.meta.url),'utf8');
- assert.match(page,/api\('\/resources'\)/);assert.match(page,/resourceHighlights\(items\)/);assert.match(page,/resourcePurpose\(resource\)/);
+ assert.match(page,/api\('\/resources'\)/);assert.match(page,/view==='cards'\?<div className="rd-featured">/);assert.match(page,/resourcePurpose\(resource\)/);
+ assert.doesNotMatch(page,/resourceHighlights\(items\)/,'One catalogue has mutually exclusive presentations, not repeated highlights');
+ assert.match(page,/aria-label="资源展示方式"/);
  assert.match(page,/navigate\('\/favorites'\)/);assert.match(page,/aria-label="课程阶段"/);assert.match(page,/resource.locked\?/);
  assert.doesNotMatch(page,/PRD 产品需求模板|MVP 开发 Prompt|Stripe|rd-card-art/);
  assert.match(page,/分类示意/);assert.match(page,/ResourceReader key=\{modal.id\}/);assert.match(css,/max-width:500px/);

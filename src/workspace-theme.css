@@ -64,7 +64,18 @@ html[data-workspace-theme=dark] body { background:#111827; }
 .ws-layout.ws-unified-layout[data-theme=dark] :is(.ws-content,.ps-modal,.rc-dialog,.opc-dialog,.lr-dialog,.wd-dialog,.pd-my-dialog,.ls-notes-dialog) :is(input,textarea)::placeholder { color:var(--wt-muted); opacity:1; }
 .ws-layout.ws-unified-layout[data-theme=dark] :is(option,optgroup) { background:var(--wt-surface); color:var(--wt-text); }
 
-/* Workbench and generic workspace pages. The offer's approved purple artwork is retained. */
+/* Compact course information follows the workspace palette, not a sales poster. */
+.ws-layout.ws-unified-layout[data-theme=dark] .ws-course-offer { background:var(--wt-surface); border-color:var(--wt-border); color:var(--wt-text); }
+.ws-layout.ws-unified-layout[data-theme=dark] :is(.ws-course-offer h3,.ws-offer-price strong) { color:var(--wt-text); }
+.ws-layout.ws-unified-layout[data-theme=dark] :is(.ws-offer-brief,.ws-offer-price del,.ws-offer-price>span,.ws-offer-syllabus,.ws-course-offer .ws-offer-account,.ws-course-offer p.ws-offer-value,.ws-course-offer .ws-unlocked-course,.ws-course-offer li,.ws-offer-details-copy>small,.ws-offer-disclosure>summary>svg,.ws-page-context) { color:var(--wt-muted); }
+.ws-layout.ws-unified-layout[data-theme=dark] :is(.ws-course-offer button.ws-offer-primary,.ws-course-offer button.ws-offer-preview,.ws-page-context button) { color:var(--wt-accent); background:var(--wt-selected); border-color:var(--wt-border); }
+.ws-layout.ws-unified-layout[data-theme=dark] .ws-course-offer button:hover { background:var(--wt-hover); }
+/* Workbench and generic workspace pages. */
+.ws-layout.ws-unified-layout[data-theme=dark] .wd-path-disclosure { color:var(--wt-text); border-color:var(--wt-border); }
+.ws-layout.ws-unified-layout[data-theme=dark] .wd-path-disclosure>summary>span { color:var(--wt-muted); }
+.ws-layout.ws-unified-layout[data-theme=dark] .rl-view-switch { border-color:var(--wt-border); }
+.ws-layout.ws-unified-layout[data-theme=dark] .rl-view-switch>button { color:var(--wt-text); }
+.ws-layout.ws-unified-layout[data-theme=dark] .rl-view-switch>button[aria-pressed=true] { background:var(--wt-selected); color:var(--wt-accent); }
 .ws-layout.ws-unified-layout[data-theme=dark] :is(.wd-layout,.ld-home,.wsp-page,.ps-layout,.pd-page,.oc-page,.ce-page,.rc-layout,.notes-studio,.favorites-studio,.ag-page,.support-page,.account-settings,.lr-space,.opc-space,.ls-page,.cl-learning-space,.cl-study-page,.cr-page,.co-site.co-workspace,.tc-layout,.tc-page) { color:var(--wt-text); }
 .ws-layout.ws-unified-layout[data-theme=dark] :is(.wd-panel,.wd-refined .wd-panel,.wd-project-card,.wd-refined .wd-project-card,.wd-calendar-grid>button,.ld-metrics>button,.ld-focus,.ld-course,.ld-shortcuts>button,.ld-note-grid>button,.ld-note-empty,.ld-empty,.ld-tasks,.ld-task-form,.ld-aside .ws-calendar,.wsp-course,.wsp-empty,.wsp-resource-row,.wsp-plan-card,.wsp-task-form,.wsp-tool,.wsp-coming-soon,.wsp-next-grid button,.wsp-membership,.wsp-loading,.ws-panel,.ws-metrics,.ws-community) { background:var(--wt-surface); border-color:var(--wt-border); color:var(--wt-text); }
 .ws-layout.ws-unified-layout[data-theme=dark] :is(.wd-product-hero,.wd-refined .wd-product-hero,.wd-inspiration,.wd-refined .wd-inspiration,.ld-method,.wsp-resource-explainer,.wsp-plan-tip,.wsp-membership-intro,.wsp-note,.wsp-note-form) { background:linear-gradient(115deg,#29223f,var(--wt-surface)); border-color:var(--wt-border); color:var(--wt-text); }

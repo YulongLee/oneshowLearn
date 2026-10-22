@@ -92,8 +92,10 @@ test('sidebar revalidation preserves its last successful offer and ignores obsol
   assert.match(card,/if\(active\)setOffer\(value\)/);
   assert.match(card,/return\(\)=>\{active=false;\}/,'A late response from the previous route cannot overwrite current pricing');
   assert.match(card,/\},\[route,model\?\.user\?\.id\]\)/,'Navigation and account changes still revalidate CMS pricing');
-  assert.match(css,/\.ws-offer-price \{[^}]*min-height:39px/);
-  assert.match(css,/\.ws-offer-billing \{ min-height:22px/);
+  assert.match(card,/<details className="ws-offer-disclosure">/);
+  assert.doesNotMatch(card,/<details[^>]*\bopen[=\s>]/,'Details do not take navigation space until explicitly expanded');
+  assert.match(css,/\.ws-offer-disclosure>summary \{[^}]*min-height:44px/);
+  assert.match(card,/单次购买/);
 });
 
 test('simplified sidebar preserves tutor and preview without competing boxes or a second filled action',()=>{
@@ -102,10 +104,11 @@ test('simplified sidebar preserves tutor and preview without competing boxes or 
   assert.doesNotMatch(card,/ws-offer-eyebrow|Robot|Sparkle/);
   assert.match(card,/课件 · Prompt 模板/);
   assert.match(card,/className="ws-offer-ai"><CheckCircle size=\{15\} weight="fill"/);
-  assert.match(css,/>button\.ws-offer-preview \{[^}]*background:transparent[^}]*border:0/);
+  assert.match(css,/button\.ws-offer-preview \{[^}]*min-height:44px[^}]*border:0[^}]*background:transparent/);
   assert.match(css,/\.ws-offer-syllabus \{[^}]*font-size:13px/);
   assert.doesNotMatch(css,/li\.ws-offer-ai \{|\.ws-offer-benefits>li:not/);
-  assert.match(css,/height:74px; opacity:\.22/);
+  assert.doesNotMatch(css,/background:url|height:74px/,'The navigation invitation no longer needs decorative artwork');
+  assert.match(css,/\.ws-course-offer h3 \{[^}]*font-size:14px/);
 });
 
 test('sales reference prioritizes three core benefits and retains eight expanded features without fabricated commerce claims',()=>{

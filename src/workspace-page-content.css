@@ -1,0 +1,5 @@
+/* Consistent task-page hierarchy; greetings, readers and the tutor keep their own roles. */
+.ws-unified-layout .ws-content :is(.rd-heading,.ns-heading,.fs-heading,.ag-heading,.as-heading,.ce-heading,.pd-hero) h1 { margin:0 0 8px; font-size:32px; line-height:1.35; letter-spacing:-.5px; }
+@container learner (max-width:600px) {
+  .ws-unified-layout .ws-content :is(.rd-heading,.ns-heading,.fs-heading,.ag-heading,.as-heading,.ce-heading,.pd-hero) h1 { font-size:26px; }
+}

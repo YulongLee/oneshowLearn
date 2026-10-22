@@ -14,6 +14,10 @@ test('learner settings keep the persistent shell and management account remains 
   assert.equal(activeWorkspaceNav('/account/'),'/account');
   assert.match(shell,/children\(\{\.\.\.model,sidebar\}\)/);
 });
+test('guest settings describes account management and preserves its safe login destination',()=>{
+  assert.match(read('src/AccountSettings.jsx'),/<Gate[^>]*title="登录后管理你的账号"[^>]*returnTo="\/account"/);
+  assert.match(read('src/PersonalShared.jsx'),/returnTo\?`\/login\?returnTo=\$\{encodeURIComponent\(returnTo\)\}`/);
+});
 test('account center uses four responsive sections, a single avatar and mounted draft editors',()=>{
   const source=read('src/AccountSettings.jsx'),css=read('src/account-settings.css');
   assert.deepEqual(ACCOUNT_SECTIONS,['profile','security','preferences','orders']);

@@ -6,6 +6,7 @@ import {randomUUID} from 'node:crypto';
 import {createRequire} from 'node:module';
 import path from 'node:path';
 import express from 'express';
+import {TUTOR_FAQ} from '../src/tutor-model.js';
 const require=createRequire(import.meta.url);
 const {chromium}=require('playwright'),dir=mkdtempSync(path.join(tmpdir(),'osl-tutor-studio-'));
 Object.assign(process.env,{NODE_ENV:'test',DATABASE_PATH:path.join(dir,'isolated.db'),UPLOAD_DIR:path.join(dir,'uploads'),JWT_SECRET:'isolated-tutor-browser-only',ASSET_STORAGE:'local',AI_ENABLED:'false',AI_USER_DAILY_LIMIT:'500',AI_GLOBAL_DAILY_LIMIT:'10000',EMAIL_API_KEY:''});
@@ -82,7 +83,7 @@ try {
  check(await p.locator('.tc-scope-copy').innerText().then(t=>t.includes('隔离第二课程')),'actual second course');
  await p.getByLabel('选择课程',{exact:true}).selectOption('');await p.waitForTimeout(50);check(await p.getByLabel('选择课程',{exact:true}).inputValue()==='','explicit all scope not overridden');
  await p.getByLabel('选择课程',{exact:true}).selectOption(String(pack));
- await p.getByRole('button',{name:'解释课程难点',exact:false}).click();check((await p.locator('.tc-composer textarea').inputValue()).includes('一次性购买和订阅'),'shortcut prepares contextual draft');check(requests.length===0,'shortcut no model call');
+ p.once('dialog',dialog=>dialog.accept());await p.getByRole('button',{name:'解释课程难点',exact:false}).click();check((await p.locator('.tc-composer textarea').inputValue()).includes('一次性购买和订阅'),'explicit replacement prepares contextual draft');check(requests.length===0,'shortcut no model call');
  await p.locator('.tc-composer textarea').fill('明确产品需求和目标用户');await p.locator('.tc-composer textarea').press('Shift+Enter');check(requests.length===0,'shift enter newline only');
  await p.locator('.tc-composer textarea').evaluate(el=>el.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',keyCode:229,isComposing:true,bubbles:true})));check(requests.length===0,'IME confirmation does not send');
  await p.locator('.tc-composer textarea').press('Enter');await answerReady(p);
@@ -133,6 +134,54 @@ try {
  const qc=await context(b),q=await qc.newPage();let quotaFailure=true;await qc.route('**/api/learning/ai/allowance',r=>quotaFailure?r.fulfill({status:503,json:{error:'隔离额度失败'}}):r.continue());await q.goto(base+'/tutor');await ready(q);await q.getByRole('button',{name:'重新读取',exact:true}).waitFor();await q.locator('.tc-composer textarea').fill('额度重试时保留草稿');quotaFailure=false;await q.getByRole('button',{name:'重新读取',exact:true}).click();await q.getByText('当前 24 小时额度剩余 500 / 500 次',{exact:false}).waitFor();check(await q.locator('.tc-composer textarea').inputValue()==='额度重试时保留草稿','allowance failure/retry preserves draft');await qc.close();
  const pc=await context(a),ep=await pc.newPage();let entryFailure=true;await pc.route('**/api/learning/entry',route=>entryFailure?route.fulfill({status:503,json:{error:'隔离学习位置不可用'}}):route.continue());await ep.goto(base+'/tutor');await ready(ep);await ep.getByRole('button',{name:'重试读取',exact:true}).waitFor();check(await ep.getByLabel('选择课程',{exact:true}).inputValue()===String(pack),'entry error retains authorized course');await ep.locator('.tc-composer textarea').fill('重试时保留的问题');entryFailure=false;await ep.getByRole('button',{name:'重试读取',exact:true}).click();await ep.getByText('最近学习：第 4 章 · 收款与商业化 · 4.1 隔离课时 收款与商业化',{exact:true}).waitFor();check(await ep.locator('.tc-composer textarea').inputValue()==='重试时保留的问题','entry retry preserves draft');
  const uc=await context(a),u=await uc.newPage();await uc.route('**/api/learning/ai/capabilities',route=>route.fulfill({json:{available:false,reason:'隔离暂停',features:{tutor:false,web:false}}}));await u.goto(base+'/tutor');await ready(u);await u.locator('.tc-composer textarea').fill('服务暂停时保留问题');check(await u.getByRole('button',{name:'发送给 AI 导师',exact:true}).isDisabled(),'service off guard');await u.getByRole('button',{name:'保存问题',exact:true}).click();check(await u.locator('.tc-composer textarea').inputValue()==='服务暂停时保留问题','save-only preserves draft');
+ const pausedCalls=calls.length,pausedRequests=requests.length;
+ await u.getByRole('button',{name:'常见问题',exact:true}).click();u.once('dialog',dialog=>dialog.accept());await u.getByRole('button',{name:'准备问题：'+TUTOR_FAQ[0].questions[0].title,exact:true}).click();
+ check(await u.locator('.tc-composer textarea').inputValue()===TUTOR_FAQ[0].questions[0].question,'paused service still permits editable FAQ preparation');
+ check(await u.getByRole('button',{name:'发送给 AI 导师',exact:true}).isDisabled()&&calls.length===pausedCalls&&requests.length===pausedRequests,'FAQ preparation never bypasses paused-service send guard');
+
+ // Same fixture metadata must resume the same lesson through both current entry URLs.
+ const rc=await context(a),r=await rc.newPage(),progressBefore=JSON.stringify(db.prepare('SELECT * FROM learning_progress WHERE user_id=? ORDER BY placement_id').all(a.id));
+ for(const route of ['/learn/tutor-opc','/opc/course/tutor-opc']){
+  await r.goto(base+route);await r.getByRole('heading',{name:'4.1 隔离课时 收款与商业化',exact:true}).waitFor();
+  check(await r.locator('.cl-lesson[aria-current="step"]').innerText().then(text=>text.includes('4.1 隔离课时 收款与商业化')),'both course entries resume the actual recent unread lesson '+route);
+ }
+ await r.goto(base+'/learn/tutor-opc/lessons/'+placements[0]);await r.getByRole('heading',{name:'1.1 隔离课时 产品与机会',exact:true}).waitFor();
+ check(true,'explicit course-reader lesson remains authoritative over recent study');
+ check(JSON.stringify(db.prepare('SELECT * FROM learning_progress WHERE user_id=? ORDER BY placement_id').all(a.id))===progressBefore,'continuation browsing alone does not alter the isolated progress records');await rc.close();
+
+ // FAQ preparation is a local action. Only the separate Send action may create a turn or consume allowance.
+ const fc=await context(a),f=await fc.newPage();await f.goto(base+'/tutor');await ready(f);await f.getByLabel('选择课程',{exact:true}).selectOption(String(pack));
+ const allowanceFor=async()=>{const response=await fc.request.get(base+'/api/learning/ai/allowance',{headers:{Authorization:'Bearer '+a.token}});assert.equal(response.status(),200);return(await response.json()).daily.remaining;};
+ const turnCount=()=>row('SELECT COUNT(*) n FROM tutor_turns t JOIN tutor_conversations c ON c.id=t.conversation_id WHERE c.user_id=?',[a.id]).n;
+ for(const [width,group] of [[390,TUTOR_FAQ[0]],[1700,TUTOR_FAQ.find(group=>group.id==='general')]]){
+  await f.setViewportSize({width,height:1150});await f.locator('.tc-composer textarea').fill('需要保留的另一份草稿');
+  await f.getByRole('button',{name:'常见问题',exact:true}).click();await f.getByRole('button',{name:group.title,exact:true}).click();
+  const item=group.questions[0],question=f.getByRole('button',{name:'准备问题：'+item.title,exact:true}),before={requests:requests.length,calls:calls.length,turns:turnCount(),remaining:await allowanceFor(),mode:await f.locator('.tc-learning-scope').getAttribute('class')};
+  f.once('dialog',dialog=>dialog.dismiss());await question.click();
+  check(await f.locator('.tc-composer textarea').inputValue()==='需要保留的另一份草稿','FAQ cancellation keeps the entire existing draft '+width);
+  check(await f.locator('.tc-learning-scope').getAttribute('class')===before.mode,'FAQ cancellation keeps the previous answering mode '+width);
+  f.once('dialog',dialog=>dialog.accept());await question.click();
+  check(await f.locator('.tc-composer textarea').inputValue()===item.question,'FAQ prepares the exact editable question '+width);
+  check(await f.locator('.tc-learning-scope').getAttribute('class').then(value=>value.includes('is-'+group.mode)),'FAQ preparation selects its truthful answering mode '+width);
+  check(await f.locator('.tc-composer textarea').evaluate(element=>document.activeElement===element)&&await f.locator('.tc-faq.is-open').count()===0,'FAQ preparation closes disclosure and focuses the draft '+width);
+  check(requests.length===before.requests&&calls.length===before.calls&&turnCount()===before.turns&&(await allowanceFor())===before.remaining,'FAQ preparation creates no conversation/turn/provider call or allowance consumption '+width);
+  await f.getByRole('button',{name:'发送给 AI 导师',exact:true}).click();await answerReady(f);
+  check(requests.filter(request=>request.url.endsWith('/turns')).at(-1).body.question===item.question,'only explicit Send transmits the prepared FAQ question '+width);
+  check(calls.length===before.calls+1&&turnCount()===before.turns+1,'explicit FAQ send creates exactly one turn and one fake provider call '+width);
+  check((await allowanceFor())===before.remaining-1,'explicit FAQ send consumes exactly one isolated allowance '+width);
+  check(await f.locator('.tc-composer textarea').inputValue()==='','successful explicit FAQ send clears only its sent draft '+width);
+ }
+ await fc.close();
+
+ // Authentication responses are local fixtures; no password/account/provider operation is performed.
+ for(const destination of ['/courses','/plan','/certificates']){
+  const lc=await context(),l=await lc.newPage();let logins=0;
+  await lc.route('**/api/auth/login',route=>{logins++;return route.fulfill({json:{token:a.token,user:row('SELECT id,email,name,role FROM users WHERE id=?',[a.id])}});});
+  await l.goto(base+destination);await l.getByRole('button',{name:'登录学习账号',exact:true}).click();
+  await l.waitForURL(base+'/login?returnTo='+encodeURIComponent(destination));check(logins===0,'private entry prepares the safe login return without submitting '+destination);
+  await l.locator('.auth-polished-card input[type=email]').fill('isolated-return@example.invalid');await l.locator('.auth-polished-card input[type=password]').fill('Isolated-Not-A-Real-Password');await l.locator('.auth-polished-card .auth-submit').click();
+  await l.waitForURL(base+destination);await l.locator('.wsp-page h1').waitFor();check(logins===1,'successful isolated login returns exactly to the originating learning task '+destination);await lc.close();
+ }
  run("UPDATE project_packs SET status='archived' WHERE id=?",[pack]);
  const hc=await context(a),h=await hc.newPage();await h.goto(base+'/tutor');await ready(h);await h.getByRole('button',{name:'历史对话',exact:true}).click();await h.locator('.tc-history-list button').filter({hasText:'上一次的 MVP 范围讨论'}).click();await h.getByText('历史课程 · 当前不可选',{exact:true}).waitFor();check(await h.getByLabel('选择课程',{exact:true}).inputValue()===String(pack),'retains revoked historical selection, not silently widened');
  check((await (await oc.request.get(base+'/api/learning/ai/conversations/'+sentId,{headers:{Authorization:'Bearer '+b.token}})).status())===404,'owner GET enforced');

@@ -1,8 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {FAVORITE_CATEGORIES,favoriteItems,filterFavorites,withoutFavorite,favoriteAction,favoriteSource,favoriteCoverUrl} from '../src/favorites-studio-model.js';
+import {FAVORITE_CATEGORIES,favoriteItems,filterFavorites,withoutFavorite,favoriteUndoEntry,favoriteUndoPresent,restoreFavorite,canUndoFavorite,favoriteAction,favoriteSource,favoriteCoverUrl} from '../src/favorites-studio-model.js';
 
 const state={favorites:[1,2,1],resourceFavorites:[{id:7,savedAt:'2026-10-01'},{id:7},{id:8}],notes:[{id:'a',title:'产品笔记',body:'## MVP\n**Codex** 实践',tags:['产品'],starred:true,updatedAt:'2026-10-02'},{id:'b',title:'普通笔记',starred:false},{id:'c',title:'回收站',starred:true,deletedAt:'2026-10-01'}],tasks:[{id:'keep'}]};
+test('undo is hidden without a signed-in matching account, including both undefined identities',()=>{
+ for(const [undo,id] of [[null,undefined],[undefined,undefined],[null,1],[{accountId:undefined},undefined],[{accountId:1},undefined],[{accountId:1},2]])assert.equal(canUndoFavorite(undo,id),false);
+ assert.equal(canUndoFavorite({accountId:1},1),true);
+});
+test('undo success requires the actual persisted reference, not only a successful write status',()=>{
+ assert.equal(favoriteUndoPresent({favorites:[]},{kind:'course',id:3}),false);assert.equal(favoriteUndoPresent({favorites:[3]},{kind:'course',id:3}),true);
+ assert.equal(favoriteUndoPresent({notes:[{id:'a',starred:true,deletedAt:'now'}]},{kind:'note',id:'a'}),false);
+ for(const item of favoriteItems({state})){
+  const entry=favoriteUndoEntry(state,item);assert.equal(favoriteUndoPresent(state,entry),true);assert.equal(favoriteUndoPresent(withoutFavorite(state,item),entry),false);
+ }
+ const reference={kind:'material',id:3,placementId:4};assert.equal(favoriteUndoPresent({contentFavorites:[{...reference,placementId:5}]},{kind:'content',reference}),false);
+});
 test('favorites aggregate account-owned references without duplicating or exposing trashed notes',()=>{
   const items=favoriteItems({state,library:[{id:1,title:'已购课程'}],recommendations:[{id:1,title:'目录课程'}],resources:[{id:7,title:'产品文档',type:'document',locked:true}],resourcesReady:true});
   assert.equal(items.length,5);
@@ -39,6 +51,26 @@ test('unbookmark affects only the selected reference and preserves original note
   assert.equal(note.notes[0].starred,false);assert.equal(note.notes[0].body,state.notes[0].body);
   assert.equal(note.tasks,state.tasks);assert.equal(note.notes[1],state.notes[1]);
   assert.equal(JSON.stringify(state),original);
+});
+test('undo restores only one reference into latest state, preserving timestamps and newer private records',()=>{
+ const original=JSON.stringify(state),items=favoriteItems({state}),resource=items.find(i=>i.id==='resource-7'),entry=favoriteUndoEntry(state,resource);
+ assert.deepEqual(entry,{kind:'resource',reference:{id:7,savedAt:'2026-10-01'}});
+ const latest={...withoutFavorite(state,resource),checkIns:['new'],notes:[{...state.notes[0],body:'newer body'}],resourceFavorites:[{id:8},{id:9,savedAt:'new'}]};
+ const restored=restoreFavorite(latest,entry);
+ assert.deepEqual(restored.resourceFavorites,[...latest.resourceFavorites,{id:7,savedAt:'2026-10-01'}]);assert.equal(restored.notes,latest.notes);assert.equal(restored.checkIns,latest.checkIns);
+ assert.equal(restoreFavorite(restored,entry),restored);assert.equal(JSON.stringify(state),original);
+ const note=items.find(i=>i.id==='note-a'),noteEntry=favoriteUndoEntry(state,note),changed={...state,notes:[{id:'a',starred:false,body:'LATEST_BODY',updatedAt:'LATEST_TIME'}]};
+ assert.deepEqual(noteEntry,{kind:'note',id:'a'});assert.ok(!JSON.stringify(noteEntry).includes('Codex'));
+ assert.deepEqual(restoreFavorite(changed,noteEntry).notes,[{...changed.notes[0],starred:true}]);
+ for(const latest of [{notes:[]},{notes:[{id:'a',starred:false,deletedAt:'now',body:'keep'}]}])assert.equal(restoreFavorite(latest,noteEntry),latest);
+});
+test('undo covers legacy courses and exact typed placement identities without resurrecting content',()=>{
+ const course={kind:'course',source:{id:1}},entry=favoriteUndoEntry(state,course),removed=withoutFavorite(state,course);
+ assert.deepEqual(restoreFavorite(removed,entry).favorites,[2,1]);assert.equal(favoriteUndoEntry(removed,course),null);
+ const reference={kind:'material',id:5,placementId:3,savedAt:'original'},other={...reference,placementId:4},value={contentFavorites:[reference,other],notes:[{body:'private'}]},item={reference};
+ const undo=favoriteUndoEntry(value,item),latest=withoutFavorite(value,item),restored=restoreFavorite(latest,undo);
+ assert.deepEqual(restored.contentFavorites,[other,reference]);assert.equal(restored.notes,value.notes);assert.equal(restoreFavorite(restored,undo),restored);
+ assert.equal(restoreFavorite(value,null),value);assert.equal(favoriteUndoEntry(latest,item),null);
 });
 test('empty and legacy collections produce honest empty states',()=>{
   assert.deepEqual(favoriteItems({}),[]);

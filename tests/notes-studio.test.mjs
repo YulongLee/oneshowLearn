@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {filterPersonalNotes,noteExcerpt} from '../src/notes-studio-model.js';
-import {NOTE_TEMPLATES,noteText,noteSource,unifiedNotes,filterNoteLibrary,draftStorageKey,validStoredDraft} from '../src/notes-library-model.js';
+import {NOTE_TEMPLATES,noteSelectionPrompt,noteText,noteSource,unifiedNotes,filterNoteLibrary,draftStorageKey,validStoredDraft} from '../src/notes-library-model.js';
 const notes=[{id:'a',title:'需求分析',body:'Codex 实践',tags:['产品'],starred:true,updatedAt:'2026-10-01'},{id:'b',title:'MVP',body:'复盘',tags:['开发'],updatedAt:'2026-10-02'},{id:'c',title:'归档',starred:true,tags:['产品'],deletedAt:'2026-10-01'}];
 test('notes studio filters preserve private records and exclude trash from favorites',()=>{
   assert.deepEqual(filterPersonalNotes(notes).map(n=>n.id),['b','a']);
@@ -38,6 +38,12 @@ test('only actual relative course/project source routes can be used',()=>{
 });
 test('templates prepare empty personal drafts, not automatic course records or model requests',()=>{
  assert.equal(NOTE_TEMPLATES.length,3);assert.deepEqual(NOTE_TEMPLATES.map(t=>t.id),['course','prompt','project']);assert.ok(NOTE_TEMPLATES.every(t=>t.body.includes('## ')&&!t.body.includes('OPC 不只是')));
+});
+test('selection guidance distinguishes an existing library from the first note',()=>{
+ assert.equal(noteSelectionPrompt(false).action,'写第一篇笔记');
+ assert.equal(noteSelectionPrompt(true).title,'选择一篇笔记继续阅读');
+ assert.equal(noteSelectionPrompt(true).action,'新建笔记');
+ assert.doesNotMatch(JSON.stringify(noteSelectionPrompt(true)),/第一|上方模板/);
 });
 test('current-tab draft recovery is account separated and preserves original lesson version',()=>{
  const value={userId:4,selected:'learning:l',draft:{id:'l',kind:'learning',title:'草稿',body:'私密',placement_id:3,version:2}};

@@ -1,4 +1,12 @@
 import {safeResourceUrl} from './opc-model.js';
+import {COMMUNITY_SETTINGS} from '../server/community-definition.mjs';
+export function communityPageCopy(settings=COMMUNITY_SETTINGS){
+ return {
+  title:settings.title===COMMUNITY_SETTINGS.title?'官方内容与学员群':settings.title,
+  description:settings.description===COMMUNITY_SETTINGS.description?'阅读官方实战文章与课程更新，按账号权益申请加入学员群。':settings.description,
+  tagline:settings.tagline===COMMUNITY_SETTINGS.tagline?'文章由官方发布，学习交流在学员群中进行。':settings.tagline,
+ };
+}
 export function communityArticles(items,{category='all',topic='',query='',sort='latest'}={}){
  const terms=query.trim().toLowerCase().split(/\s+/).filter(Boolean);
  return items.filter(i=>(category==='all'||i.category===category)&&(!topic||i.topic===topic)&&terms.every(term=>`${i.title||''} ${i.summary||''} ${i.topic||''}`.toLowerCase().includes(term))).sort((a,b)=>Number(Boolean(b.pinned))-Number(Boolean(a.pinned))||(sort==='recommended'?Number(Boolean(b.recommended))-Number(Boolean(a.recommended)):0)||String(b.publishedAt||'').localeCompare(String(a.publishedAt||''))||b.id-a.id);

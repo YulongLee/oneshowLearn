@@ -23,6 +23,9 @@ test('commercial brand and secondary registration are explicit without duplicati
   assert.doesNotMatch(auth,/className="auth-column-footer"/);
   assert.match(auth,/没有账号？使用邮箱注册/);
   assert.match(auth,/className="auth-platform-switch"/);
+  assert.match(auth,/polished \? "欢迎回来"/);
+  assert.match(auth,/polished \? "登录并继续学习"/);
+  assert.match(auth,/<details className="auth-platform-options"><summary>管理员入口<\/summary>/);
   assert.match(auth,/presentation === 'commercial' && !isAdmin/);
   assert.match(auth,/if \(!isAdmin\) return <main className="user-auth-page auth-commercial"/);
 });

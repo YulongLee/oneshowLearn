@@ -58,7 +58,6 @@ import { PublicHomepage } from "./PublicHomepage.jsx";
 import {FavoriteButton} from './FavoriteButton.jsx';
 import {
   normalizeWorkspaceRoute,
-  workspaceSearchPrompts,
 } from "./workspace-navigation.js";
 import {RouteLoadBoundary} from './RouteLoadBoundary.jsx';
 import {NotFound} from './NotFound.jsx';
@@ -807,28 +806,16 @@ function LearnerWorkspace({ route: rawRoute, navigate, notify }) {
   const route = normalizeWorkspaceRoute(rawRoute);
   const guard = useRef(null);
   const [search, setSearch] = useState({ route, query: "" });
-  const [searchRevision, setSearchRevision] = useState(0);
   const query = search.route === route ? search.query : "";
   const setQuery = (query) => setSearch({ route, query });
   const go = (path) => {
     if (!guard.current || guard.current(() => navigate(path))) navigate(path);
   };
-  const placeholder = workspaceSearchPrompts[route];
-  const resourceSearch = placeholder
-    ? {
-        value: query,
-        onChange: setQuery,
-        onSubmit: () => setSearchRevision((v) => v + 1),
-        placeholder,
-        label: placeholder.replace("…", ""),
-      }
-    : undefined;
   return (
     <WorkspaceShell
       route={route}
       navigate={go}
       notify={notify}
-      resourceSearch={resourceSearch}
     >
       {(model) => {
         const props = { model, navigate: go, notify };
@@ -854,7 +841,6 @@ function LearnerWorkspace({ route: rawRoute, navigate, notify }) {
               {...props}
               query={query}
               setQuery={setQuery}
-              searchRevision={searchRevision}
             />
           );
         if (

@@ -38,8 +38,9 @@ function EmptyState({ icon: Icon = FolderOpen, title, children, action, onAction
   return <section className="wsp-empty"><span className="wsp-empty-icon"><Icon size={32} weight="duotone" /></span><h2>{title}</h2><p>{children}</p>{action && <button className="wsp-button wsp-button-primary" onClick={onAction}>{action}<ArrowRight size={17} /></button>}</section>;
 }
 
-function LoginPrompt({ navigate }) {
-  return <EmptyState icon={BookOpenText} title="登录后，开始记录你的学习">课程、笔记和计划会保存到你的账号，换一个设备也能接着学。<span className="wsp-login-action"><button className="wsp-button wsp-button-primary" onClick={() => navigate("/login")}>登录学习账号<ArrowRight size={17} /></button></span></EmptyState>;
+function LoginPrompt({ navigate, returnTo }) {
+  const loginPath=returnTo ? `/login?returnTo=${encodeURIComponent(returnTo)}` : '/login';
+  return <EmptyState icon={BookOpenText} title="登录后，开始记录你的学习">课程、笔记和计划会保存到你的账号，换一个设备也能接着学。<span className="wsp-login-action"><button className="wsp-button wsp-button-primary" onClick={() => navigate(loginPath)}>登录学习账号<ArrowRight size={17} /></button></span></EmptyState>;
 }
 
 function CourseCard({ pack, navigate, remove, busy, model, showProgress = true }) {
@@ -76,7 +77,7 @@ function CourseCollection({ model, navigate, favorites = false, notify }) {
     const ok = await model.saveState({ ...model.state, favorites: (model.state?.favorites || []).filter(value => value !== id) });
     if (ok) notify?.("已取消收藏");
   }
-  if (!model.user) return <LoginPrompt navigate={navigate} />;
+  if (!model.user) return <LoginPrompt navigate={navigate} returnTo={favorites ? undefined : '/courses'} />;
   return <><div className="wsp-toolbar"><div className="wsp-tabs" aria-label="课程筛选"><button className={filter === "all" ? "wsp-selected" : ""} onClick={() => setFilter("all")}>{favorites ? "全部收藏" : "全部课程"}<span>{source.length}</span></button>{!favorites && <><button className={filter === "learning" ? "wsp-selected" : ""} onClick={() => setFilter("learning")}>学习中</button><button className={filter === "completed" ? "wsp-selected" : ""} onClick={() => setFilter("completed")}>已完成</button></>}</div><label className="wsp-search"><MagnifyingGlass size={18} /><input value={query} onChange={event => setQuery(event.target.value)} aria-label="搜索我的课程" placeholder="搜索课程名称" /></label></div>{matches.length ? <div className="wsp-course-grid">{matches.map(pack => <CourseCard key={pack.id} pack={pack} model={model} navigate={navigate} busy={model.busy} remove={favorites ? () => removeFavorite(pack.id) : undefined} />)}</div> : <EmptyState icon={favorites ? Star : BookOpenText} title={source.length ? "没有找到符合条件的课程" : favorites ? "值得再看的内容，收藏在这里" : "你的第一门课程，从这里开始"} action={source.length ? "重置筛选" : "探索学习路径"} onAction={source.length ? () => { setQuery(""); setFilter("all"); } : () => navigate("/paths")}>{source.length ? "试试其他关键词，或查看全部课程。" : favorites ? "在首页收藏感兴趣的实战课程，之后就能在这里快速找到。" : "选择一个学习路径，查看项目与内容。已获得访问权限的课程会出现在这里。"}</EmptyState>}</>;
 }
 
@@ -132,7 +133,7 @@ function PlanPage({ model, navigate, notify }) {
     const ok = await model.saveState({ ...model.state, tasks: nextTasks });
     if (ok && remove) notify?.("任务已删除");
   }
-  if (!model.user) return <LoginPrompt navigate={navigate} />;
+  if (!model.user) return <LoginPrompt navigate={navigate} returnTo="/plan" />;
   return <div className="wsp-plan"><section className="wsp-plan-card"><div className="wsp-plan-heading"><div><span className="wsp-kicker">一步一步，走向完成</span><h2>{date === localDate() ? "今天的学习计划" : "这一天的学习计划"}</h2><p>{shownTasks.length ? `已完成 ${doneCount} / ${shownTasks.length} 个任务` : "给自己定一个小目标吧"}</p></div><label className="wsp-date-picker"><span>选择日期</span><input aria-label="学习计划日期" type="date" value={date} disabled={model.busy} onChange={event => setDate(event.target.value)} required /></label></div><div className="wsp-plan-progress"><i style={{ width: `${shownTasks.length ? doneCount / shownTasks.length * 100 : 0}%` }} /></div><form className="wsp-task-form" onSubmit={addTask}><input aria-label="新任务内容" placeholder="例如：完成 AI OPC 第一章，并记录一个产品想法" value={title} readOnly={model.busy} onChange={event => setTitle(event.target.value)} maxLength={160} required /><button className="wsp-button wsp-button-primary" disabled={model.busy || !date}><Plus size={18} />{model.busy ? "保存中…" : "添加任务"}</button></form>{formError && <p className="wsp-inline-error" role="alert">{formError}</p>}<ul className="wsp-task-list">{shownTasks.map(task => <li key={task.id} className={task.done ? "wsp-task-done" : ""}><label><input type="checkbox" checked={Boolean(task.done)} disabled={model.busy} onChange={() => changeTask(task.id)} /><span>{task.title}</span></label><button className="wsp-icon-button" aria-label={`删除任务：${task.title}`} disabled={model.busy} onClick={() => changeTask(task.id, true)}><Trash size={18} /></button></li>)}</ul>{!shownTasks.length && <div className="wsp-plan-empty"><CalendarCheck size={32} weight="duotone" /><p>这一天还没有任务</p><span>一次只安排几件重要的事，学习会更有方向。</span></div>}</section><aside className="wsp-plan-tip"><Sparkle size={24} weight="duotone" /><h3>计划不需要很满，<br />每次有一点进步就好。</h3><p>读一份实战文档，试一个 Prompt，完成一个小功能。把今天学到的，变成可以交付的成果。</p><button className="wsp-text-button" onClick={() => navigate("/courses")}>去我的课程找灵感<ArrowRight size={16} /></button></aside></div>;
 }
 
@@ -156,6 +157,6 @@ export function WorkspacePages({ route, model, navigate, notify }) {
   else if (route === "/plan") content = <PlanPage model={model} navigate={navigate} notify={notify} />;
   else if (route === "/tools") content = <ToolsPage navigate={navigate} />;
   else if (route === "/community") content = <CommunityPage navigate={navigate} />;
-  else if (route === "/certificates") content = model.user?<CourseCertificates user={model.user}/>:<EmptyState icon={Trophy} title="查看你的课程结业证书" action="登录学习账号" onAction={() => navigate("/login?next=%2Fcertificates")}>登录后查看正式课程的完课要求与个人结业证书。</EmptyState>;
+  else if (route === "/certificates") content = model.user?<CourseCertificates user={model.user}/>:<EmptyState icon={Trophy} title="查看你的课程结业证书" action="登录学习账号" onAction={() => navigate("/login?returnTo=%2Fcertificates")}>登录后查看正式课程的完课要求与个人结业证书。</EmptyState>;
   return <div className="wsp-page"><header className="wsp-page-header"><span className="wsp-header-icon"><Icon size={26} weight="duotone" /></span><div><h1>{title}</h1><p>{subtitle}</p></div></header>{content}</div>;
 }

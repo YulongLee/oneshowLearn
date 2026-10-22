@@ -8,7 +8,6 @@ import "./workspace-shell.css";
 import "./workspace-responsive.css";
 import "./readability.css";
 import "./course-offer-workspace.css";
-import "./sidebar-course-offer.css";
 import "./brand-identity.css";
 
 startTelemetry();

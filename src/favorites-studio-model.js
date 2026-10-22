@@ -65,3 +65,31 @@ export function withoutFavorite(state,item) {
   if(item.kind==='note')return {...state,notes:(state.notes||[]).map(n=>n.id===item.source.id?{...n,starred:false}:n)};
   return {...state,resourceFavorites:(state.resourceFavorites||[]).filter(r=>r.id!==item.source.id)};
 }
+// An undo holds only the removed reference, never a snapshot of private content.
+export function canUndoFavorite(undo,accountId){return Boolean(undo&&accountId!=null&&undo.accountId===accountId);}
+export function favoriteUndoPresent(state,entry){
+ if(!entry)return false;
+ if(entry.kind==='content')return (state.contentFavorites||[]).some(ref=>favoriteReferenceKey(ref)===favoriteReferenceKey(entry.reference));
+ if(entry.kind==='course')return (state.favorites||[]).includes(entry.id);
+ if(entry.kind==='note')return (state.notes||[]).some(n=>n.id===entry.id&&!n.deletedAt&&n.starred);
+ return entry.kind==='resource'&&(state.resourceFavorites||[]).some(ref=>ref.id===entry.reference.id);
+}
+export function favoriteUndoEntry(state,item){
+ if(item.reference){const reference=(state.contentFavorites||[]).find(ref=>favoriteReferenceKey(ref)===favoriteReferenceKey(item.reference));return reference?{kind:'content',reference:{...reference}}:null;}
+ const id=item.source.id;
+ if(item.kind==='course')return (state.favorites||[]).includes(id)?{kind:'course',id}:null;
+ if(item.kind==='note')return (state.notes||[]).some(n=>n.id===id&&!n.deletedAt&&n.starred)?{kind:'note',id}:null;
+ const reference=(state.resourceFavorites||[]).find(ref=>ref.id===id);
+ return reference?{kind:'resource',reference:{...reference}}:null;
+}
+export function restoreFavorite(state,entry){
+ if(!entry)return state;
+ if(entry.kind==='content')return (state.contentFavorites||[]).some(ref=>favoriteReferenceKey(ref)===favoriteReferenceKey(entry.reference))?state:{...state,contentFavorites:[...(state.contentFavorites||[]),{...entry.reference}]};
+ if(entry.kind==='course')return (state.favorites||[]).includes(entry.id)?state:{...state,favorites:[...(state.favorites||[]),entry.id]};
+ if(entry.kind==='note'){
+  const note=(state.notes||[]).find(n=>n.id===entry.id&&!n.deletedAt);
+  return !note||note.starred?state:{...state,notes:state.notes.map(n=>n.id===entry.id?{...n,starred:true}:n)};
+ }
+ if(entry.kind==='resource')return (state.resourceFavorites||[]).some(ref=>ref.id===entry.reference.id)?state:{...state,resourceFavorites:[...(state.resourceFavorites||[]),{...entry.reference}]};
+ return state;
+}

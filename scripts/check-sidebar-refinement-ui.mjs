@@ -78,13 +78,18 @@ const typography=async(p,label)=>{
     if(v.active)equal([v.background,v.color],['rgb(243, 239, 255)','rgb(112, 66, 255)'],'selected tone '+label+' '+i);
     else equal(v.color,'rgb(96, 113, 142)','readable gray-blue menu label '+label+' '+i);
   }
-  equal(await p.locator('.wb-nav-group>span').evaluateAll(elements=>elements.map(e=>{const s=getComputedStyle(e);return [s.fontSize,s.lineHeight,s.fontWeight,s.color];})),Array(4).fill(['12px','20px','400','rgb(107, 114, 128)']),'muted group caption hierarchy '+label);
+  equal(await p.locator('.wb-nav-group>span').evaluateAll(elements=>elements.map(e=>{const s=getComputedStyle(e);return [s.fontSize,s.lineHeight,s.fontWeight,s.color];})),Array(2).fill(['12px','20px','400','rgb(107, 114, 128)']),'two task-based group captions '+label);
 };
 
 try{
   const c=await context(),p=await c.newPage();await ready(p);await width(p,248,'new desktop default');
   equal(await pref(p),{mode:'expanded',width:248},'new default is saved without changing the storage key');
   await typography(p,'desktop');await p.screenshot({path:path.join(out,'sidebar-desktop-1440.png'),fullPage:false});
+  await p.setViewportSize({width:1366,height:768});
+  check(await nav(p).evaluate(e=>e.scrollHeight<=e.clientHeight+1),'all ten menus fit above the collapsed course information at 1366×768');
+  check((await p.locator('.ws-course-offer').boundingBox()).height<=130,'default course invitation stays compact');
+  await p.screenshot({path:path.join(out,'sidebar-desktop-1366.png'),fullPage:false});
+  await p.setViewportSize({width:1440,height:1100});
   const stable=await geometry(item(p,'工作台'));await sidebar(p).evaluate(e=>{e.dataset.acceptanceIdentity='same-sidebar';});
   for(const [label,destination] of routes){
     await item(p,label).click();await p.waitForURL(base+destination);equal(await nav(p).locator('[aria-current="page"]').getAttribute('aria-label'),label,'exact selected destination '+destination);
@@ -144,6 +149,16 @@ try{
   const touchContext=await context({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),touch=await touchContext.newPage();await ready(touch);
   check(await touch.evaluate(()=>matchMedia('(pointer:coarse)').matches),'actual coarse pointer touch context');await touch.getByRole('button',{name:'打开工作空间导航'}).tap();
   await typography(touch,'touch');await touch.screenshot({path:path.join(out,'sidebar-mobile-390.png'),fullPage:false});
+  check(await touch.locator('.ws-drawer-close').evaluate(e=>e===document.activeElement),'opening drawer moves focus to its close control');
+  check(await touch.locator('.ws-main').evaluate(e=>e.inert),'background is inert while the drawer is open');
+  for(let i=0;i<17;i++){await touch.keyboard.press('Tab');check(await sidebar(touch).evaluate(e=>e.contains(document.activeElement)),'Tab stays within the mobile drawer '+i);}
+  await touch.keyboard.press('Shift+Tab');check(await sidebar(touch).evaluate(e=>e.contains(document.activeElement)),'reverse Tab stays in drawer');
+  await touch.keyboard.press('Control+k');check(await sidebar(touch).evaluate(e=>e.contains(document.activeElement)),'global shortcut cannot focus inert background');
+  await touch.keyboard.press('Escape');
+  check(await touch.getByRole('button',{name:'打开工作空间导航'}).evaluate(e=>e===document.activeElement),'Escape restores mobile trigger focus');
+  check(!await touch.locator('.ws-main').evaluate(e=>e.inert),'closing drawer restores background controls');
+  check(await touch.getByRole('button',{name:'查看通知',exact:true}).isVisible(),'notification entry remains available on mobile');
+  await touch.getByRole('button',{name:'打开工作空间导航'}).tap();
   await item(touch,'我的收藏').tap();await touch.waitForURL(base+'/favorites');check(!await sidebar(touch).isVisible(),'touch navigation dismisses drawer');
   await touch.setViewportSize({width:390,height:360});await touch.getByRole('button',{name:'打开工作空间导航'}).tap();await item(touch,'设置中心').scrollIntoViewIfNeeded();
   check(await item(touch,'设置中心').evaluate(e=>{const r=e.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;}),'last navigation reachable on short touch screen');

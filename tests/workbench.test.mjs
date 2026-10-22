@@ -27,22 +27,22 @@ test('project rotation keeps CMS priorities and all remaining published recommen
   assert.doesNotMatch(carousel,/setTimeout|wd-carousel-footer|wd-carousel-caption|下一组实战项目/);
 });
 
-test('workbench columns align their final cards without stretching tool cards or mobile rails',()=>{
+test('workbench supporting tools stay compact instead of stretching into decorative posters',()=>{
   const css=readFileSync(new URL('../src/workbench-product.css',import.meta.url),'utf8');
-  assert.match(css,/grid-template-rows:auto auto auto minmax\(155px,1fr\)/);
-  assert.match(css,/\.wd-growth-entry \{ margin-top:auto; \}/);
+  assert.match(css,/grid-template-rows:auto auto;[^}]*align-self:start; align-content:start/);
+  assert.match(css,/\.wd-growth-entry \{ margin-top:0; \}/);
   assert.match(css,/@container learner \(max-width:1050px\)[\s\S]*?\.wd-rail \{[^}]*grid-template-rows:none; align-self:start/);
   const ui=readFileSync(new URL('../src/Workbench.jsx',import.meta.url),'utf8');
   assert.doesNotMatch(ui,/useWorkbenchRail|ref=\{rail\}/);
 });
 
-test('mountain detail stays opaque and bounded while the card keeps its flexible height',()=>{
-  const css=readFileSync(new URL('../src/workbench-product.css',import.meta.url),'utf8');
-  const scene=css.match(/\.wd-inspiration::after \{([^}]+)\}/)?.[1];
-  assert.ok(scene);assert.match(scene,/height:65%; max-height:min\(380px,calc\(100% - 96px\)\)/);
-  assert.match(scene,/opacity:1;/);assert.match(scene,/82% 65%\/cover no-repeat/);
-  assert.match(scene,/mask-image:linear-gradient\(to bottom,transparent,#000 32%\)/);
-  assert.doesNotMatch(scene,/filter:|background:linear-gradient/);
+test('workbench foregrounds the actual lesson and recent work before the optional full path',()=>{
+  const ui=readFileSync(new URL('../src/Workbench.jsx',import.meta.url),'utf8');
+  assert.match(ui,/<h2 id="wd-current-lesson" className="wd-current-lesson">\{title\}/);
+  assert.match(ui,/selection.started\?<details className="wd-path-disclosure"/);
+  assert.ok(ui.indexOf('<RecentLearning')<ui.indexOf('<LearningPath selection='));
+  assert.match(ui,/wd-plan-entry/);
+  assert.doesNotMatch(ui,/<LearningCalendar|className="wd-inspiration"/);
 });
 
 test('workbench differentiates labeled generic demo art while preserving real CMS covers',()=>{

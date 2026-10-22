@@ -17,6 +17,29 @@ export function courseEntryRoute(route) {
     phase: phase ? Number(phase[1]) : null,
   };
 }
+// Both course entry points resume the same readable, unfinished learning record.
+// Callers retain their own course/phase filters and explicit lesson links.
+export function chooseContinueLesson(lessons = [], courses = []) {
+  const recent = lessons
+    .filter((l) => !l.locked && l.progress?.version > 0)
+    .sort((a, b) =>
+      (b.progress.updated_at || "").localeCompare(a.progress.updated_at || ""),
+    );
+  return (
+    recent.find((l) => !l.progress.completed_at) ||
+    lessons.find(
+      (l) =>
+        !l.locked &&
+        !l.progress?.completed_at &&
+        courses.some((c) => c.id === l.owner_id && c.entitled),
+    ) ||
+    lessons.find((l) => !l.locked && !l.progress?.completed_at) ||
+    recent[0] ||
+    lessons.find((l) => !l.locked) ||
+    lessons[0] ||
+    null
+  );
+}
 export function chooseEntry(data, route = "/opc") {
   const { lessonId, slug, phase } = courseEntryRoute(route);
   const courses = data.courses || [],
@@ -33,28 +56,11 @@ export function chooseEntry(data, route = "/opc") {
   }
   const defaultCourse = slug === null ? courses.find(c=>c.id===data.defaultCourseId) : null;
   const chosenSlug = slug ?? defaultCourse?.slug ?? null;
-  let available = lessons.filter(
+  const available = lessons.filter(
     (l) =>
       (!phase || l.phase === phase) && (chosenSlug === null || l.owner_slug === chosenSlug),
   );
-  const recent = available
-    .filter((l) => !l.locked && l.progress?.version > 0)
-    .sort((a, b) =>
-      (b.progress.updated_at || "").localeCompare(a.progress.updated_at || ""),
-    );
-  const lesson =
-    recent.find((l) => !l.progress.completed_at) ||
-    available.find(
-      (l) =>
-        !l.locked &&
-        !l.progress?.completed_at &&
-        courses.some((c) => c.id === l.owner_id && c.entitled),
-    ) ||
-    available.find((l) => !l.locked && !l.progress?.completed_at) ||
-    recent[0] ||
-    available.find((l) => !l.locked) ||
-    available[0] ||
-    null;
+  const lesson = chooseContinueLesson(available, courses);
   const course =
     (chosenSlug !== null
       ? courses.find((c) => c.slug === chosenSlug)

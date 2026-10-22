@@ -62,19 +62,22 @@ export function AiTutorChat({model, cap, navigate, notify}) {
       if(!session.draft.trim() && !busy)applyIncoming();
     }
   },[incoming, incomingReady, session.loading, model.loading, busy]);
-  const selectQuestion = item => {setDraft(item.question);setMode(item.mode);composer.current?.focus();};
+  const selectQuestion = item => {
+    if(busy)return;
+    if(draft.trim()&&draft.trim()!==item.question.trim()&&!window.confirm('输入框中有未发送的草稿，是否替换为这个问题？'))return;
+    setDraft(item.question);setMode(item.mode);setFaqOpen(false);composer.current?.focus();
+  };
   const prepareGeneral=message=>{
     if(busy)return;
     if(draft.trim()&&draft.trim()!==message.question.trim()&&!window.confirm('输入框中有未发送的草稿，是否替换为这个问题？'))return;
     setDraft(message.question);setMode('general');setIncludeProduct(false);setSettingsOpen(true);composer.current?.focus();
   };
-  const send=async (event,quick=null)=>{
+  const send=async event=>{
     event?.preventDefault();
-    if(!available||busy||!(quick?.question||draft).trim())return;
+    if(!available||busy||!draft.trim())return;
     setFaqOpen(false);
-    const selectedMode=quick?.mode||mode;
-    if(selectedMode==='web'&&!webAvailable)return notify(cap?.webReason||'联网回答暂不可用');
-    if(await session.send({question:(quick?.question||draft).trim(),mode:selectedMode,courseId:selectedMode==='web'?null:courseId,includeProduct:selectedMode==='web'?false:includeProduct}))if(!quick)setDraft('');
+    if(mode==='web'&&!webAvailable)return notify(cap?.webReason||'联网回答暂不可用');
+    if(await session.send({question:draft.trim(),mode,courseId:mode==='web'?null:courseId,includeProduct:mode==='web'?false:includeProduct}))setDraft('');
   };
   const cancel=(event)=>{event?.preventDefault();session.stop();};
   const saveNote=async(message)=>{
@@ -153,9 +156,9 @@ export function AiTutorChat({model, cap, navigate, notify}) {
     <button className="tc-faq-toggle" aria-expanded={faqOpen} aria-controls="tutor-faq-content" onClick={()=>setFaqOpen(!faqOpen)}><Question size={19}/><strong>常见问题</strong><span>{faqOpen?'收起快捷提问':'点击展开快捷提问'}</span><CaretDown size={16}/></button>
     <div className="tc-faq-content" id="tutor-faq-content"><p className="tc-faq-intro">不确定怎么问？选一个问题开始。</p>
       <div className="tc-faq-tabs" role="group" aria-label="常见问题分类">{TUTOR_FAQ.map(group=><button key={group.id} aria-pressed={faqGroup===group.id} onClick={()=>setFaqGroup(group.id)}>{group.title}</button>)}</div>
-      {TUTOR_FAQ.filter(group=>group.id===faqGroup).map(group=><section key={group.id} className="tc-faq-list"><p className="tc-faq-mode">{group.mode==='knowledge'?<BookOpenText size={14}/>:<Sparkle size={14}/>} {group.mode==='knowledge'?'检索课程资料 · 回答附来源':'通用建议 · 非课程结论'}</p>{group.questions.map(item=><button key={item.id} disabled={busy||!available} onClick={()=>send(null,{...item,mode:group.mode})} aria-label={`直接提问：${item.title}`}><span>{item.title}</span><CaretRight size={16}/></button>)}</section>)}
-      <p className="tc-faq-hint">点击即发送给 AI，会计入调用额度；输入框中的草稿会保留。资料问答沿用当前课程范围。</p>
-      {!available&&<p role="status" className="tc-faq-unavailable">{cap?'AI 暂不可用，恢复后可快捷提问。':'正在检查 AI 服务…'}</p>}
+      {TUTOR_FAQ.filter(group=>group.id===faqGroup).map(group=><section key={group.id} className="tc-faq-list"><p className="tc-faq-mode">{group.mode==='knowledge'?<BookOpenText size={14}/>:<Sparkle size={14}/>} {group.mode==='knowledge'?'检索课程资料 · 回答附来源':'通用建议 · 非课程结论'}</p>{group.questions.map(item=><button key={item.id} disabled={busy} onClick={()=>selectQuestion({...item,mode:group.mode})} aria-label={`准备问题：${item.title}`}><span>{item.title}</span><CaretRight size={16}/></button>)}</section>)}
+      <p className="tc-faq-hint">点击仅填入输入框，不会发送或计入调用额度；确认内容后再发送。资料问答沿用当前课程范围。</p>
+      {!available&&<p role="status" className="tc-faq-unavailable">{cap?'AI 暂不可用，仍可准备问题，恢复后再发送。':'正在检查 AI 服务…'}</p>}
       <div className="tc-faq-tip"><Lightbulb size={18}/><div><strong>问得具体，回答更有用</strong><p>补充课程名称、当前目标或完整报错。资料不足时，AI 会明确告诉你。</p></div></div>
     </div>
   </aside></div>;

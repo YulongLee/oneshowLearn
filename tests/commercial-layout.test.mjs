@@ -238,7 +238,8 @@ test('workbench prioritizes actual lessons, adaptive records and the approved co
   assert.ok(workbench.indexOf('<RecentLearning recent=')<workbench.indexOf('className="wd-recommendations"'));
   assert.match(workbench,/workbenchPhaseState\(selection.lessons/);
   assert.match(workbench,/currentProductAchievement\(items\)/);
-  assert.ok(workbench.indexOf('<TutorPanel model=')<workbench.indexOf('<LearningCalendar model='));
+  assert.match(workbench,/<TutorPanel key=\{accountId/);
+  assert.doesNotMatch(workbench,/<LearningCalendar model=/,'Today plan has one prominent entry, not a second calendar card');
   assert.match(source('workbench-product.css'),/@container learner \(max-width:1050px\)/);
   assert.match(workbench,/className="wd-panel wd-tasks"/);
   assert.match(workbench,/实时回答未接入/);

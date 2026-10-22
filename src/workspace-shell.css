@@ -42,7 +42,7 @@
 .ws-reference-layout .ws-content { max-width:1840px; padding:20px 17px 22px 25px; }
 .ws-reference-layout .ws-search-results { top:50px; }
 @media(max-width:1000px) { .ws-reference-layout { grid-template-columns:minmax(0,1fr); } .ws-reference-layout .ws-sidebar { position:fixed; top:0; bottom:0; left:0; width:228px; transform:translateX(-105%); transition:transform .2s; box-shadow:10px 0 50px #18203a16; } .ws-reference-layout .ws-sidebar.is-open { transform:translateX(0); } .ws-reference-layout .ws-mobile-menu { display:inline-grid; flex-shrink:0; } .ws-reference-layout .ws-topbar { gap:14px; padding:0 18px; } .ws-reference-layout .ws-search { flex:1; width:auto; max-width:532px; } .ws-reference-layout .ws-user-actions { gap:10px; } .ws-reference-layout .ws-profile strong { max-width:120px; } .ws-reference-layout .ws-search-results { left:18px; width:min(540px,calc(100vw - 36px)); } }
-@media(max-width:699px) { .ws-reference-layout .ws-topbar { padding:0 13px; gap:10px; } .ws-reference-layout .ws-content { padding:17px 14px; } .ws-reference-layout .ws-profile > span:nth-child(2), .ws-reference-layout .ws-profile > svg, .ws-reference-layout .ws-user-actions > .ws-icon-button, .ws-reference-layout .ws-search kbd { display:none; } .ws-reference-layout .ws-user-actions { gap:0; } .ws-reference-layout .ws-avatar { width:32px; height:32px; } .ws-reference-layout .ws-search { height:34px; } }
+@media(max-width:699px) { .ws-reference-layout .ws-topbar { padding:0 13px; gap:10px; } .ws-reference-layout .ws-content { padding:17px 14px; } .ws-reference-layout .ws-profile > span:nth-child(2), .ws-reference-layout .ws-profile > svg, .ws-reference-layout .ws-search kbd { display:none; } .ws-reference-layout .ws-user-actions { gap:0; } .ws-reference-layout .ws-avatar { width:32px; height:32px; } .ws-reference-layout .ws-search { height:34px; } }
 @media(max-width:1000px) {
   .ws-reference-layout .ws-sidebar { display:none; }
   .ws-reference-layout .ws-sidebar.is-open { display:flex; }
@@ -54,13 +54,13 @@
 html:has(.ws-unified-layout) { scrollbar-gutter:stable; }
 .ws-layout.ws-unified-layout { grid-template-columns:var(--sidebar-width,248px) minmax(0,1fr); }
 .ws-unified-layout .ws-brand { font-size:18px; gap:10px; }
-.ws-unified-layout .ws-sidebar { padding:10px 13px 16px; gap:24px; }
+.ws-unified-layout .ws-sidebar { padding:10px 13px 16px; gap:16px; }
 .ws-unified-layout .ws-sidebar nav > button,
 .ws-unified-layout .wb-nav-group > button { min-height:48px; padding:13px 14px; gap:12px; border-radius:10px; color:#60718e; font-size:15px; line-height:22px; font-weight:400; }
 .ws-unified-layout .ws-sidebar nav > button.is-active,
 .ws-unified-layout .wb-nav-group > button.is-active { background:#f3efff; color:#7042ff; font-weight:500; }
-.ws-unified-layout .wb-nav-group { margin-top:18px; }
-.ws-unified-layout .wb-nav-group > span { display:block; font-size:12px; line-height:20px; font-weight:400; color:#6b7280; }
+.ws-unified-layout .wb-nav-group { margin-top:8px; }
+.ws-unified-layout .wb-nav-group > span { display:block; margin-bottom:4px; font-size:12px; line-height:20px; font-weight:400; color:#6b7280; }
 .ws-layout.ws-unified-layout .ws-sidebar nav button>svg,
 .ws-unified-layout .wb-settings>svg { width:18px; height:18px; flex-shrink:0; color:inherit; }
 .ws-unified-layout .wb-settings { min-height:48px; padding:13px 29px; font-size:15px; line-height:22px; font-weight:400; }
@@ -71,7 +71,9 @@ html:has(.ws-unified-layout) { scrollbar-gutter:stable; }
 .ws-unified-layout .wb-access { margin:0; padding:16px 12px; }
 .ws-unified-layout .wb-access h3 { font-size:17px; white-space:nowrap; }
 .ws-unified-layout .ws-sidebar-bottom { gap:18px; }
-.ws-unified-layout .ws-drawer-close { position:absolute; top:55px; right:13px; display:grid; place-items:center; width:28px; height:28px; border:0; border-radius:6px; color:#7042ff; background:#f0eaff; }
+.ws-unified-layout .ws-drawer-close { position:absolute; top:7px; right:4px; display:grid; place-items:center; width:44px; height:44px; border:0; border-radius:6px; color:#7042ff; background:#f0eaff; }
+.ws-page-context { display:flex; align-items:center; gap:8px; min-height:32px; margin-bottom:12px; color:#69738f; font-size:13px; }
+.ws-page-context button { min-height:32px; border:0; padding:0 4px; border-radius:4px; background:transparent; color:#7042ff; }
 .ws-unified-layout button:focus-visible { outline:2px solid #9a7bff; outline-offset:2px; }
 .ws-sidebar-frame { position:sticky; top:0; height:100dvh; min-width:0; z-index:30; }
 .ws-unified-layout .ws-sidebar-frame .ws-sidebar { position:relative; height:100%; }
@@ -112,13 +114,20 @@ html:has(.ws-unified-layout) { scrollbar-gutter:stable; }
   .ws-unified-layout .ws-sidebar-frame .ws-sidebar { display:none; position:fixed; inset:0 auto 0 0; width:228px; height:100dvh; transform:translateX(-100%); }
   .ws-unified-layout .ws-sidebar-frame .ws-sidebar.is-open { display:flex; transform:translateX(0); }
   .ws-unified-layout .ws-sidebar.is-open { display:flex; transform:translateX(0); }
+  .ws-unified-layout .ws-sidebar.is-open .ws-brand { padding-right:34px; }
+  .ws-unified-layout .ws-sidebar.is-open .ws-brand .osl-brand-wordmark { font-size:14px; }
+  .ws-unified-layout .ws-sidebar.is-open .ws-brand .osl-brand-tagline { font-size:8px; }
   .ws-unified-layout .ws-mobile-menu { display:inline-grid; flex-shrink:0; }
+  .ws-unified-layout .ws-topbar .ws-icon-button { width:44px; height:44px; }
+  .ws-unified-layout .ws-user-actions>.ws-icon-button { display:inline-grid; }
   .ws-unified-layout .ws-scrim { display:block; left:228px; width:calc(100% - 228px); }
   .ws-unified-layout .ws-topbar { padding-inline:18px; gap:14px; }
   .ws-unified-layout .ws-content { padding:20px 18px 28px; }
   .ws-unified-layout .ws-search { flex:1; width:auto; max-width:532px; }
 }
 @media(max-width:699px) {
-  .ws-unified-layout .ws-topbar { padding-inline:14px; gap:10px; }
+  .ws-unified-layout .ws-topbar { padding-inline:8px; gap:4px; }
+  .ws-unified-layout .ws-user-actions { gap:0; }
+  .ws-unified-layout .ws-search { min-width:0; }
   .ws-unified-layout .ws-content { padding:18px 14px 24px; }
 }

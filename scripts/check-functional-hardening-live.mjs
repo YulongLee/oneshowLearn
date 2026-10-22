@@ -14,7 +14,7 @@ try{
  for(const width of [320,768,1440])for(const route of ['/','/app','/notes','/account?section=orders','/course-offer?course='+encodeURIComponent(offer.slug),'/not-a-real-hardening-page']){
   await page.setViewportSize({width,height:1000});await page.waitForTimeout(1800);await page.goto(base+route);await page.waitForTimeout(500);await page.evaluate(()=>document.fonts.ready);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),route+' at '+width);checks++;
   if(route.includes('not-a-real')){await page.getByRole('heading',{name:'这个页面不存在',exact:true}).waitFor();checks++;}
-  if(route.startsWith('/account')||route==='/notes'){await page.getByRole('heading',{name:'登录后保存你的学习记录',exact:true}).waitFor();checks++;}
+  if(route.startsWith('/account')||route==='/notes'){await page.getByRole('heading',{name:route.startsWith('/account')?'登录后管理你的账号':'登录后保存你的学习记录',exact:true}).waitFor();checks++;}
  }
  await page.goto(base+'/packs/'+encodeURIComponent(offer.slug));await page.waitForURL(base+'/course-offer?course='+encodeURIComponent(offer.slug));checks++;
  await page.locator('.co-price strong').waitFor();assert.equal(await page.locator('.co-price strong').innerText(),offerMoney(offer.priceCents));checks++;

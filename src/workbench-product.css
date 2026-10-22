@@ -74,8 +74,8 @@
 .wd-growth-entry>div>div { min-width:0; }
 .wd-growth-entry h2 { margin:0 0 5px; font-size:17px; line-height:1.5; }
 .wd-growth-entry p { margin:0; color:#66708b; font-size:14px; line-height:1.75; overflow-wrap:anywhere; }
-.ws-unified-layout .wd-refined .wd-rail { display:grid; grid-template-columns:1fr; grid-template-rows:auto auto auto minmax(155px,1fr); padding-top:0; gap:18px; position:static; align-self:stretch; align-content:stretch; }
-.wd-refined .wd-growth-entry { margin-top:auto; }
+.ws-unified-layout .wd-refined .wd-rail { display:grid; grid-template-columns:1fr; grid-template-rows:auto auto; padding-top:0; gap:18px; position:static; align-self:start; align-content:start; }
+.wd-refined .wd-growth-entry { margin-top:0; }
 .wd-refined .wd-rail .wd-section-heading h2 { font-size:18px; }
 .wd-refined .wd-rail .wd-section-heading .wd-link { font-size:13px!important; }
 .wd-task-suggestion-label { color:#6e7189; font-size:13px; line-height:1.7; }
@@ -154,9 +154,16 @@
 .wd-refined .wd-main { gap:22px; }
 .wd-refined .wd-panel { border-radius:14px; }
 .wd-refined .wd-workspace-tag { display:none; }
-.wd-refined .wd-product-hero { grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); gap:20px; padding:24px; border-radius:18px; background:radial-gradient(ellipse at 82% 0%,#e4e0ff80,transparent 60%),linear-gradient(115deg,#f2edff,#fafaff 70%); box-shadow:0 8px 28px #4c348308; }
+.wd-refined .wd-product-hero { grid-template-columns:minmax(0,1fr) minmax(160px,.6fr); gap:20px; padding:24px; border-radius:14px; background:linear-gradient(115deg,#f6f3ff,#fcfbff); box-shadow:none; }
 .wd-refined .wd-hero-eyebrow { color:#7548de; margin-bottom:10px; font-size:14px; }
-.wd-refined .wd-hero-copy h2 { font-size:clamp(28px,2.05vw,38px); line-height:1.35; letter-spacing:-.7px; color:#11152e; margin-bottom:13px; }
+.wd-refined .wd-hero-copy h2 { font-size:clamp(24px,2vw,32px); line-height:1.4; letter-spacing:-.5px; color:#11152e; margin-bottom:13px; }
+.wd-refined .wd-plan-entry { flex-shrink:0; }
+.wd-refined .wd-welcome { flex-wrap:wrap; align-items:center; }
+.wd-path-disclosure { border:1px solid #e6e8f2; border-radius:12px; padding:4px 16px; color:#4d4263; }
+.wd-path-disclosure>summary { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; min-height:48px; cursor:pointer; font-weight:600; }
+.wd-path-disclosure>summary>span { color:#736884; font-size:13px; font-weight:400; }
+.wd-path-disclosure[open]>.wd-learning-path { padding-block:12px; }
+.wd-path-disclosure>summary:focus-visible { outline:2px solid #9a7bff; outline-offset:2px; border-radius:6px; }
 .wd-refined .wd-current-lesson { font-size:15px; font-weight:650; color:#262d4b; line-height:1.7; margin:0 0 8px; overflow-wrap:anywhere; }
 .wd-refined .wd-hero-goal { font-size:15px; line-height:1.7; margin-bottom:8px; }
 .wd-refined .wd-hero-actions { gap:10px; margin-top:13px; }

@@ -35,6 +35,10 @@
 .auth-commercial .auth-switch { display:flex; align-items:center; justify-content:center; width:100%; min-height:50px; margin-top:20px; padding:11px 14px; border:1px solid #e2d9f4; border-radius:11px; background:#fcfaff; color:#7042d9; font-size:15px; font-weight:550; }
 .auth-commercial .auth-switch:hover:not(:disabled) { background:#f5efff; border-color:#c9b5ed; }
 .auth-commercial .auth-platform-switch { justify-content:center; min-height:44px; margin-top:20px; padding:12px 0 0; border-top-color:#efecf5; color:#756e82; font-size:12px; }
+.auth-commercial .auth-platform-options { margin-top:16px; border-top:1px solid #efecf5; color:#756e82; font-size:12px; text-align:center; }
+.auth-commercial .auth-platform-options>summary { min-height:44px; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:6px; }
+.auth-commercial .auth-platform-options>summary:focus-visible { outline:3px solid #a38aff; outline-offset:3px; }
+.auth-commercial .auth-platform-options .auth-platform-switch { margin:0; padding:0; border:0; width:100%; }
 .auth-commercial .auth-polished-card>small { gap:6px; margin-top:18px; color:#766f84; font-size:12px; line-height:1.7; text-align:center; }
 .auth-commercial .auth-polished-card>small svg { flex-shrink:0; color:#8b75bc; }
 .auth-commercial .service-links { justify-content:center; gap:10px 16px; margin-top:16px; font-size:12px; }

@@ -4,7 +4,13 @@ import {mkdtempSync,rmSync,readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {COMMUNITY_SETTINGS,EMPTY_ARTICLE} from '../server/community-definition.mjs';
-import {communityArticles,communityFeatured,safeCommunityImage,safeCommunityLink,groupAudience,groupMessage} from '../src/community-editorial-model.js';
+import {communityArticles,communityFeatured,safeCommunityImage,safeCommunityLink,groupAudience,groupMessage,communityPageCopy} from '../src/community-editorial-model.js';
+test('community copy distinguishes official publishing and member groups without rewriting custom CMS values',()=>{
+ const before=JSON.stringify(COMMUNITY_SETTINGS),copy=communityPageCopy();
+ assert.equal(copy.title,'官方内容与学员群');assert.match(copy.tagline,/文章由官方发布/);assert.match(copy.tagline,/交流在学员群/);
+ const custom={...COMMUNITY_SETTINGS,title:'官方自定义标题',description:'原说明',tagline:'原标语'};
+ assert.deepEqual(communityPageCopy(custom),{title:custom.title,description:custom.description,tagline:custom.tagline});assert.equal(JSON.stringify(COMMUNITY_SETTINGS),before);
+});
 test('editorial sorting, combined filters and feature choice use only actual records',()=>{
  const items=[{id:1,title:'验证需求',category:'idea',topic:'入门',summary:'产品机会',publishedAt:'2026-01-01',pinned:true},{id:2,title:'开发 MVP',category:'development',topic:'入门',summary:'拆解产品',publishedAt:'2026-02-01',recommended:true},{id:3,title:'上线',category:'launch',publishedAt:'2026-03-01'}],before=structuredClone(items);
  assert.equal(communityFeatured(items).id,1);assert.equal(communityFeatured(items.slice(1)).id,2);assert.equal(communityFeatured([]),null);

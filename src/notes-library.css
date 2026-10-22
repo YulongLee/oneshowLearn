@@ -10,7 +10,14 @@
 .nl-starters{padding:18px 20px;background:linear-gradient(115deg,#f6f2ff,#f9f8ff);border:1px solid #e4d9ff;border-radius:12px;margin-bottom:14px}
 .nl-starters h2{font-size:17px;color:#6637e0;margin:0 0 5px}
 .nl-starters p{font-size:13px;color:#747b96;line-height:1.7;margin:0 0 14px}
-.nl-starters>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.nl-starters>header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.nl-starters>header h2{margin:0}
+.nl-starters .nl-template-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.nl-starters [hidden]{display:none!important}
+.nl-starters button.nl-template-toggle{min-height:44px;min-width:108px;padding:8px 10px;border:0;background:transparent;font-size:14px;gap:8px;justify-content:space-between;color:inherit}
+.nl-starters.is-collapsed{padding:4px 14px;background:transparent;border-color:transparent}
+.nl-starters.is-collapsed>header{margin:0}
+.nl-starters.is-collapsed h2{font-size:15px;color:inherit}
 .nl-starters button{display:flex;align-items:center;gap:14px;text-align:left;padding:15px 14px;min-height:76px;border:1px solid #e9e3f8;border-radius:8px;background:#fff;color:#7545ee;min-width:0}
 .nl-starters button>svg:first-child{flex-shrink:0}
 .nl-starters button>svg:last-child{margin-left:auto;flex-shrink:0}
@@ -75,11 +82,11 @@
 .nl-more{margin:12px auto;display:flex;justify-content:center}
 .nl-resume-draft{display:flex;gap:8px;align-items:center;margin:12px 0;color:#7640df;background:#f5efff}
 @container learner (max-width:1200px){.nl-page .ns-workspace{grid-template-columns:300px minmax(0,1fr)}.nl-starters button{gap:10px;padding:12px}.nl-page .ns-document,.nl-page .ns-writing{padding:25px}.nl-page .ns-editor-toolbar{padding:10px 15px}}
-@container learner (max-width:950px){.nl-starters>div{gap:8px}.nl-starters button small{display:none}.nl-page .ns-workspace{grid-template-columns:270px minmax(0,1fr)}.nl-page .ns-document,.nl-page .ns-writing{padding:22px}.nl-heading-actions{gap:10px}}
+@container learner (max-width:950px){.nl-starters .nl-template-grid{gap:8px}.nl-starters button small{display:none}.nl-page .ns-workspace{grid-template-columns:270px minmax(0,1fr)}.nl-page .ns-document,.nl-page .ns-writing{padding:22px}.nl-heading-actions{gap:10px}}
 @container learner (max-width:800px){
  .nl-page:has(.ns-workspace.is-reading) .nl-starters{display:none}
  .nl-page .ns-heading{align-items:flex-start;flex-wrap:wrap}.nl-heading-actions{flex-direction:row;align-items:center;flex-wrap:wrap;width:100%;justify-content:space-between}.nl-page .ns-private{display:flex}
- .nl-page .ns-heading h1{font-size:28px}.nl-starters{padding:15px}.nl-starters>div{grid-template-columns:minmax(0,1fr)}.nl-starters button{min-height:60px}.nl-starters button small{display:block}.nl-starters>p{font-size:13px}
+ .nl-page .ns-heading h1{font-size:28px}.nl-starters{padding:15px}.nl-starters .nl-template-grid{grid-template-columns:minmax(0,1fr)}.nl-starters button{min-height:60px}.nl-starters button small{display:block}.nl-starters p{font-size:13px}
  .nl-page .ns-sources{gap:4px;justify-content:space-between}.nl-page .ns-sources button{font-size:14px;padding:0 8px 9px;white-space:nowrap}
  .nl-page .ns-workspace,.nl-page .ns-workspace.is-focused{grid-template-columns:minmax(0,1fr);min-height:420px}.nl-page .ns-note-list{max-height:none}
  .nl-page .ns-editor-toolbar{position:static;gap:4px}.nl-page .ns-editor-toolbar .ns-actions{gap:4px}.nl-page .ns-save-status{min-height:34px}

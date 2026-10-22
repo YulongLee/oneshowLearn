@@ -3,7 +3,7 @@ import {ArrowRight,Clock,Code,Cube,DotsThree,FileText,Image as ImageIcon,LockSim
 import {api} from './api.js';
 import {STAGES,liveAchievements,shortDate,tagsFromText} from './personal-model.js';
 import {Gate,Modal as SharedModal,SafeLink} from './PersonalShared.jsx';
-import {OUTCOME_TYPES,OUTCOME_STARTERS,outcomeSummary,outcomeSource,filterOutcomes,outcomeCoverUrl,validateOutcome,saveOutcome,archiveOutcome} from './achievement-library-model.js';
+import {OUTCOME_TYPES,OUTCOME_STARTERS,outcomeSummary,outcomeSource,filterOutcomes,outcomeCoverUrl,validateOutcome,saveOutcome,archiveOutcome,outcomeSupplementCount} from './achievement-library-model.js';
 import './achievement-library.css';
 import {CourseCertificates} from './CourseCertificates.jsx';
 
@@ -22,6 +22,7 @@ export function AchievementsWorkspace({model,navigate,notify,query='',setQuery,g
  const [category,setCategory]=useState('all'),[stage,setStage]=useState('all'),[sort,setSort]=useState('updated');
  const [projects,setProjects]=useState([]),[projectStatus,setProjectStatus]=useState('loading'),[retry,setRetry]=useState(0);
  const [draft,setDraft]=useState(null),[detailId,setDetailId]=useState(null),[archiveOpen,setArchiveOpen]=useState(false),[operation,setOperation]=useState(null),[leave,setLeave]=useState(null),[error,setError]=useState(''),[localBusy,setLocalBusy]=useState(false);
+ const [supplementOpen,setSupplementOpen]=useState(false);
  const saving=useRef(false),draftRef=useRef(null),modelRef=useRef(model),guardRef=useRef(null),navigationDecision=useRef(null);
  draftRef.current=draft;modelRef.current=model;
  const records=model.state.achievements||[],achievements=liveAchievements(model.state),archived=records.filter(i=>i.deletedAt),summary=outcomeSummary(achievements);
@@ -46,7 +47,7 @@ export function AchievementsWorkspace({model,navigate,notify,query='',setQuery,g
   if(!model.user)return navigate('/login?returnTo=%2Fachievements');if(blocked)return;
   if(!item&&limitReached){notify('成果记录最多保存 100 项，归档记录也会保留。');return;}
   const value=item?{...item}:blank(initialStage),tagsText=(value.tags||[]).join(', ');
-  setDraft({value,initial:value,base:item||null,tagsText,initialTags:tagsText});setDetailId(null);setError('');
+  setDraft({value,initial:value,base:item||null,tagsText,initialTags:tagsText});setSupplementOpen(outcomeSupplementCount(value)>0);setDetailId(null);setError('');
  };
  const change=(key,value)=>setDraft(d=>({...d,value:{...d.value,[key]:value}}));
  const save=async e=>{
@@ -99,15 +100,18 @@ export function AchievementsWorkspace({model,navigate,notify,query='',setQuery,g
     {limitReached&&<p className="ag-notice">已达到 100 项记录上限，归档记录也计入上限；已有成果仍可编辑或恢复。</p>}
    </>}
   </Gate>}
-  {draft&&<Modal title={draft.base?'编辑成果':'新建成果'} close={closeEditor}><form className="ps-form ag-form" onSubmit={save}><fieldset className="ag-fields" disabled={localBusy}>
+  {draft&&<Modal title={draft.base?'编辑成果':'新建成果'} close={closeEditor}><form className="ps-form ag-form" onSubmit={save} onInvalidCapture={event=>{const disclosure=event.target.closest('.ag-supplement');if(disclosure&&!disclosure.open){event.preventDefault();const input=event.target;setSupplementOpen(true);requestAnimationFrame(()=>{input.focus();input.reportValidity();});}}}><fieldset className="ag-fields" disabled={localBusy}>
+   <p className="ag-editor-intro">先留下这次想法或实践，作品链接等信息可以以后补充。</p>
    <label>成果名称<input autoFocus required maxLength={120} value={draft.value.title} onChange={e=>change('title',e.target.value)}/></label>
    <div><label>成果类型<select aria-label="成果记录类型" value={draft.value.type} onChange={e=>change('type',e.target.value)}>{OUTCOME_TYPES.slice(1).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label><label>当前阶段<select aria-label="当前阶段" value={draft.value.stage} onChange={e=>change('stage',e.target.value)}>{Object.entries(STAGES).map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label></div>
    <label>成果描述<textarea aria-label="成果描述" rows={4} maxLength={5000} placeholder="这次解决了什么问题？已经完成什么，下一步准备做什么？" value={draft.value.description||''} onChange={e=>change('description',e.target.value)}/></label>
+   <details className="ag-supplement" open={supplementOpen} onToggle={event=>setSupplementOpen(event.currentTarget.open)}><summary>补充作品信息<span>项目关联、链接、截图与标签 · 可选</span></summary><div>
    <label>关联实战项目（可选）<select aria-label="关联实战项目（可选）" disabled={projectStatus!=='ready'} value={draft.value.sourceProjectId||''} onChange={e=>change('sourceProjectId',e.target.value?Number(e.target.value):undefined)}><option value="">个人成果记录</option>{draft.value.sourceProjectId&&!projects.some(p=>p.id===draft.value.sourceProjectId)&&<option value={draft.value.sourceProjectId}>原关联项目暂不可用（保留关联）</option>}{projects.map(p=><option key={p.id} value={p.id}>{p.title}</option>)}</select><small>只可关联当前账号已开始的项目，不会创建新的项目学习记录。{projectStatus==='error'?'关联项目加载失败，原关联会保留。':''}</small></label>{projectStatus==='error'&&<button type="button" className="ag-button" onClick={()=>setRetry(v=>v+1)}>重新加载关联项目</button>}
    <label>作品链接（可选）<input type="url" placeholder="https://" maxLength={2000} value={draft.value.url||''} onChange={e=>change('url',e.target.value)}/></label>
    <label>代码仓库链接（可选）<input type="url" placeholder="https://" maxLength={2000} value={draft.value.githubUrl||''} onChange={e=>change('githubUrl',e.target.value)}/></label>
    <label>作品截图地址（可选）<input type="url" placeholder="https://…/screenshot.png" maxLength={2000} value={draft.value.screenshotUrl||''} onChange={e=>change('screenshotUrl',e.target.value)}/><small>使用已有图片的 HTTPS 地址展示；不上传图片，不改变原图片的访问权限。</small></label>
    <label>标签（逗号分隔，最多 8 个）<input maxLength={200} value={draft.tagsText} onChange={e=>setDraft(d=>({...d,tagsText:e.target.value}))}/></label>
+   </div></details>
    <p className="ag-editor-note"><LockSimple size={15}/>保存为私人记录，阶段由你填写，不会发布到社区或发放证书。</p>
    {error&&<p className="ps-alert" role="alert">{error}{draft.base&&<button type="button" onClick={()=>{const action=()=>{setDetailId(draft.value.id);setDraft(null);setError('');};if(confirmLeave(action))action();}}>查看最新记录</button>}</p>}
    <div className="ag-form-actions"><button type="button" className="ag-button" disabled={localBusy} onClick={closeEditor}>取消编辑</button><button className="ag-primary" disabled={blocked}>{localBusy?'正在保存…':'保存成果'}<ArrowRight size={16}/></button></div>

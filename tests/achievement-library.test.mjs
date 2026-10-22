@@ -4,13 +4,20 @@ import {randomUUID} from 'node:crypto';
 import {mkdtempSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
-import {OUTCOME_TYPES,OUTCOME_STARTERS,outcomeSummary,outcomeSource,filterOutcomes,outcomeCoverUrl,validateOutcome,saveOutcome,archiveOutcome} from '../src/achievement-library-model.js';
+import {OUTCOME_TYPES,OUTCOME_STARTERS,outcomeSummary,outcomeSource,filterOutcomes,outcomeCoverUrl,validateOutcome,saveOutcome,archiveOutcome,outcomeSupplementCount} from '../src/achievement-library-model.js';
 import {liveAchievements} from '../src/personal-model.js';
 const time='2026-10-05T01:00:00Z',item=(extra={})=>({id:randomUUID(),title:'我的原型',description:'验证目标用户需求',type:'product',stage:'building',url:'https://example.invalid/work',githubUrl:'https://example.invalid/code',screenshotUrl:'https://example.invalid/screenshot.png',tags:['AI'],createdAt:time,updatedAt:time,...extra});
 test('outcome library types and blank starter stages never claim certificates or assessments',()=>{
  assert.deepEqual(OUTCOME_TYPES.map(([id])=>id),['all','product','work','document','code']);
  assert.deepEqual(OUTCOME_STARTERS.map(i=>i.stage),['idea','building','launched']);
  assert.ok(OUTCOME_STARTERS.every(i=>!i.url&&!i.title.includes('示例')));
+});
+test('progressive metadata counts existing optional values without normalizing or discarding legacy data',()=>{
+ assert.equal(outcomeSupplementCount(),0);assert.equal(outcomeSupplementCount({title:'only title',type:'product',stage:'building'}),0);
+ const record=item({sourceProjectId:3,url:'http://legacy.example.invalid',customField:'preserved'}),before=JSON.stringify(record);
+ assert.equal(outcomeSupplementCount(record),5);assert.equal(JSON.stringify(record),before);
+ const saved=saveOutcome({achievements:[record]}, {...record,title:'new title'}).achievements[0];
+ for(const key of ['sourceProjectId','url','githubUrl','screenshotUrl','tags','createdAt','customField'])assert.deepEqual(saved[key],record[key]);
 });
 test('only actual live records produce total/building/launched counts',()=>{
  const state={achievements:[item(),item({stage:'idea'}),item({stage:'launched'}),item({stage:'launched',deletedAt:time})]};

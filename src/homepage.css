@@ -158,6 +158,11 @@
 .sales-clarity { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); gap:85px; margin-block:35px 42px; padding-top:30px; border-top:1px solid #f0edf8; }
 .sales-clarity>div>p { margin-top:10px; font-size:15px; }
 .sales-benefit-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:25px 28px; margin-block:27px 15px; }
+.sales-benefits-disclosure { margin-block:20px 12px; border-block:1px solid #ece7f5; }
+.sales-benefits-disclosure>summary { display:flex; justify-content:space-between; align-items:center; gap:12px; min-height:48px; cursor:pointer; color:#6c4da1; font-size:14px; list-style:none; }
+.sales-benefits-disclosure>summary::-webkit-details-marker { display:none; }
+.sales-benefits-disclosure>summary:focus-visible { outline:2px solid #9b7ae1; outline-offset:3px; border-radius:5px; }
+.sales-benefits-disclosure[open]>summary>svg { transform:rotate(180deg); }
 .sales-benefit-grid article { display:flex; align-items:flex-start; gap:13px; }.sales-benefit-grid i { display:grid; place-items:center; width:47px; height:47px; flex-shrink:0; border-radius:13px; color:#4884ff; background:#eff5ff; }
 .sales-benefit-grid .green i { color:#15b78a; background:#ecfaf5; }.sales-benefit-grid .violet i { color:#8554f2; background:#f0eaff; }
 .sales-benefit-grid h3 { font-size:16px; }.sales-benefit-grid p { margin-top:6px; font-size:14px; line-height:1.85; }

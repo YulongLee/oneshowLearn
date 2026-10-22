@@ -3,6 +3,11 @@ export const NOTE_TEMPLATES = [
   {id:'prompt',title:'Prompt 收藏',description:'留下使用场景、提示词和改进方法',body:'## 使用场景\n\n\n## Prompt\n\n```\n\n```\n\n## 使用效果与改进\n\n',tagsText:'Prompt'},
   {id:'project',title:'项目复盘',description:'记录实践过程、经验总结和改进方向',body:'## 实践目标\n\n\n## 实践过程\n\n\n## 经验与问题\n\n\n## 下一步\n\n- [ ] 写下一个改进方向\n',tagsText:'项目复盘'},
 ];
+export function noteSelectionPrompt(hasRecords){
+ return hasRecords
+  ? {title:'选择一篇笔记继续阅读',description:'从笔记列表打开已有记录，或新建一篇笔记。',action:'新建笔记'}
+  : {title:'从第一条学习收获开始',description:'选择笔记模板，或写一篇自由笔记。在课程中保存的笔记，也会汇集到这里。',action:'写第一篇笔记'};
+}
 export function noteText(body){
   try{
     const doc=JSON.parse(body);if(doc?.type==='doc'){

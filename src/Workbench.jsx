@@ -52,11 +52,11 @@ function ProductHero({model,extra,selection,navigate}) {
   const path=lesson?lessonLink(lesson):course?courseLearningPath(course.slug):'/opc';
   const title=loading?'正在读取你的课程…':error?'课程记录暂时无法读取':lesson?.title||course?.title||'从课程开始，建立你的产品能力';
   const status=!model.user?'登录后保存学习记录':!owned?'免费课时体验':finished?'课程学习已完成':started?'继续上次学习':'尚未开始';
-  return <section className="wd-product-hero" aria-labelledby="wd-hero-title">
-    <div className="wd-hero-copy"><span className="wd-hero-eyebrow">{course?.title||'你的课程学习入口'}</span><h2 id="wd-hero-title">把想法，做成你的<br/>第一个 AI 产品</h2>
-      <p id="wd-current-lesson" className="wd-current-lesson">{loading||error?'':started?'正在学习 · ':'从这里开始 · '}{title}</p>
-      <p className="wd-hero-goal">{!error?'从一节课程开始，建立你的产品能力。':'请重新加载后继续，已保存的学习记录不会丢失。'}</p>
-      {!loading&&!error&&<span className="wd-study-status">{status}</span>}
+  return <section className="wd-product-hero" aria-labelledby="wd-current-lesson">
+    <div className="wd-hero-copy"><span className="wd-hero-eyebrow">{course?.title||'你的课程学习入口'}</span>
+      <h2 id="wd-current-lesson" className="wd-current-lesson">{title}</h2>
+      <p className="wd-hero-goal">{error?'请重新加载后继续，已保存的学习记录不会丢失。':finished?'回顾课程中的关键方法，继续推进自己的实践。':started?'已为你找到上次的学习位置，接着这一节继续。':model.user?'从当前课时开始，按自己的节奏完成学习。':'浏览课程目录，选择一个适合自己的学习起点。'}</p>
+      {!loading&&!error&&<span id="wd-hero-title" className="wd-study-status">{status}</span>}
       <div className="wd-hero-actions"><button className="wd-primary" disabled={loading||Boolean(error)} onClick={()=>navigate(model.user?path:'/login')}>{!model.user?'登录后开始学习':finished?'回顾课程':!owned&&lesson?'开始免费试听':started?'继续学习':'开始学习'}<ArrowRight size={18}/></button><button className="wd-link" onClick={()=>navigate(course?courseLearningPath(course.slug):'/opc')}>查看完整课程目录<ArrowRight size={15}/></button></div>
     </div>
     <CoursePreview course={course} lesson={lesson} navigate={navigate} path={path} disabled={loading||Boolean(error)} guest={!model.user}/>
@@ -147,12 +147,12 @@ export function Workbench({model,navigate,notify}) {
   };
   const retry=()=>{setReload(value=>value+1);model.refresh({preserve:true});};
   return <div className="wd-layout wd-product-layout wd-refined" aria-busy={model.loading||extra.loading}>
-    <div className="wd-main"><header className="wd-welcome"><div><h1>{model.user?'欢迎回来，':'欢迎来到工作台'}{model.user&&<span>{model.user.name?.trim()||'学习者'}</span>}</h1><p>{selection.started?'继续上次的学习，让想法向前推进一步。':'今天，从一节课开始，把想法向前推进一步。'}</p></div><span className="wd-workspace-tag"><SquaresFour size={17}/>我的学习工作台</span></header>
+    <div className="wd-main"><header className="wd-welcome"><div><h1>{model.user?'欢迎回来，':'欢迎来到工作台'}{model.user&&<span>{model.user.name?.trim()||'学习者'}</span>}</h1><p>{selection.started?'继续上次的学习，让想法向前推进一步。':'今天，从一节课开始，把想法向前推进一步。'}</p></div><button className="wd-secondary wd-plan-entry" onClick={()=>navigate('/plan')}><CalendarBlank size={18}/>今日计划{model.user&&tasks.length>0&&<span>{completed}/{tasks.length}</span>}</button></header>
       {(model.error||Object.keys(extra.errors).length>0)&&<div className="wd-error" role="alert">部分学习数据暂时无法读取，已保存内容不会丢失。<button onClick={retry}>重新加载</button></div>}
       <ProductHero model={model} extra={extra} selection={selection} navigate={navigate}/>
-      <LearningPath selection={selection} extra={extra} model={model} navigate={navigate}/>
       {recent.length>0&&<RecentLearning recent={recent} navigate={navigate}/>}
       {project&&<CurrentProject project={project} navigate={navigate}/>}
+      {model.user&&selection.started?<details className="wd-path-disclosure"><summary>五章学习路径<span>查看完整学习进度</span></summary><LearningPath selection={selection} extra={extra} model={model} navigate={navigate}/></details>:<LearningPath selection={selection} extra={extra} model={model} navigate={navigate}/>}
       {(recommendations.length>0||extra.loading||extra.errors.projects)&&<section className="wd-recommendations"><Heading action="查看全部项目" onClick={()=>navigate('/projects')}>从学习，走向实战</Heading><p className="wd-panel-subtitle">从真实项目出发，练习完整的产品开发流程。</p><WorkbenchProjectCarousel items={recommendations} renderItem={item=>{const visual=workbenchProjectVisual(item);return <button className="wd-project-card" onClick={()=>navigate(`/projects/${encodeURIComponent(item.slug)}`)}><Cover item={item} project/><div className="wd-project-card-copy"><h3>{visual.title}</h3><p>{workbenchProjectSummary(item)}</p>{visual.tags.length>0&&<div className="wd-project-tags">{visual.tags.map(tag=><span key={tag}>{tag}</span>)}</div>}{visual.demo&&<small className="wd-project-demo">演示项目 · 正式教学内容待补充</small>}<span className="wd-link">了解项目<ArrowRight size={15}/></span></div></button>;}}/>{!recommendations.length&&<p className="wd-muted">{extra.loading?'正在加载已发布项目…':'项目推荐暂时无法读取，请重新加载。'}</p>}</section>}
       {personalProduct&&<PersonalProducts items={achievements} model={model} navigate={navigate}/>}
       <GrowthEntry model={model} items={achievements} navigate={navigate}/>
@@ -160,8 +160,6 @@ export function Workbench({model,navigate,notify}) {
     <aside className="wd-rail" aria-label="个人学习工具">
       <section className="wd-panel wd-tasks"><Heading action="查看学习计划" onClick={()=>navigate('/plan')}>{tasks.length?'今日任务':<><CalendarBlank size={23}/>今日学习</>}</Heading>{tasks.length>0&&!unavailable?<><p className="wd-task-count">已完成 {completed} / {tasks.length} 项</p><div className="wd-task-list">{tasks.slice(0,3).map(task=><label key={task.id} className={task.done?'done':''}><input type="checkbox" checked={task.done} disabled={model.busy||unavailable} onChange={()=>model.saveState({...model.state,tasks:model.state.tasks.map(item=>item.id===task.id?{...item,done:!item.done}:item)})}/><span>{task.title}</span></label>)}</div><form className="wd-task-add" onSubmit={e=>{e.preventDefault();saveTask(newTask);}}><input value={newTask} onChange={e=>setNewTask(e.target.value)} aria-label="新学习任务" placeholder="添加一个学习任务…" maxLength={160} required/><button aria-label="添加任务" disabled={model.busy||unavailable||!newTask.trim()}><Plus size={18}/></button></form></>:<><div className="wd-task-empty-art" aria-hidden="true"><ClipboardText size={68} weight="duotone"/></div><span className="wd-task-suggestion-label">{unavailable?'登录后管理学习任务':'尚未添加学习任务'}</span><div className="wd-task-suggestion"><div><strong>{model.loading||extra.loading?'正在读取建议…':model.error||extra.errors.entry?'建议暂不可用':suggestedTitle}</strong><p>建议任务 · 从一节内容开始，建立今天的学习节奏。</p></div></div><button className="wd-secondary" disabled={model.loading||extra.loading||model.busy||Boolean(model.error)||Boolean(extra.errors.entry)||suggestionAdded} onClick={()=>saveTask(suggestedTitle)}>{model.user?'加入今日计划':'登录后加入计划'}<Plus size={17}/></button></>}</section>
       <TutorPanel key={accountId||'guest'} model={model} selection={selection} navigate={navigate} notify={notify}/>
-      <LearningCalendar model={model} recent={recent} navigate={navigate}/>
-      <div className="wd-inspiration"><strong>Learn. Build. Grow.</strong><span>让学习有方向，让想法有作品。</span></div>
     </aside>
   </div>;
 }

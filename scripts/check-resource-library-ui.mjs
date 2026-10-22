@@ -29,18 +29,24 @@ const base=`http://127.0.0.1:${server.address().port}`,browser=await chromium.la
 const check=(ok,label)=>{assert.ok(ok,label);checks++;};
 const output=path.resolve('artifacts/resource-library');mkdirSync(output,{recursive:true});
 const context=async u=>{const c=await browser.newContext({viewport:{width:1700,height:1150},reducedMotion:'reduce'});await c.route('**/*',route=>{const req=route.request();if(!req.url().startsWith(base)){external.push(req.url());return route.abort();}requests.push({url:req.url(),method:req.method()});return route.continue();});if(u)await c.addInitScript(token=>{if(location.protocol==='http:')localStorage.setItem('oneshowlearn_token',token);},u.token);c.on('page',p=>p.on('pageerror',e=>errors.push(e.message)));return c;};
-const ready=async p=>{await p.waitForFunction(()=>!localStorage.getItem('oneshowlearn_token')||document.querySelector('.ws-profile')?.getAttribute('aria-label')?.startsWith('账号菜单：'));await p.waitForFunction(()=>document.querySelectorAll('.rl-page .rd-card').length===3&&document.querySelector('.rd-table tbody tr'));};
+const ready=async p=>{await p.waitForFunction(()=>!localStorage.getItem('oneshowlearn_token')||document.querySelector('.ws-profile')?.getAttribute('aria-label')?.startsWith('账号菜单：'));await p.waitForFunction(()=>document.querySelector('.rd-table tbody tr'));};
 const close=async p=>{await p.getByRole('button',{name:'关闭资源窗口',exact:true}).click();await p.locator('.rc-dialog').waitFor({state:'detached'});};
 try{
  const c=await context(owner),p=await c.newPage();await p.goto(base+'/resources');await ready(p);
- check(await p.locator('.rd-card').count()===3,'only three real highlights');check(await p.locator('.rd-table tbody tr').count()===5,'page size unchanged');
- check(await p.getByText('不能公开的草稿',{exact:true}).count()===0,'draft not exposed');check(await p.getByRole('heading',{name:'从课程资料开始',exact:true}).isVisible(),'no false recommendation');
+ check(await p.locator('.rd-card').count()===0,'list view does not repeat content as highlights');check(await p.locator('.rd-table tbody tr').count()===5,'page size unchanged');
+ check(await p.getByText('不能公开的草稿',{exact:true}).count()===0,'draft not exposed');check(await p.getByRole('heading',{name:'课程配套资料',exact:true}).isVisible(),'actual catalogue is the primary content');
+ await p.getByRole('button',{name:'卡片',exact:true}).click();check(await p.locator('.rd-card').count()===5&&await p.locator('.rd-table').count()===0,'cards show the same five resources without a duplicate table');
+ await p.getByRole('button',{name:'列表',exact:true}).click();check(requests.filter(r=>r.method!=='GET').length===0,'view switching never writes data');
+ await p.getByRole('search',{name:'全站搜索',exact:true}).getByRole('textbox').fill('全站搜索隔离词');check(await p.getByLabel('搜索资源关键词').inputValue()==='','global search does not change resource filtering');
+ await p.getByRole('button',{name:'清空搜索',exact:true}).click();await p.getByLabel('搜索资源关键词').fill('隔离');check(await p.getByRole('search',{name:'全站搜索',exact:true}).getByRole('textbox').inputValue()==='','local resource search does not change global search');await p.getByLabel('搜索资源关键词').fill('');
  check(await p.locator('.rl-phases button').count()===6,'five phases and reset');check(requests.filter(r=>r.method!=='GET').length===0,'viewing causes no mutation');
  for(const width of [320,390,768,1024,1440,1920,2560]){
   await p.setViewportSize({width,height:1150});await p.waitForTimeout(150);
   check(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'no overflow '+width);
+  await p.getByRole('button',{name:'卡片',exact:true}).click();
   check(await p.locator('.rd-card').evaluateAll(cards=>cards.every(card=>card.querySelector('.rl-cover').getBoundingClientRect().bottom<=card.querySelector('h3').getBoundingClientRect().top)),'separate sharp cover '+width);
   check(await p.locator('.rd-card footer button,.rl-phases button').evaluateAll(buttons=>buttons.every(b=>b.getBoundingClientRect().height>=44)),'touch controls '+width);
+  await p.getByRole('button',{name:'列表',exact:true}).click();
   check(await p.locator('.rd-table td:last-child button').evaluateAll(buttons=>buttons.every(b=>b.getBoundingClientRect().height>=44)),'touch table actions '+width);
   if([390,1440,1920].includes(width))await p.screenshot({path:path.join(output,'resource-'+width+'.png'),fullPage:true});
  }

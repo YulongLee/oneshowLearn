@@ -3,8 +3,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowRight, Bell, BookOpenText, Books, CalendarBlank, CaretDown, CaretLeft, CaretRight, ChartBar, Check, CheckCircle, Clock, Crown, Cube, FileText, FolderSimple, Gauge, GearSix, House, List, MagnifyingGlass, MapTrifold, NotePencil, Play, Plus, Robot, SealCheck, Sparkle, SquaresFour, Star, Trophy, UsersThree, X } from "@phosphor-icons/react";
 import { api, getToken, subscribeToSession } from "./api.js";
 import { canManage } from "./platforms.js";
-import { activeWorkspaceNav } from "./workspace-navigation.js";
+import { activeWorkspaceNav,workspacePageContext } from "./workspace-navigation.js";
 import {useSidebarLayout} from './useSidebarLayout.js';
+import {useWorkspaceDrawer} from './useWorkspaceDrawer.js';
 import {LearningLayoutContext} from './learning-layout-context.js';
 import {SidebarCourseOffer} from './SidebarCourseOffer.jsx';
 import {WorkspaceAccountMenu} from './WorkspaceAccountMenu.jsx';
@@ -12,6 +13,8 @@ import {useWorkspaceSearch} from './useWorkspaceSearch.js';
 import {WorkspaceNotifications} from './WorkspaceNotifications.jsx';
 import {useWorkspaceTheme} from './useWorkspaceTheme.js';
 import "./workspace.css";
+import './workspace-page-content.css';
+import './sidebar-course-offer.css';
 import './workspace-theme.css';
 
 const emptyState = () => ({ tasks: [], notes: [], favorites: [], checkIns: [] });
@@ -43,7 +46,7 @@ export function useWorkspaceModel(notify) {
     finally { if (request === revision.current) setLoading(false); }
   };
   useEffect(() => { refresh(); const unsubscribe = subscribeToSession(refresh); return () => { revision.current++; unsubscribe(); }; }, []);
-  const saveState = async (next) => {
+  const saveState = async (next, { onError } = {}) => {
     if (!data.user) { notify("请先登录，学习记录将保存到你的账号。"); return false; }
     if (saving.current) return false;
     const request = revision.current;
@@ -62,6 +65,8 @@ export function useWorkspaceModel(notify) {
           notify("其他窗口已更新记录，已同步最新数据。当前输入已保留，请再次保存。");
         } catch { notify("记录已在其他窗口更新，请保留当前输入并刷新后重试。"); }
       } else notify(e.message || "保存失败，请重试。");
+      // Optional operation-specific feedback must not replace central conflict recovery.
+      if (typeof onError === 'function') { try { onError(e); } catch { /* Preserve the boolean save contract. */ } }
       return false;
     }
     finally { saving.current = false; setBusy(false); }
@@ -69,7 +74,7 @@ export function useWorkspaceModel(notify) {
   return { ...data, loading, error, busy, refresh, saveState };
 }
 
-export function WorkspaceShell({ route, navigate, notify, children, resourceSearch }) {
+export function WorkspaceShell({ route, navigate, notify, children }) {
   const [learningFocused,setLearningFocused]=useState(false),[learningHost,setLearningHost]=useState(null);
   const model = useWorkspaceModel(notify);
   const {theme}=useWorkspaceTheme();
@@ -81,6 +86,8 @@ export function WorkspaceShell({ route, navigate, notify, children, resourceSear
   const [menu, setMenu] = useState(false);
   const sidebar=useSidebarLayout();
   const sidebarToggle=useRef(null);
+  const mobileToggle=useRef(null),drawer=useRef(null);
+  useWorkspaceDrawer(menu&&sidebar.mobile,drawer,mobileToggle,sidebarToggle);
   useEffect(()=>{setMenu(false);},[sidebar.mobile]);
   const [popover, setPopover] = useState("");
   const [query, setQuery] = useState("");
@@ -90,28 +97,27 @@ export function WorkspaceShell({ route, navigate, notify, children, resourceSear
   useEffect(() => {
     const closeOnEscape = e => {
       if (e.key === "Escape") { setMenu(false); setPopover(""); }
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); searchRef.current?.focus(); if (!resourceSearch) setPopover("search"); }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k" && !menu) { e.preventDefault(); searchRef.current?.focus(); setPopover("search"); }
     };
     const closeOutside = e => { if (!topbarRef.current?.contains(e.target)) setPopover(""); };
     document.addEventListener("keydown", closeOnEscape);
     document.addEventListener("pointerdown", closeOutside);
     return () => { document.removeEventListener("keydown", closeOnEscape); document.removeEventListener("pointerdown", closeOutside); };
-  }, [Boolean(resourceSearch)]);
+  }, [menu]);
   const go = (path) => { setMenu(false); setPopover(""); navigate(path); };
   const selected = (path) => activeWorkspaceNav(route) === path;
-  const search=useWorkspaceSearch(query,popover==='search'&&!resourceSearch,model.user?.id);
+  const search=useWorkspaceSearch(query,popover==='search',model.user?.id);
   const searchResults=search.items;
+  const pageContext=workspacePageContext[route];
   const groups = [
-    ["学习", [["/opc", "学习课程", BookOpenText], ["/projects", "实战项目", Cube]]],
-    ["AI", [["/tutor", "AI 导师", Robot], ["/resources", "资源中心", FolderSimple]]],
-    ["社区", [["/community", "学习社区", UsersThree]]],
-    ["我的", [["/notes", "学习笔记", NotePencil], ["/favorites", "我的收藏", Star], ["/achievements", "我的成果", Trophy], ["/account", "设置中心", GearSix]]],
+    ["学习与实践", [["/opc", "学习课程", BookOpenText], ["/projects", "实战项目", Cube], ["/tutor", "AI 导师", Robot], ["/resources", "资源中心", FolderSimple], ["/community", "学习社区", UsersThree]]],
+    ["个人空间", [["/notes", "学习笔记", NotePencil], ["/favorites", "我的收藏", Star], ["/achievements", "我的成果", Trophy], ["/account", "设置中心", GearSix]]],
   ];
   const navItem = ([path, title, Icon]) => <button key={`${path}-${title}`} title={title} aria-label={title} className={selected(path) ? "is-active" : ""} aria-current={selected(path) ? "page" : undefined} onClick={() => go(path)}><Icon size={18} weight="regular" /><span>{title}</span></button>;
   return <LearningLayoutContext.Provider value={{host:learningHost,setFocused:setLearningFocused}}><div className="ws-layout ws-reference-layout ws-unified-layout" data-theme={theme} data-learning-focused={learningFocused||undefined} data-sidebar={sidebar.mode} data-resizing={sidebar.resizing||undefined} style={{'--sidebar-width':`${sidebar.width}px`}}>
-    {menu && <button className="ws-scrim" aria-label="关闭侧边导航" onClick={() => setMenu(false)} />}
+    {menu && <button className="ws-scrim" aria-label="关闭侧边导航" tabIndex={-1} onClick={() => setMenu(false)} />}
     <div className="ws-sidebar-frame">
-    <aside id="workspace-sidebar" className={`ws-sidebar ${menu ? "is-open" : ""}`}>
+    <aside ref={drawer} id="workspace-sidebar" className={`ws-sidebar ${menu ? "is-open" : ""}`} role={menu&&sidebar.mobile?'dialog':undefined} aria-modal={menu&&sidebar.mobile?true:undefined} aria-label="工作空间导航" tabIndex={-1}>
       {menu && <button className="ws-drawer-close" aria-label="关闭侧边导航" onClick={() => setMenu(false)}><X size={17} /></button>}
       <button className="ws-brand" onClick={() => go("/app")} aria-label="OneShowLearn 工作台"><BrandIdentity/></button>
       {learningFocused&&<div className="ws-learning-directory-slot" ref={setLearningHost}/>}
@@ -122,11 +128,11 @@ export function WorkspaceShell({ route, navigate, notify, children, resourceSear
     </aside>
     {!sidebar.mobile&&sidebar.mode==='expanded'&&<div className="ws-sidebar-resize" {...sidebar.separator} aria-controls="workspace-sidebar"/>}
     </div>
-    <div className="ws-main">
+    <div className="ws-main" inert={menu&&sidebar.mobile}>
       <header className="ws-topbar" ref={topbarRef}>
         <div className="ws-desktop-nav-controls"><button ref={sidebarToggle} className="ws-icon-button" aria-controls="workspace-sidebar" aria-expanded={sidebar.mode==='expanded'} aria-label={sidebar.mode==='expanded'?'折叠侧栏为图标':sidebar.mode==='icons'?'展开侧栏':'显示侧栏'} title={sidebar.mode==='expanded'?'折叠侧栏为图标':'展开侧栏'} onClick={()=>sidebar.setMode(sidebar.mode==='expanded'?'icons':'expanded')}>{sidebar.mode==='expanded'?<CaretLeft size={20}/>:<List size={21}/>}</button>{sidebar.mode!=='hidden'&&<button className="ws-icon-button" aria-label="隐藏侧栏" title="隐藏侧栏" onClick={()=>{sidebar.setMode('hidden');sidebarToggle.current?.focus();}}><X size={18}/></button>}</div>
-        <button className="ws-mobile-menu ws-icon-button" aria-label={menu ? "关闭工作空间导航" : "打开工作空间导航"} aria-expanded={menu} onClick={() => setMenu(!menu)}>{menu ? <X size={22} /> : <List size={22} />}</button>
-        <form className="ws-search" onSubmit={e => { e.preventDefault(); resourceSearch ? resourceSearch.onSubmit() : setPopover("search"); }}><MagnifyingGlass size={20} /><input ref={searchRef} value={resourceSearch ? resourceSearch.value : query} onChange={e => { if(resourceSearch) resourceSearch.onChange(e.target.value); else {setQuery(e.target.value); setPopover("search");} }} onFocus={() => !resourceSearch && query.trim() && setPopover("search")} onKeyDown={e => e.key === "Escape" && setPopover("")} placeholder={resourceSearch ? (resourceSearch.placeholder || "搜索资源（例如：PRD 模板、Codex 指令、支付接入…）") : "搜索课程、项目、学习笔记…"} aria-label={resourceSearch ? (resourceSearch.label || "搜索资源") : "搜索课程、项目、学习笔记"} />{(resourceSearch ? resourceSearch.value : query) ? <button type="button" aria-label="清空搜索" onClick={() => { resourceSearch ? resourceSearch.onChange("") : setQuery(""); setPopover(""); searchRef.current?.focus(); }}><X size={16} /></button> : <kbd>⌘ K</kbd>}</form>
+        <button ref={mobileToggle} className="ws-mobile-menu ws-icon-button" aria-controls="workspace-sidebar" aria-label={menu ? "关闭工作空间导航" : "打开工作空间导航"} aria-expanded={menu} onClick={() => setMenu(!menu)}>{menu ? <X size={22} /> : <List size={22} />}</button>
+        <form className="ws-search" role="search" aria-label="全站搜索" onSubmit={e => { e.preventDefault(); setPopover("search"); }}><MagnifyingGlass size={20} /><input ref={searchRef} value={query} onChange={e => {setQuery(e.target.value); setPopover("search");}} onFocus={() => query.trim() && setPopover("search")} onKeyDown={e => e.key === "Escape" && setPopover("")} placeholder="搜索课程、项目、学习笔记…" aria-label="搜索课程、项目、学习笔记" />{query ? <button type="button" aria-label="清空搜索" onClick={() => {setQuery("");setPopover("");searchRef.current?.focus();}}><X size={16} /></button> : <kbd>⌘ K</kbd>}</form>
         <div className="ws-user-actions"><button className="ws-icon-button" aria-label="查看通知" aria-expanded={popover === "notifications"} onClick={() => setPopover(popover === "notifications" ? "" : "notifications")}><Bell size={22} /></button><WorkspaceAccountMenu model={model} route={route} navigate={go} open={popover==='account'} setOpen={open=>setPopover(open?'account':'')}/></div>
         {popover === "search" && <section className="ws-popover ws-search-results" aria-label="搜索结果"><div><strong>搜索结果</strong><button className="ws-icon-button" aria-label="关闭搜索结果" onClick={() => setPopover("")}><X size={18} /></button></div>{!query.trim() ? <p>搜索课程、项目、资料和自己的笔记。</p> : search.loading ? <p role="status">正在搜索…</p> : search.error ? <p role="alert">{search.error}</p> : searchResults.length ? searchResults.map((r, i) => <button key={`${r.path}-${i}`} onClick={() => go(r.path)}><span>{r.title}<small>{r.kind}</small></span><ArrowRight size={16} /></button>) : <p>没有找到相关内容，试试其他关键词。</p>}</section>}
         {popover === "notifications" && <WorkspaceNotifications key={model.user?.id||'guest'} identity={model.user?.id} navigate={go}/>}
@@ -134,6 +140,7 @@ export function WorkspaceShell({ route, navigate, notify, children, resourceSear
       <main className="ws-content">
         {model.error && <div className="ws-status ws-status-error" role="alert">{model.error}<button onClick={model.refresh}>重试</button><button onClick={() => go("/login")}>登录</button></div>}
         {!model.loading && !model.user && !model.error && <div className="ws-status">当前为访客浏览；登录后可保存学习计划、笔记和收藏。<button onClick={() => go("/login")}>立即登录<ArrowRight size={14} /></button></div>}
+        {pageContext&&<nav className="ws-page-context" aria-label="当前位置"><button onClick={()=>go(pageContext[2])}>{pageContext[0]}</button><CaretRight size={13} aria-hidden="true"/><span aria-current="page">{pageContext[1]}</span></nav>}
         {children({...model,sidebar})}
       </main>
     </div>

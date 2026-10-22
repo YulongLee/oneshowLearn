@@ -1,9 +1,10 @@
-import {useEffect,useRef,useState} from 'react';
+import {useEffect,useMemo,useRef,useState} from 'react';
 import {ArrowLeft,ArrowRight,BookOpenText,CheckCircle,FileText,LockKey} from '@phosphor-icons/react';
 import {api} from './api.js';
 import {CONTENT_TYPES,safeResourceUrl} from './opc-model.js';
 import {Markdown} from './PersonalShared.jsx';
 import {nextReadingItem,readingProgress} from './course-reader-model.js';
+import {chooseContinueLesson} from './course-entry-model.js';
 import './course-reader.css';
 import {LessonWorkspace,lessonLink} from './LessonWorkspace.jsx';
 import {FavoriteButton} from './FavoriteButton.jsx';
@@ -13,10 +14,13 @@ export function CourseReader(props){
   const {slug,model,navigate,placementId}=props;
   const [catalog,setCatalog]=useState(null),[error,setError]=useState(''),[retry,setRetry]=useState(0),[legacy,setLegacy]=useState(false);
   useEffect(()=>{let active=true;setCatalog(null);setError('');setLegacy(false);api(`/learning/courses/${encodeURIComponent(slug)}`).then(d=>{if(active)setCatalog(d);}).catch(e=>{if(active)setError(e.message);});return()=>{active=false;};},[slug,model.user?.id,retry]);
+  // The course object changes only when its catalogue is loaded. Progress saves
+  // replace lesson rows without choosing a different lesson during study.
+  const currentId=useMemo(()=>placementId || chooseContinueLesson(catalog?.lessons)?.id,[placementId,catalog?.course]);
   if(error)return <div className="ls-empty" role="alert"><p>{error}</p><button className="ls-btn" onClick={()=>setRetry(v=>v+1)}>重新加载课程</button></div>;
   if(!catalog)return <div className="ls-empty" role="status">正在加载课程…</div>;
   if(!catalog.lessons.length||legacy)return <><button className="ls-btn" hidden={!catalog.lessons.length} onClick={()=>setLegacy(false)}>返回视频 / 课件学习空间</button><LegacyCourseReader {...props}/></>;
-  const current=placementId?catalog.lessons.find(l=>l.id===placementId):catalog.lessons.find(l=>!l.locked&&!l.progress.completed_at)||catalog.lessons[0];
+  const current=catalog.lessons.find(l=>l.id===currentId);
   if(!current)return <div className="ls-empty"><p>当前课时不属于本课程或尚未发布。</p><button className="ls-btn" onClick={()=>navigate(`/learn/${encodeURIComponent(slug)}`)}>返回课程</button></div>;
   return <>{catalog.legacyCount>0&&<div className="ls-actions"><button className="ls-btn" onClick={()=>setLegacy(true)}>查看原章节资料</button></div>}<LessonWorkspace id={current.id} lessons={catalog.lessons} model={model} navigate={navigate} onProgress={(id,progress)=>setCatalog(v=>({...v,lessons:v.lessons.map(l=>l.id===id?{...l,progress}:l)}))}/></>;
 }

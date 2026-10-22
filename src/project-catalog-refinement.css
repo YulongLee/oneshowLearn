@@ -1,7 +1,8 @@
 /* Approved commercial catalogue: independent covers, real metadata and explicit entry. */
-.pd-refined .pd-hero { min-height:200px; }
+.pd-refined .pd-hero { min-height:0; }
+.pd-refined .pd-hero h1 { font-size:32px; }
 .pd-refined .pd-hero-content { padding:22px 26px; }
-.pd-refined .pd-hero nav { margin-bottom:14px; }
+.pd-refined .pd-hero nav { margin-bottom:10px; }
 .pd-refined .pd-hero>img { right:0; width:54%; mask-image:linear-gradient(90deg,transparent,#000 34%); }
 .ws-unified-layout .pd-refined .pd-hero .pd-hero-value { font-size:20px; font-weight:650; color:#20243e; }
 .ws-unified-layout .pd-refined .pd-hero .pd-hero-subtitle { font-size:14px; margin-top:5px; }

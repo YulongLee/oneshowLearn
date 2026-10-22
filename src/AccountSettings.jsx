@@ -16,7 +16,7 @@ import {SIDEBAR_MIN,SIDEBAR_DEFAULT,SIDEBAR_MAX} from './sidebar-preferences.js'
 import {useWorkspaceTheme} from './useWorkspaceTheme.js';
 
 export function AccountSettings({ model, navigate, notify }) {
-  return <div className="account-settings"><header className="as-heading"><h1>设置中心</h1><p>管理个人资料、账号安全与订单。</p></header><Gate model={model} navigate={navigate}><Settings key={model.user?.id} model={model} navigate={navigate} notify={notify}/></Gate></div>;
+  return <div className="account-settings"><header className="as-heading"><h1>设置中心</h1><p>管理个人资料、账号安全与订单。</p></header><Gate model={model} navigate={navigate} title="登录后管理你的账号" description="个人资料、登录安全与课程订单，集中在这里管理。" returnTo="/account"><Settings key={model.user?.id} model={model} navigate={navigate} notify={notify}/></Gate></div>;
 }
 function Settings({ model, navigate, notify }) {
   const [tab,setTab]=useState(()=>accountMenuRequest(window.location.search).section),[saved,setSaved]=useState(null),[draft,setDraft]=useState(null);

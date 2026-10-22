@@ -91,6 +91,11 @@ const register=async page=>{
 
 try{
   const desktop=await makeContext(),page=await desktop.context.newPage();await ready(page);await mode(page,'login');
+  equal(await card(page).locator('h1').innerText(),'欢迎回来','learner-facing welcome replaces platform terminology');
+  check((await submit(page).innerText()).includes('登录并继续学习'),'primary action describes the learner task');
+  check(!await card(page).locator('.auth-platform-switch').isVisible(),'admin switch is secondary, not a competing default action');
+  const adminOptions=card(page).locator('.auth-platform-options>summary');await adminOptions.focus();await adminOptions.press('Enter');
+  check(await card(page).locator('.auth-platform-switch').isVisible(),'admin entry remains keyboard-discoverable');await adminOptions.press('Enter');
   equal(await page.locator('.auth-page-header .osl-brand-wordmark').count(),1,'one standalone brand in the header');
   equal(await card(page).locator('.auth-brand').count(),0,'standalone card does not repeat brand');
   equal(await page.locator('.auth-showcase .auth-benefits>div').count(),3,'showcase contains exactly three value points');

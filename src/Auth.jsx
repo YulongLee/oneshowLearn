@@ -63,9 +63,9 @@ export function UserAuthCard({ navigate, onSuccess, onClose, initialMode = "logi
   const signupUnavailable = !capabilities?.registrationEnabled;
   const resetUnavailable = !capabilities?.passwordResetEnabled;
   const blocked = ["register", "verify"].includes(mode) ? signupUnavailable : ["forgot", "reset"].includes(mode) ? resetUnavailable : false;
-  const heading = ({ login: isAdmin ? "登录管理平台" : "登录用户平台", register: "创建学习账号", forgot: "找回登录密码", reset: "设置新密码", verify: "输入邮箱验证码" })[mode];
+  const heading = ({ login: isAdmin ? "登录管理平台" : polished ? "欢迎回来" : "登录用户平台", register: "创建学习账号", forgot: "找回登录密码", reset: "设置新密码", verify: "输入邮箱验证码" })[mode];
   const copy = mode === "login" ? (isAdmin ? "管理课程资料、用户与订单。仅管理员及内容编辑可进入。" : "继续你的课程、项目与学习进度。管理员也可在这里学习。") : mode === "register" ? "先验证你的邮箱，购买记录和学习成果会保存在账号中。" : mode === "forgot" ? "输入注册邮箱，通过验证码重置密码。" : `请查看 ${form.email} 的收件箱及垃圾邮件，验证码 10 分钟内有效。`;
-  const buttonText = busy ? "请稍候…" : ({ login: `进入${platformInfo.label}`, register: "发送注册验证码", forgot: "发送重置验证码", reset: "确认重置密码", verify: "验证并完成注册" })[mode];
+  const buttonText = busy ? "请稍候…" : ({ login: polished ? "登录并继续学习" : `进入${platformInfo.label}`, register: "发送注册验证码", forgot: "发送重置验证码", reset: "确认重置密码", verify: "验证并完成注册" })[mode];
   return <section className={`user-auth-card ${polished?'auth-polished-card':''}`} data-auth-mode={polished?mode:undefined}>
     {onClose && <button className="auth-close" onClick={onClose} aria-label="关闭"><X size={20} /></button>}
     {!polished&&<><div className="auth-brand"><BrandIdentity/></div><div className="auth-platform-label">{platformInfo.label}</div></>}<h1>{heading}</h1><p>{mode==='login'&&!isAdmin?'继续你的 AI 学习与产品创作之旅。':copy}</p>
@@ -86,7 +86,7 @@ export function UserAuthCard({ navigate, onSuccess, onClose, initialMode = "logi
     </form>
     {codeMode ? <div className="auth-foot"><button disabled={busy} onClick={() => switchMode(mode === "reset" ? "forgot" : "register")}><ArrowLeft size={14} />修改邮箱</button><button disabled={Boolean(countdown) || busy || blocked} onClick={resend}>{countdown ? `${countdown} 秒后可重发` : "重新发送验证码"}</button></div> : (!isAdmin || mode !== "login") && <button className="auth-switch" disabled={busy} onClick={() => switchMode(mode === "login" ? "register" : "login")}>{mode === "login" ? "没有账号？使用邮箱注册" : "返回密码登录"}</button>}
     </>}
-    {onPlatformSwitch && <button className="auth-platform-switch" disabled={busy} onClick={onPlatformSwitch}>{isAdmin ? "想学习课程？前往用户平台登录" : "管理课程与订单？前往管理平台登录"}<ArrowRight size={15} /></button>}
+    {onPlatformSwitch && (polished?<details className="auth-platform-options"><summary>管理员入口</summary><button className="auth-platform-switch" disabled={busy} onClick={onPlatformSwitch}>前往管理平台登录<ArrowRight size={15}/></button></details>:<button className="auth-platform-switch" disabled={busy} onClick={onPlatformSwitch}>{isAdmin ? "想学习课程？前往用户平台登录" : "管理课程与订单？前往管理平台登录"}<ArrowRight size={15} /></button>)}
     <small><CheckCircle size={14} weight="fill" /> 登录信息仅用于账号验证与学习服务</small>
     {!isAdmin&&<ServiceLinks compact/>}
   </section>;

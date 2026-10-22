@@ -66,11 +66,12 @@ const output=path.resolve('artifacts/workbench-refinement');mkdirSync(output,{re
 try{
  const fc=await context(fresh),f=await fc.newPage();await f.goto(base+'/app');await ready(f);
  check((await f.locator('#wd-current-lesson').textContent()).includes('1.1'));
- check((await f.locator('#wd-hero-title').textContent()).includes('第一个 AI 产品'));
+ check((await f.locator('#wd-hero-title').textContent()).includes('尚未开始'));
+ check(await f.locator('#wd-current-lesson').evaluate(el=>el.tagName==='H2'&&parseFloat(getComputedStyle(el).fontSize)>=24));
  check(await f.locator('.wd-course-meter').innerText().then(t=>t.includes('0 / 40 节')));
  check(await f.locator('.ws-course-offer').getAttribute('data-access')==='unlocked');
  check(await f.locator('.ws-course-offer .ws-offer-price').count()===0);
- check(await f.locator('.ws-course-offer').evaluate(el=>getComputedStyle(el).backgroundImage.includes('linear-gradient')));
+ check(await f.locator('.ws-course-offer').evaluate(el=>getComputedStyle(el).backgroundImage==='none'&&el.getBoundingClientRect().height<=130));
  check(await f.locator('.wd-recent,.wd-current-project,.wd-personal-products').count()===0);
  check(await f.locator('.wd-project-slide:not([data-copy]) .wd-project-card').count()===5);
  check(await f.locator('.wd-project-slide:not([data-copy]) .wd-demo-badge').count()===5);
@@ -86,20 +87,17 @@ try{
  await custom.goto(base+'/app');await ready(custom);check(await custom.locator('.wd-course-preview>img').getAttribute('src')===covers[0]);check(await custom.locator('.wd-preview-copy').count()===0);await cc.close();
  check(await f.locator('.wd-project-carousel').getAttribute('data-visible')==='3');
  const widths=[320,390,768,1024,1440,1920,2560];
- for(const width of widths){await f.setViewportSize({width,height:1100});await overflow(f);check(await f.locator('.wd-primary').isVisible());check(await f.locator('.wd-learning-phases li').count()===5);check(await f.locator('.wd-inspiration').evaluate(el=>{const s=getComputedStyle(el,'::after');return el.getBoundingClientRect().height-parseFloat(s.height)>=95.5;}));if([390,1440,1920].includes(width))await f.screenshot({path:path.join(output,'fresh-'+width+'.png'),fullPage:true});}
+ for(const width of widths){await f.setViewportSize({width,height:1100});await overflow(f);check(await f.locator('.wd-primary').isVisible());check(await f.locator('.wd-learning-phases li').count()===5);check(await f.locator('.wd-plan-entry').isVisible());check(await f.locator('.wd-inspiration,.wd-calendar-summary').count()===0);if([390,1440,1920].includes(width))await f.screenshot({path:path.join(output,'fresh-'+width+'.png'),fullPage:true});}
  await f.setViewportSize({width:390,height:844});check(await f.locator('.wd-rail').evaluate(el=>getComputedStyle(el).position)==='static');
  const railBottom=async(p,name)=>{
   await p.setViewportSize({width:1536,height:900});
-  await p.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));await p.waitForTimeout(150);
+  await p.evaluate(()=>window.scrollTo(0,0));await p.waitForTimeout(150);
   check(await p.locator('.wd-rail').evaluate(el=>getComputedStyle(el).position)==='static');
   const [rail,main]=await Promise.all([p.locator('.wd-rail').boundingBox(),p.locator('.wd-main').boundingBox()]);
-  check(Math.abs(rail.y+rail.height-main.y-main.height)<3);check(rail.y+rail.height<=880);
-  check(await p.locator('.wd-inspiration').isVisible());
-  const [poster,last]=await Promise.all([p.locator('.wd-inspiration').boundingBox(),p.locator('.wd-growth-entry').boundingBox()]);
-  check(Math.abs(poster.y+poster.height-last.y-last.height)<3);check(poster.height>=155);
-  const scene=await p.locator('.wd-inspiration').evaluate(el=>{const s=getComputedStyle(el,'::after');return {opacity:s.opacity,height:parseFloat(s.height),filter:s.filter,mask:s.maskImage,position:s.backgroundPosition};});
-  check(scene.opacity==='1'&&scene.filter==='none');check(scene.height<=380&&scene.height>0&&scene.position==='82% 65%');
-  await p.locator('.wd-inspiration').screenshot({path:path.join(output,name+'-mountain.png')});
+  check(Math.abs(rail.y-main.y)<3);check(rail.height<=main.height+1);
+  check(await p.locator('.wd-rail>.wd-panel').count()===2);check(await p.locator('.wd-inspiration').count()===0);
+  const [tasks,tutor]=await Promise.all([p.locator('.wd-tasks').boundingBox(),p.locator('.wd-tutor').boundingBox()]);
+  check(tasks.y<tutor.y&&tasks.height<500);check((await p.locator('.wd-plan-entry').boundingBox()).y<200);
   await p.screenshot({path:path.join(output,name+'.png'),fullPage:false});
   await p.evaluate(()=>window.scrollTo(0,0));
  };
@@ -121,7 +119,8 @@ try{
  await railBottom(r,'rail-bottom-returning-1536');await r.setViewportSize({width:1440,height:1100});
  await r.screenshot({path:path.join(output,'returning-1440.png'),fullPage:true});
  await r.locator('.wd-primary').click();await r.waitForURL(base+`/learn/${curriculum.slug}/lessons/${placements[1]}`);checks++;
- await r.goto(base+'/app');await ready(r);await r.locator('.wd-learning-phases button').nth(4).click();await r.waitForURL(base+'/opc/phase/5');checks++;
+ await r.goto(base+'/app');await ready(r);check(!await r.locator('.wd-learning-phases').isVisible());
+ await r.locator('.wd-path-disclosure>summary').click();await r.locator('.wd-learning-phases button').nth(4).click();await r.waitForURL(base+'/opc/phase/5');checks++;
  await r.goto(base+'/app');await ready(r);
  // A session change must clear the previous account's private workbench instantly.
  await r.evaluate(token=>{localStorage.setItem('oneshowlearn_token',token);window.dispatchEvent(new Event('oneshowlearn:session'));},fresh.token);
@@ -129,6 +128,7 @@ try{
  const tc=await context(trial),t=await tc.newPage();await t.goto(base+'/app');await ready(t);
  check(await t.locator('.ws-course-offer').getAttribute('data-access')==='purchase');check((await t.locator('.wd-study-status').first().innerText()).includes('免费'));check(await t.getByText('我的隔离记账产品',{exact:true}).count()===0);
  check((await t.locator('.ws-offer-price').innerText()).includes('¥499'));check((await t.locator('.ws-offer-price del').innerText()).includes('¥999'));
+ check(!await t.locator('.ws-offer-preview').isVisible());await t.locator('.ws-offer-disclosure>summary').click();
  await t.locator('.ws-offer-syllabus').filter({hasText:'5 章 · 40 节'}).waitFor();
  check(await t.locator('.ws-offer-benefits li').count()===3);check((await t.locator('.ws-offer-ai').innerText()).includes('AI 导师 · 课程答疑'));
  check(await t.locator('.ws-offer-eyebrow').count()===0);
@@ -136,7 +136,7 @@ try{
  check(await t.locator('.ws-offer-benefits').evaluate(el=>[...el.children].every(row=>{const s=getComputedStyle(row);return s.borderTopWidth==='0px'&&s.backgroundColor==='rgba(0, 0, 0, 0)'&&s.fontSize===getComputedStyle(el.firstElementChild).fontSize;})));
  check(await t.locator('.ws-offer-preview').evaluate(el=>{const s=getComputedStyle(el);return s.borderTopWidth==='0px'&&s.backgroundColor==='rgba(0, 0, 0, 0)'&&el.getBoundingClientRect().height>=44;}));
  check(await t.locator('.ws-offer-benefits li').evaluateAll(rows=>rows.every(el=>el.getBoundingClientRect().height<=parseFloat(getComputedStyle(el).lineHeight)+1)));
- check(await t.locator('.ws-course-offer').evaluate(el=>parseFloat(getComputedStyle(el,'::before').height)<=74&&parseFloat(getComputedStyle(el,'::before').opacity)<=.25));
+ check(await t.locator('.ws-course-offer').evaluate(el=>getComputedStyle(el).backgroundImage==='none'));
  check(await t.locator('.ws-offer-preview').innerText()==='免费试看前 2 节');check(await t.locator('.ws-offer-account,.ws-offer-saving').count()===0);
  check((await t.locator('.ws-offer-payment').innerText()).includes('以收银台为准'));
  await t.setViewportSize({width:1536,height:1152});await t.screenshot({path:path.join(output,'trial-1536.png'),fullPage:true});
@@ -146,7 +146,7 @@ try{
    if(width<1000&&!await t.locator('.ws-sidebar').isVisible())await t.locator('.ws-mobile-menu').click();
    await overflow(t);check(await t.locator('.ws-sidebar').evaluate(el=>el.getBoundingClientRect().bottom<=innerHeight+1));
    check(await t.locator('.ws-sidebar>nav').evaluate(el=>el.clientHeight>20));
-   await t.locator('.ws-offer-primary').focus();await t.keyboard.press('Tab');
+   await t.locator('.ws-offer-disclosure>summary').focus();await t.keyboard.press('Tab');
    check(await t.locator('.ws-offer-preview').evaluate(el=>el===document.activeElement));
    const previewBounds=await t.locator('.ws-offer-preview').boundingBox(),cardBounds=await t.locator('.ws-course-offer').boundingBox();
    assert.ok(previewBounds.y>=Math.max(0,cardBounds.y)-1&&previewBounds.y+previewBounds.height<=Math.min(height,cardBounds.y+cardBounds.height)+1,JSON.stringify({width,height,previewBounds,cardBounds}));checks++;
@@ -156,9 +156,9 @@ try{
  await t.goto(base+'/app');await ready(t);
  const wideContext=await context(trial,{sidebar:{mode:'expanded',width:320}}),wide=await wideContext.newPage();
  await wideContext.route('**/api/commerce/offer',async route=>{const response=await route.fetch(),data=await response.json();await route.fulfill({json:{...data,channels:data.channels.map(c=>({...c,available:true}))}});});
- await wide.goto(base+'/app');await ready(wide);await wide.locator('.ws-offer-syllabus').filter({hasText:'40 节'}).waitFor();
+ await wide.goto(base+'/app');await ready(wide);await wide.locator('.ws-offer-disclosure>summary').click();await wide.locator('.ws-offer-syllabus').filter({hasText:'40 节'}).waitFor();
  check((await wide.locator('.ws-offer-payment').innerText()).includes('微信'));check((await wide.locator('.ws-offer-payment').innerText()).includes('支付宝'));
- check(await wide.locator('.ws-offer-ai').evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=14));
+ check(await wide.locator('.ws-offer-ai').evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=13));
  await wide.locator('.ws-course-offer').screenshot({path:path.join(output,'sidebar-offer-wide.png')});
  await wideContext.route('**/api/learning/entry',route=>route.fulfill({status:503,json:{error:'隔离目录重验证失败'}}));
  await wide.getByRole('button',{name:'学习笔记',exact:true}).click();await wide.waitForURL(base+'/notes');
@@ -168,7 +168,7 @@ try{
  run("INSERT INTO entitlements(user_id,pack_id,status) VALUES(?,?,'active')",[trial.id,pack]);await t.reload();await ready(t);check(await t.locator('.ws-course-offer').getAttribute('data-access')==='unlocked');
  check(await t.locator('.ws-offer-preview,.ws-offer-price,.ws-offer-benefits').count()===0);
  const oc=await context(admin),o=await oc.newPage();await o.goto(base+'/app');await ready(o);check(await o.locator('.ws-course-offer').getAttribute('data-access')==='management');
- check((await o.locator('.ws-course-offer').innerText()).includes('管理员预览'));check((await o.locator('.ws-offer-price').innerText()).includes('¥499'));
+ await o.locator('.ws-offer-disclosure>summary').click();check((await o.locator('.ws-course-offer').innerText()).includes('管理员预览'));check((await o.locator('.ws-offer-price').innerText()).includes('¥499'));
  await o.locator('.ws-offer-primary').click();await o.waitForURL(base+'/membership');checks++;
  const gc=await context(),g=await gc.newPage();await g.goto(base+'/app');await ready(g);await g.locator('.wd-primary').click();await g.waitForURL(base+'/login');checks++;
  const ec=await context(fresh),e=await ec.newPage();await ec.route('**/api/learning/entry',route=>route.fulfill({status:503,json:{error:'隔离测试不可用'}}));await e.goto(base+'/app');await ready(e);check(await e.locator('.wd-primary').isDisabled());check(await e.locator('.wd-learning-phases .unavailable').count()===5);

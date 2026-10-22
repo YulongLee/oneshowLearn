@@ -1,6 +1,6 @@
 import {BrandSymbol} from './BrandIdentity.jsx';
 import {useEffect,useRef,useState} from 'react';
-import {ArrowRight,BookOpenText,FileText,UsersThree,MagnifyingGlass,WechatLogo,Clock,ArrowUpRight,ShieldCheck,Laptop,Lightbulb,PaperPlaneTilt,Code,CloudArrowUp,ChartLineUp} from '@phosphor-icons/react';
+import {ArrowRight,BookOpenText,FileText,UsersThree,MagnifyingGlass,WechatLogo,Clock,ArrowUpRight,ShieldCheck,Lightbulb,PaperPlaneTilt,Code,CloudArrowUp,ChartLineUp} from '@phosphor-icons/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {api} from './api.js';
@@ -8,7 +8,7 @@ import {useLocationSearch} from './useLocationSearch.js';
 import {Empty,Modal,Panel} from './PersonalShared.jsx';
 import {COMMUNITY_CATEGORIES,COMMUNITY_SETTINGS} from '../server/community-definition.mjs';
 import {ResourceReader} from './ResourceCenter.jsx';
-import {communityArticles,communityFeatured,safeCommunityImage,safeCommunityLink,groupAudience,groupMessage} from './community-editorial-model.js';
+import {communityArticles,communityFeatured,safeCommunityImage,safeCommunityLink,groupAudience,groupMessage,communityPageCopy} from './community-editorial-model.js';
 import './community-official.css';
 import './community-editorial.css';
 
@@ -48,7 +48,7 @@ export function CommunityWorkspace({model,navigate,notify,query='',setQuery}){
  useEffect(()=>{const id=Number(new URLSearchParams(locationSearch).get('article'));if(id&&data&&linkedOpened.current!==locationRevision){linkedOpened.current=locationRevision;openArticle(data.items.find(a=>a.id===id)||{id,title:'官方文章'});}},[data,locationSearch,locationRevision]);
  const openGroup=async()=>{const rev=++groupRevision.current;setGroup(true);setGroupData(null);setGroupError('');setGroupLoading(true);try{const d=await api('/community');if(rev===groupRevision.current)setGroupData(d.settings);}catch{if(rev===groupRevision.current)setGroupError('入群配置暂时无法核验，请稍后重试或联系官方。');}finally{if(rev===groupRevision.current)setGroupLoading(false);}};
  const closeGroup=()=>{groupRevision.current++;setGroup(false);setGroupData(null);};
- const settings=data?.settings||COMMUNITY_SETTINGS,items=data?.items||[],resources=data?.resources||[],ready=!loading&&!error&&Boolean(data);
+ const settings=data?.settings||COMMUNITY_SETTINGS,items=data?.items||[],resources=data?.resources||[],ready=!loading&&!error&&Boolean(data),copy=communityPageCopy(settings);
  const filtered=communityArticles(items,{category,topic,query,sort}),unfiltered=category==='all'&&!topic&&!query.trim();
  const featured=ready&&unfiltered?communityFeatured(items):null,grid=featured?filtered.filter(i=>i.id!==featured.id):filtered;
  const topics=Array.from(new Set(items.map(i=>i.topic).filter(Boolean))).map(name=>({name,count:items.filter(i=>i.topic===name).length})).sort((a,b)=>b.count-a.count);
@@ -57,8 +57,8 @@ export function CommunityWorkspace({model,navigate,notify,query='',setQuery}){
  const reset=()=>{setCategory('all');setTopic('');setQuery('');};
  if(!loading&&error&&!model.user)return <div className="oc-page ce-page"><section className="oc-guest-prompt"><UsersThree size={38}/><h2>登录后，加入学习社区</h2><p>阅读官方内容、查看学员群和配套资源。课程权益会按你的账号核验。</p><button onClick={()=>navigate('/login?returnTo=%2Fcommunity')}>登录我的学习账号<ArrowRight size={16}/></button></section></div>;
  const faq=()=>{const first=faqRef.current?.querySelector('details');if(first)first.open=true;faqRef.current?.scrollIntoView({behavior:'smooth',block:'center'});first?.querySelector('summary')?.focus();};
- return <div className="oc-page ce-page"><header className="ce-heading"><div><span className="ce-breadcrumb">学习社区</span><h1>{settings.title===COMMUNITY_SETTINGS.title?'学员社区':settings.title}</h1><p>{settings.description===COMMUNITY_SETTINGS.description?'官方实战文章、课程更新与学员交流，在这里持续跟进。':settings.description}</p></div><div><button className="oc-text-link" onClick={()=>navigate('/notes')}>我的学习笔记<ArrowRight size={16}/></button>{admin&&<button className="oc-text-link" onClick={()=>navigate('/admin/community')}>管理官方内容<ArrowUpRight size={14}/></button>}</div></header>
-  <div className="oc-layout"><main className="oc-main"><section className="ce-intro"><div><h2>从学习，到把产品做出来</h2><p>{settings.tagline===COMMUNITY_SETTINGS.tagline?'读方法，跟更新，与同行交流。':settings.tagline}</p></div>{safeCommunityImage(settings.heroImage)?<ArticleImage src={settings.heroImage} alt="官方社区配图"/>:<div className="ce-intro-art" aria-hidden="true"><BookOpenText size={64} weight="duotone"/><Laptop size={66} weight="duotone"/><Lightbulb size={32}/></div>}</section>
+ return <div className="oc-page ce-page"><header className="ce-heading"><div><span className="ce-breadcrumb">学习社区</span><h1>{copy.title}</h1><p>{copy.description}</p></div><div><button className="oc-text-link" onClick={()=>navigate('/notes')}>我的学习笔记<ArrowRight size={16}/></button>{admin&&<button className="oc-text-link" onClick={()=>navigate('/admin/community')}>管理官方内容<ArrowUpRight size={14}/></button>}</div></header>
+  <div className="oc-layout"><main className="oc-main"><section className="ce-intro ce-purpose"><div><h2>官方文章</h2><p>{copy.tagline}</p></div>{safeCommunityImage(settings.heroImage)&&<ArticleImage src={settings.heroImage} alt="官方社区配图"/>}</section>
    {featured&&<section className="ce-feature-section" aria-label="重点文章"><small>{featured.pinned?'官方置顶':featured.recommended?'官方精选':'最新发布'}</small><ArticleCard item={featured} featured onOpen={openArticle}/></section>}
    <section aria-label="官方文章" ref={listRef} tabIndex={-1} className="ce-catalog"><div className="oc-toolbar"><div className="oc-categories" aria-label="文章分类">{COMMUNITY_CATEGORIES.map(([id,label])=><button key={id} aria-pressed={category===id} className={category===id?'active':''} onClick={()=>{setCategory(id);setTopic('');}}>{label}</button>)}</div><form className="oc-search-row" onSubmit={e=>{e.preventDefault();focusList();}}><label><MagnifyingGlass size={17}/><input aria-label="搜索官方文章" placeholder="搜索文章、专题…" value={query} onChange={e=>setQuery(e.target.value)}/></label><select aria-label="文章排序" value={sort} onChange={e=>setSort(e.target.value)}><option value="latest">最新发布</option><option value="recommended">官方推荐</option></select></form></div>
    <div className="ce-list-heading"><h2>{unfiltered?'官方文章':'筛选结果'}</h2>{!unfiltered&&<button className="oc-text-link" onClick={reset}>清除筛选 ×</button>}</div>{!unfiltered&&<p className="oc-filter-status" role="status">{topic&&`专题：${topic} · `}找到 {filtered.length} 篇文章</p>}

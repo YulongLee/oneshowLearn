@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import { routeOverview, coursePhasePath, phaseFromPath } from '../src/learning-route-model.js';
-import {chooseEntry, courseEntryRoute, entryLessonPath} from '../src/course-entry-model.js';
+import {chooseContinueLesson, chooseEntry, courseEntryRoute, entryLessonPath} from '../src/course-entry-model.js';
+import {completeLogin, safeLoginReturn} from '../src/platforms.js';
 
 test('learning route derives progress only from published account curriculum', () => {
   const empty = routeOverview();
@@ -89,6 +90,29 @@ test('course entry prefers entitled unfinished study, resumes actual history and
   assert.equal(chooseEntry(data,'/opc/phase/5').lesson,null);
   assert.equal(entryLessonPath(data.lessons[1]),'/opc/lessons/2');
 });
+
+test('course reader and course entry share the same stable, account-metadata-only continuation rule',()=>{
+  const course={id:7,slug:'same-course',entitled:true};
+  const lesson=(id,progress,locked=false)=>({id,owner_id:course.id,owner_slug:course.slug,kind:'course',locked,progress});
+  const lessons=[lesson(1),lesson(2,{version:1,updated_at:'2026-10-20',completed_at:'2026-10-20'}),lesson(3,{version:2,updated_at:'2026-10-19'}),lesson(4,{version:3,updated_at:'2026-10-21'},true)];
+  const before=structuredClone(lessons),data={courses:[course],lessons};
+  assert.equal(chooseContinueLesson(lessons).id,3);
+  assert.equal(chooseEntry(data,'/opc/course/same-course').lesson.id,chooseContinueLesson(lessons).id);
+  assert.equal(chooseEntry(data,'/opc/lessons/1').lesson.id,1,'an explicit deep link still wins over recent study');
+  assert.equal(chooseEntry(data,'/opc/lessons/4').lesson.id,4,'an explicit locked link is not silently substituted');
+  assert.deepEqual(lessons,before,'sorting must never mutate the supplied catalogue or progress');
+  const completed=lessons.map(l=>({...l,progress:{...l.progress,completed_at:'2026-10-22'}}));
+  assert.equal(chooseContinueLesson(completed).id,2,'all complete resumes the latest readable record');
+  assert.equal(chooseContinueLesson([lesson(9),lesson(10)]).id,9,'no history begins with the first readable lesson');
+  assert.equal(chooseContinueLesson([lesson(9,null,true),lesson(10,null,true)]).id,9,'locked-only catalogue retains its truthful access state');
+  assert.equal(chooseContinueLesson(),null);
+  const tied=[lesson(11,{version:1,updated_at:'2026-10-21'}),lesson(12,{version:2,updated_at:'2026-10-21'})];
+  assert.equal(chooseContinueLesson(tied).id,11,'equal timestamps retain catalogue order');
+  const reader=readFileSync(new URL('../src/CourseReader.jsx',import.meta.url),'utf8');
+  assert.match(reader,/placementId \|\| chooseContinueLesson\(catalog\?\.lessons\)/);
+  assert.match(reader,/\[placementId,catalog\?\.course\]/,'implicit entry remains stable across progress-only updates');
+  assert.match(reader,/catalog.lessons.find\(l=>l.id===currentId\)/);
+});
 test('missing entries stay empty and never invent a course or silently substitute another lesson',()=>{
   assert.equal(chooseEntry({}).lesson,null);
   assert.equal(chooseEntry({}).course,null);
@@ -98,6 +122,22 @@ test('missing entries stay empty and never invent a course or silently substitut
   assert.equal(courseEntryRoute('/opc/phase/2').phase,2);
   assert.equal(courseEntryRoute('/opc/phase/2/').phase,2);
   assert.equal(courseEntryRoute('/opc/phase/6').phase,null);
+});
+
+test('courses, plan and certificates use the existing safe login return contract',()=>{
+  const page=readFileSync(new URL('../src/WorkspacePages.jsx',import.meta.url),'utf8');
+  assert.match(page,/`\/login\?returnTo=\$\{encodeURIComponent\(returnTo\)\}`/);
+  assert.match(page,/returnTo=\{favorites \? undefined : '\/courses'\}/);
+  assert.match(page,/returnTo="\/plan"/);
+  assert.match(page,/navigate\("\/login\?returnTo=%2Fcertificates"\)/);
+  assert.doesNotMatch(page,/\/login\?next=/);
+  const user={role:'learner'};
+  for(const path of ['/courses','/plan','/certificates']){
+    assert.equal(safeLoginReturn(path,'user',user),path);
+    const visited=[];
+    completeLogin({token:'isolated-only',user},{saveToken:()=>{},navigate:value=>visited.push(value),returnTo:path});
+    assert.deepEqual(visited,[path]);
+  }
 });
 
 test('latest learning reference keeps global navigation and an independent responsive directory',()=>{

@@ -1,5 +1,13 @@
 /* Favorite content only: shared shell, purchase entry and readers stay intact. */
 .favorites-studio{--fs-ink:#20263d;--fs-muted:#6c7891;--fs-violet:#7949ea;color:var(--fs-ink);container:favorites / inline-size}
+.favorites-studio .fs-feedback{display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:76px;z-index:4;box-shadow:0 4px 18px #241c3b12}
+.favorites-studio .fs-feedback>span{flex:1;min-width:160px;overflow-wrap:anywhere}
+.favorites-studio .fs-feedback[role=alert]{position:static}
+.favorites-studio .fs-save{color:var(--fs-violet)}
+.favorites-studio .fs-save:hover{background:#f4efff}
+.ws-unified-layout[data-theme=dark] .favorites-studio .fs-save{background:var(--wt-raised);color:var(--wt-accent)}
+.ws-unified-layout[data-theme=dark] .favorites-studio .fs-save:hover{background:var(--wt-hover)}
+.ws-unified-layout[data-theme=dark] .favorites-studio .fs-card-body footer>button:not(:disabled){color:var(--wt-accent)}
 .favorites-studio button,.fs-remove button{font:inherit;cursor:pointer}.favorites-studio :is(button,input,select):focus-visible,.fs-remove button:focus-visible{outline:3px solid #bca1f6;outline-offset:3px}.favorites-studio button:disabled,.fs-remove button:disabled{cursor:not-allowed}
 .fs-heading{display:flex;align-items:center;justify-content:space-between;gap:24px;margin:4px 0 24px}.fs-heading h1{font-size:32px;line-height:1.4;letter-spacing:-.035em;margin:0 0 9px}.ws-unified-layout .favorites-studio .fs-heading p{font-size:15px;color:var(--fs-muted);margin:0;line-height:1.8}.fs-heading-actions{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:18px}.fs-heading-actions>span{display:flex;align-items:center;gap:6px;font-size:13px;color:#77839a}
 .fs-button,.fs-primary{border:1px solid #e1dfef;border-radius:9px;background:#fff;min-height:44px;padding:10px 15px;color:#48546e;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:14px}.fs-button:hover{background:#f6f2fc}.fs-primary{background:#7949ea;border-color:#7949ea;color:#fff}.fs-primary:hover{background:#6939d9}

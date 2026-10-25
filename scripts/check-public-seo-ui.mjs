@@ -17,6 +17,61 @@ export async function waitForSeoNativeDocument(page,expected) {
   await page.waitForLoadState('domcontentloaded');
 }
 
+export function createPublicOfferReadiness(page,base,offerResponses=[]) {
+  const origin=new URL(base).origin,home=origin+'/',offerUrl=origin+'/api/commerce/offer',mainFrame=page.mainFrame();
+  let document={epoch:0,url:mainFrame.url()},navigation=null;const requests=new WeakMap(),reads=[];
+  const offerPath=request=>{try{return new URL(request.url()).pathname==='/api/commerce/offer';}catch{return false;}};
+  const diagnostic=(error,phase)=>{
+    const name=/^[A-Za-z][A-Za-z0-9_.-]{0,63}$/.test(error?.name)?error.name:'Error',code=/^[A-Z][A-Z0-9_]{0,63}$/.test(error?.code)?':'+error.code:'';
+    // Only fixed categories leave this helper, never response text, headers or
+    // raw error messages (JSON parse errors can themselves contain body text).
+    const message=String(error?.message||''),category=name==='SyntaxError'||/Unexpected token|Unexpected end.*JSON|not valid JSON|JSON\.parse/i.test(message)?'json-parse':/No resource with given identifier|No data found for resource|Response body is unavailable|Protocol error.*Network\.getResponseBody/i.test(message)?'body-unavailable':/Target.*closed|page.*closed|context.*closed|browser.*closed/i.test(message)?'target-closed':/net::ERR_|ECONN|EPIPE|ETIMEDOUT|network|socket|fetch failed/i.test(message)?'transport':'unknown';
+    return phase+':'+category+':'+name+code;
+  };
+  const body=(record,response)=>{
+    if(!record.body){const status=response.status();record.body=Promise.resolve().then(()=>response.json()).then(value=>({status,value})).catch(error=>({status,error:diagnostic(error,'response-json')}));}
+    return record.body;
+  };
+  const track=(request,response,sourceDocument)=>{
+    let record=requests.get(request);if(record){if(response)body(record,response);return record;}
+    record={sourceDocument};requests.set(request,record);reads.push(record);
+    record.promise=response?body(record,response):Promise.resolve().then(()=>request.response()).then(response=>response?body(record,response):{status:null,error:'request-response:no-response:Error'}).catch(error=>({status:null,error:diagnostic(error,'request-response')}));
+    offerResponses.push(record.promise);return record;
+  };
+  page.on('framenavigated',frame=>{
+    if(frame!==mainFrame)return;const url=frame.url();
+    // History/replaceState also emits framenavigated. Advance a document only
+    // when its main-frame navigation request commits, including same-URL reload.
+    if(navigation?.headers&&navigation.url===url){document={epoch:document.epoch+1,url};navigation=null;}
+    else document={...document,url};
+  });
+  page.on('request',request=>{
+    try{if(request.isNavigationRequest()&&request.resourceType()==='document'&&request.frame()===mainFrame)navigation={request,url:request.url(),headers:false};}catch{}
+    if(!offerPath(request))return;let sourceDocument=null;
+    try{if(request.frame()===mainFrame)sourceDocument=Object.freeze({...document});}catch{}
+    track(request,null,sourceDocument);
+  });
+  page.on('requestfailed',request=>{if(navigation?.request===request)navigation=null;});
+  // Include even a response whose request preceded observation, but never
+  // invent its source document from the frame's later/current URL.
+  page.on('response',response=>{const request=response.request();if(navigation?.request===request)navigation.headers=true;if(offerPath(request))track(request,response,null);});
+  const beforeNavigation=async()=>{
+    let consumed=0;
+    while(consumed<reads.length){const batch=reads.slice(consumed);consumed=reads.length;for(const captured of await Promise.all(batch.map(record=>record.promise))){assert.ok(!captured.error,'Public offer body acknowledgement failed: status='+captured.status+'; error='+captured.error);assert.equal(captured.status,200,'Public offer acknowledgement status must remain 200');}}
+  };
+  const homeNavigation=async action=>{
+    await beforeNavigation();const epoch=document.epoch+1;
+    const response=page.waitForResponse(response=>{
+      const request=response.request(),source=requests.get(request)?.sourceDocument;
+      return request.method()==='GET'&&request.url()===offerUrl&&source?.epoch===epoch&&source.url===home;
+    });
+    const [acknowledged]=await Promise.all([response,Promise.resolve().then(action)]);
+    await track(acknowledged.request(),acknowledged,null).promise;
+    await beforeNavigation();
+  };
+  return {homeNavigation,beforeNavigation};
+}
+
 // Parse data, never execute a CMS value or a script. The browser also parses these exact blocks.
 export function seoJsonBlocks(html,{id,type}={}) {
   const result=[];

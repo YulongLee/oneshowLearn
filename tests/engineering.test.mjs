@@ -14,7 +14,7 @@ import {onlyLoopbackWebBinding} from '../deploy/portable/container-inspection.mj
 import {mineruEnvironment} from '../deploy/configure-mineru.mjs';
 import {inspectOperations} from '../scripts/check-operations.mjs';
 import {checkDependencyDelta,prepareProxy,patchedVersions} from '../deploy/check-commercial-refinement.mjs';
-import {acceptanceFailureEvidence} from '../scripts/run-acceptance-with-diagnostics.mjs';
+import {acceptanceFailureEvidence,buildFailureEvidence} from '../scripts/run-acceptance-with-diagnostics.mjs';
 import proxyaddr from 'proxy-addr';
 import nodemailer from 'nodemailer';
 const temp=t=>{const p=realpathSync(mkdtempSync(path.join(tmpdir(),'osl-engineering-unit-')));t.after(()=>rmSync(p,{recursive:true,force:true}));return p;};
@@ -54,6 +54,34 @@ test('CI dependency failures annotate bounded stderr first without retrying or c
   assert.equal(observed.calls.length,1);assert.deepEqual(observed.calls[0][1],['run','check:dependencies']);assert.deepEqual(observed.writes,[result.stdout+result.stderr]);assert.deepEqual(observed.exits,[result.status||1]);
   const expected='::error title=check:dependencies acceptance failure::'+acceptanceFailureEvidence(result).replaceAll('%','%25').replaceAll('\r','%0D').replaceAll('\n','%0A');
   assert.deepEqual(observed.annotations,[expected]);assert.ok(observed.annotations[0].indexOf('Original stderr')<observed.annotations[0].indexOf('Last stdout'));assert.ok(observed.annotations[0].includes('25%25%0D%0A'));assert.ok(!observed.annotations[0].includes('A'.repeat(80)));
+ }
+});
+test('CI paired-build diagnostics preserve only the exact original npm ops build and release arguments',()=>{
+ const args=['build','--release','ci-5ac1cd832380'],argv=['run','ops','--','build','--release','ci-5ac1cd832380'];
+ for(const platform of ['linux','win32']){
+  const result=diagnosticRun(args,{status:0,signal:null,stdout:'original isolated build output\n',stderr:''},{platform});assert.deepEqual(result.calls,[[platform==='win32'?'npm.cmd':'npm',argv,{encoding:'utf8',maxBuffer:20*1024*1024}]]);assert.deepEqual(result.writes,['original isolated build output\n']);assert.deepEqual(result.exits,[]);assert.deepEqual(result.annotations,[]);
+ }
+ for(const args of [['build'],['build','--release'],['build','--release','../outside'],['build','--release','Uppercase'],['build','--release','ci-valid','--node-image','node:22'],['build','--release','ci-valid','--nginx-image','nginx:stable'],['build','--release','ci-valid','--'],['build','--release','two words'],['build','--release','a'.repeat(65)]])assert.throws(()=>diagnosticRun(args,{status:0}),/Choose check:dependencies/);
+ const workflow=readFileSync('.github/workflows/ci.yml','utf8');assert.ok(workflow.includes('run: node scripts/run-acceptance-with-diagnostics.mjs build --release ci-${{ github.sha }}\n'));assert.doesNotMatch(workflow,/run: npm run ops -- build/);
+});
+test('CI paired-build evidence keeps early BuildKit assertions and npm/ERROR lines rather than only the outer wrapper tail',()=>{
+ const stdout='#17 1.2 not ok 7 - isolated actual dependency assertion\n#17 1.3 AssertionError [ERR_ASSERTION]: isolated expected-value mismatch\n'+('progress without failure\n').repeat(3000)+'Error: npm failed (1)\n',stderr='#17 1.4 npm error isolated install command failure\n#17 1.5 ERROR: process isolated failure\n'+('stderr progress\n').repeat(3000)+'Error: outer image wrapper failed (1)\n';
+ const evidence=buildFailureEvidence({status:1,signal:null,stdout,stderr});assert.ok(evidence.length<=5000);assert.ok(evidence.indexOf('Original stderr (tail):')<evidence.indexOf('Build failure context from original stdout:'));for(const value of ['not ok 7 - isolated actual dependency assertion','AssertionError [ERR_ASSERTION]: isolated expected-value mismatch','npm error isolated install command failure','ERROR: process isolated failure','Error: outer image wrapper failed (1)','Last stdout:','Error: npm failed (1)'])assert.ok(evidence.includes(value),value);
+});
+test('CI paired-build context remains bounded, redacted and useful beside arbitrarily long neighboring progress lines',()=>{
+ const result={status:null,signal:'SIGTERM',stdout:('long neighboring progress '.repeat(3000))+'\n#22 4.2 not ok 3 - exact early failure 25%\r\n#22 4.3 AssertionError: actual mismatch\n#22 fixture '+'A'.repeat(160)+'\n'+('later harmless progress\n').repeat(3000),stderr:('irrelevant stderr\n').repeat(3000)+'last stderr 25%\r\n'};
+ const evidence=buildFailureEvidence(result);assert.ok(evidence.length<=5000);assert.ok(!evidence.includes('A'.repeat(80)));assert.ok(evidence.includes('[long fixture value omitted]'));assert.ok(evidence.includes('exact early failure 25%'));assert.ok(evidence.includes('AssertionError: actual mismatch'));assert.ok(evidence.includes('signal=SIGTERM'));
+ assert.match(buildFailureEvidence({status:null,error:{code:'ENOENT'}}),/code=ENOENT/);
+ const observed=diagnosticRun(['build','--release','ci-bound'],result),expected='::error title=build acceptance failure::'+evidence.replaceAll('%','%25').replaceAll('\r','%0D').replaceAll('\n','%0A');assert.deepEqual(observed.annotations,[expected]);assert.ok(observed.annotations[0].includes('25%25%0D%0A'));assert.ok(!/[\r\n]/.test(observed.annotations[0]));
+});
+test('CI paired-build failures retain nonzero, spawn-error and signal exit without retry or success masking',()=>{
+ for(const child of [{status:1,signal:null},{status:9,signal:null},{status:null,signal:'SIGKILL'},{status:null,signal:null,error:{code:'ENOENT'}},{status:0,signal:null,error:{code:'ENOBUFS'}},{status:0,signal:'SIGTERM'}]){
+  const result={...child,stdout:'#5 2.2 not ok 1 - isolated actual failure\n',stderr:'#5 2.3 AssertionError: known captured assertion only\n'},observed=diagnosticRun(['build','--release','ci-failure'],result);assert.equal(observed.calls.length,1);assert.deepEqual(observed.calls[0][1],['run','ops','--','build','--release','ci-failure']);assert.deepEqual(observed.exits,[result.status||1]);assert.deepEqual(observed.writes,[result.stdout+result.stderr]);assert.deepEqual(observed.annotations,['::error title=build acceptance failure::'+buildFailureEvidence(result).replaceAll('%','%25').replaceAll('\r','%0D').replaceAll('\n','%0A')]);
+ }
+});
+test('adding build diagnostics does not alter any existing command failure formatter or argument contract',()=>{
+ for(const [args,argv] of [[['check:dependencies'],['run','check:dependencies']],[['test'],['run','test']],[['test:browser'],['run','test:browser']],[['test:deployment','--release','ci-original'],['run','test:deployment','--','--release','ci-original']]]){
+  const result={status:7,signal:null,stdout:'early not ok 1 - unchanged old output\n',stderr:'original old-command stderr\n'},observed=diagnosticRun(args,result);assert.equal(observed.calls.length,1);assert.deepEqual(observed.calls[0][1],argv);assert.deepEqual(observed.exits,[7]);assert.deepEqual(observed.annotations,['::error title='+args[0]+' acceptance failure::'+acceptanceFailureEvidence(result).replaceAll('%','%25').replaceAll('\r','%0D').replaceAll('\n','%0A')]);
  }
 });
 test('historical security dependency release accepts only its reviewed versions and obsolete upload removals',()=>{

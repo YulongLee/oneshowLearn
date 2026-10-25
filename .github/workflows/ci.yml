@@ -34,7 +34,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: npx playwright install --with-deps chromium
       - run: node scripts/run-acceptance-with-diagnostics.mjs test:browser
-      - run: npm run ops -- build --release ci-${{ github.sha }}
+      - name: Paired image build with bounded failure diagnostics
+        run: node scripts/run-acceptance-with-diagnostics.mjs build --release ci-${{ github.sha }}
       - run: npm run test:auth-proxy
         env:
           # BuildKit need not retain a base-image tag. Use the tagged web image just built.

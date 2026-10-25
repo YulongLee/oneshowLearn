@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import {tmpdir} from 'node:os';
-import {readFileSync,writeFileSync,mkdirSync,mkdtempSync,rmSync,cpSync,symlinkSync,lstatSync,readlinkSync,existsSync,chmodSync,readdirSync,realpathSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdirSync,mkdtempSync,rmSync,cpSync,symlinkSync,lstatSync,readlinkSync,existsSync,chmodSync,chownSync,readdirSync,realpathSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
-import {SECURITY_BASELINE_COMMIT,BASELINE_PACKAGE_SHA256,BASELINE_LOCK_SHA256,SECURITY_FORMAT,PRODUCTION_NODE_VERSION,reviewedDependencyEntries,assertDependencyDelta,assertBaselineFiles,assertSecurityManifest,runtimeTree,runtimeIdentity,digest,digestObject,assertSealedMode,assertSameFilesystem,requiredAppHeadroom,prepareRuntimePair,activateRuntimePair,recoverRuntimePair,assertInstalledPair,assertRecoverableRuntimePair,notePublicationStep,journalProof} from '../deploy/security-dependency-policy.mjs';
+import {SECURITY_BASELINE_COMMIT,BASELINE_PACKAGE_SHA256,BASELINE_LOCK_SHA256,SECURITY_FORMAT,PRODUCTION_NODE_VERSION,reviewedDependencyEntries,assertDependencyDelta,assertBaselineFiles,assertSecurityManifest,assertProductionNodeIdentity,runtimeTree,runtimeIdentity,digest,digestObject,assertSealedMode,assertSameFilesystem,requiredAppHeadroom,prepareRuntimePair,activateRuntimePair,recoverRuntimePair,assertInstalledPair,assertRecoverableRuntimePair,notePublicationStep,journalProof} from '../deploy/security-dependency-policy.mjs';
 import {compareDatabase,validateAcceptance,validateSecurityAcceptance} from '../deploy/check-security-dependency-release.mjs';
 const source=readFileSync(new URL('../deploy/update-security-dependencies.sh',import.meta.url),'utf8');
 const checker=readFileSync(new URL('../deploy/check-security-dependency-release.mjs',import.meta.url),'utf8');
@@ -19,6 +19,16 @@ function dependencyFixture(){
   return {oldPackage,oldLock,nextPackage:structuredClone(candidatePackage),nextLock:structuredClone(candidateLock)};
 }
 const delta=f=>assertDependencyDelta(f.oldPackage,f.oldLock,f.nextPackage,f.nextLock);
+function productionNodeFixture(t,{version=PRODUCTION_NODE_VERSION,mode=0o555}={}){
+  const root=realpathSync(mkdtempSync(path.join(tmpdir(),'osl-production-node-identity-')));t.after(()=>rmSync(root,{recursive:true,force:true}));
+  const file=root+'/node-version-fixture',bytes=Buffer.from('#!/bin/sh\nprintf \'%s\\n\' '+JSON.stringify(version)+'\n');
+  writeFileSync(file,bytes,{mode,flag:'wx'});chmodSync(file,mode);
+  // Only the owned disposable fixture is assigned a non-root owner when tests
+  // themselves run as root. This shell fixture is not a real Node binary proof.
+  if(process.getuid()===0)chownSync(file,1001,1001);
+  const identity=()=>{const s=lstatSync(file);return {uid:s.uid,gid:s.gid,mode:s.mode&0o777,ino:s.ino,dev:s.dev,size:s.size,mtimeMs:s.mtimeMs,ctimeMs:s.ctimeMs,hash:digest(readFileSync(file))};};
+  return {root,file,hash:digest(bytes),identity};
+}
 function fixture(t,{linked=false}={}){
   const root=realpathSync(mkdtempSync(path.join(tmpdir(),'osl-security-pair-test-')));t.after(()=>rmSync(root,{recursive:true,force:true}));
   const app=root+'/app',stage=root+'/oneshowlearn-seo-Fixture1',backup=root+'/backup',runtime=root+'/candidate-runtime';
@@ -79,6 +89,30 @@ test('runtime links cannot escape node_modules, point to sidecar package, be abs
 });
 test('sealed permission policy forbids writable files and directories while retaining exact readable/executable modes',()=>{
   for(const mode of [0o600,0o640,0o644,0o700,0o750,0o755])assert.doesNotThrow(()=>assertSealedMode(mode));for(const mode of [0o666,0o664,0o775,0o777,0o702])assert.throws(()=>assertSealedMode(mode));
+});
+test('retained production Node identity accepts an existing non-root owner without mutating bytes or stat metadata',t=>{
+  const f=productionNodeFixture(t),before=f.identity();assert.notEqual(before.uid,0);assert.equal(before.mode,0o555);
+  assert.deepEqual(assertProductionNodeIdentity(f.file,f.hash),{uid:before.uid,gid:before.gid,mode:before.mode,hash:f.hash});
+  // Access time is intentionally not compared: ordinary reads may update it.
+  assert.deepEqual(f.identity(),before);
+});
+test('retained production Node rejects different bytes/version, writable modes, links and non-files without changing the fixture',async t=>{
+  await t.test('different captured bytes',t=>{const f=productionNodeFixture(t),before=f.identity();assert.throws(()=>assertProductionNodeIdentity(f.file,'0'.repeat(64)),/Original production Node bytes/);assert.deepEqual(f.identity(),before);});
+  await t.test('malformed captured SHA',t=>{const f=productionNodeFixture(t),before=f.identity();assert.throws(()=>assertProductionNodeIdentity(f.file,'not-a-sha'));assert.deepEqual(f.identity(),before);});
+  await t.test('different actual version despite matching bytes',t=>{const f=productionNodeFixture(t,{version:'v22.23.3'}),before=f.identity();assert.throws(()=>assertProductionNodeIdentity(f.file,f.hash));assert.deepEqual(f.identity(),before);});
+  for(const mode of [0o775,0o757,0o777])await t.test('writable mode '+mode.toString(8),t=>{const f=productionNodeFixture(t,{mode}),before=f.identity();assert.throws(()=>assertProductionNodeIdentity(f.file,f.hash),/not group\/world writable/);assert.deepEqual(f.identity(),before);});
+  await t.test('non-executable regular file',t=>{const f=productionNodeFixture(t,{mode:0o444}),before=f.identity();assert.throws(()=>assertProductionNodeIdentity(f.file,f.hash));assert.deepEqual(f.identity(),before);});
+  await t.test('symbolic link',t=>{const f=productionNodeFixture(t),before=f.identity(),link=f.root+'/linked-node';symlinkSync('node-version-fixture',link);const original=lstatSync(link);assert.throws(()=>assertProductionNodeIdentity(link,f.hash),/Ordinary file/);const retained=lstatSync(link);assert.equal(retained.ino,original.ino);assert.equal(retained.uid,original.uid);assert.equal(retained.gid,original.gid);assert.equal(retained.mode,original.mode);assert.equal(readlinkSync(link),'node-version-fixture');assert.deepEqual(f.identity(),before);});
+  await t.test('directory',t=>{const f=productionNodeFixture(t),before=f.identity();assert.throws(()=>assertProductionNodeIdentity(f.root,f.hash),/Ordinary file/);assert.deepEqual(f.identity(),before);});
+});
+test('manifest Node validation keeps platform/architecture and root-owned stage/runtime guards separate from installed Node ownership',t=>{
+  const f=productionNodeFixture(t),before=f.identity(),manifest={format:SECURITY_FORMAT,baselineCommit:SECURITY_BASELINE_COMMIT,baselinePackageSha256:BASELINE_PACKAGE_SHA256,baselineLockSha256:BASELINE_LOCK_SHA256,packageSha256:'1'.repeat(64),lockSha256:'2'.repeat(64),gitCommit:'3'.repeat(40),ciId:123,ciSuccess:true,runtime:{directory:'/tmp/oneshowlearn-security-runtime-Node1',treeSha256:'4'.repeat(64),platform:'linux',arch:process.arch,nodeVersion:PRODUCTION_NODE_VERSION,nodeSha256:f.hash}};
+  if(process.platform==='linux')assert.doesNotThrow(()=>assertSecurityManifest(manifest,{runtime:false,nodePath:f.file,root:true}));
+  else assert.throws(()=>assertSecurityManifest(manifest,{runtime:false,nodePath:f.file,root:true}),error=>error.actual===process.platform&&error.expected==='linux');
+  const foreignStage=f.root+'/foreign-stage';mkdirSync(foreignStage,{mode:0o700});if(process.getuid()===0)chownSync(foreignStage,1001,1001);
+  assert.throws(()=>assertSecurityManifest(manifest,{stage:foreignStage,runtime:false,root:true}),/Root-owned sealed input/);
+  assert.throws(()=>runtimeTree(foreignStage,{rootOwned:true}),/Root-owned sealed input/);
+  assert.deepEqual(f.identity(),before);
 });
 test('security manifest is closed and binds the package, lock, CI, Linux architecture and unchanged production Node',async t=>{
   const valid={format:SECURITY_FORMAT,baselineCommit:SECURITY_BASELINE_COMMIT,baselinePackageSha256:BASELINE_PACKAGE_SHA256,baselineLockSha256:BASELINE_LOCK_SHA256,packageSha256:'1'.repeat(64),lockSha256:'2'.repeat(64),gitCommit:'3'.repeat(40),ciId:123,ciSuccess:true,runtime:{directory:'/tmp/oneshowlearn-security-runtime-Case1',treeSha256:'4'.repeat(64),platform:'linux',arch:'x64',nodeVersion:PRODUCTION_NODE_VERSION,nodeSha256:'5'.repeat(64)}};

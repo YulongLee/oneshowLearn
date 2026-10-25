@@ -58,6 +58,14 @@ function ordinary(file,{directory=false,root=false}={}){
   const state=lstatSync(file);assert.ok(!state.isSymbolicLink()&&(directory?state.isDirectory():state.isFile()),'Ordinary '+(directory?'directory:':'file:')+file);
   if(root){assert.equal(state.uid,0,'Root-owned sealed input: '+file);assertSealedMode(state.mode);}return state;
 }
+export function assertProductionNodeIdentity(file,expectedSha){
+  // This is the retained installation, not a newly root-owned release input.
+  // Verify its captured bytes/mode without changing its existing owner or group.
+  const state=ordinary(file);assertSealedMode(state.mode);hex(expectedSha);
+  const hash=digest(readFileSync(file));assert.equal(hash,expectedSha,'Original production Node bytes');
+  assert.equal(execFileSync(file,['--version'],{encoding:'utf8'}).trim(),PRODUCTION_NODE_VERSION);
+  return {uid:state.uid,gid:state.gid,mode:state.mode&0o777,hash};
+}
 // Root links are accepted only when capturing/restoring an existing installation.
 // Candidate runtime links must be relative, ordinary-file .bin links contained in node_modules.
 export function runtimeTree(root,{allowRootLink=false,rootOwned=false}={}){
@@ -96,7 +104,7 @@ export function assertSecurityManifest(value,{stage,runtime=true,nodePath,root=f
     const lock=json(r.directory+'/package-lock.json');
     for(const [name,[,version]] of Object.entries(reviewedDependencyEntries)){const packageFile=r.directory+'/'+name+'/package.json';ordinary(packageFile,{root});assert.equal(json(packageFile).version,version,'Actual installed security version: '+name);assert.equal(lock.packages[name].version,version);}
   }
-  if(nodePath){ordinary(nodePath,{root});assert.equal(digest(readFileSync(nodePath)),r.nodeSha256,'Original production Node bytes');assert.equal(execFileSync(nodePath,['--version'],{encoding:'utf8'}).trim(),PRODUCTION_NODE_VERSION);assert.equal(process.platform,r.platform);assert.equal(process.arch,r.arch);}
+  if(nodePath){assertProductionNodeIdentity(nodePath,r.nodeSha256);assert.equal(process.platform,r.platform);assert.equal(process.arch,r.arch);}
   return value;
 }
 export function assertBaselineFiles(directory){

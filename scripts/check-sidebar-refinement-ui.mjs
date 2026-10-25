@@ -69,22 +69,24 @@ const typography=async(p,label)=>{
   equal(values.length,10,'ten navigation destinations '+label);
   check(await nav(p).evaluate(e=>getComputedStyle(e).fontFamily.startsWith('system-ui')),'navigation uses scoped system typeface '+label);
   equal(await sidebar(p).evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(255, 255, 255)','known opaque navigation background '+label);
-  check(values.every(v=>contrast(v.color,v.active?v.background:'rgb(255, 255, 255)')>=4.5)&&contrast('rgb(107, 114, 128)','rgb(255, 255, 255)')>=4.5,'menu and caption contrast on actual surfaces '+label);
+  check(values.every(v=>contrast(v.color,v.active?v.background:'rgb(255, 255, 255)')>=7),'menu text has enhanced contrast on actual surfaces '+label);
   for(const [i,v] of values.entries()){
-    equal([v.size,v.line,v.weight,v.gap,v.radius],['15px','22px',v.active?'500':'400','12px','10px'],'stable reference-like menu typography '+label+' '+i);
+    equal([v.size,v.line,v.weight,v.gap,v.radius],['17px','24px',v.active?'600':'500','12px','10px'],'larger, stronger menu typography '+label+' '+i);
     equal(v.icon,['18px','18px'],'restrained outline icon size '+label+' '+i);
     equal(v.iconColor,v.color,'outline icon follows its menu label '+label+' '+i);
     check(v.height>=48&&v.fits&&v.transform==='none','target and label fit '+label+' '+i);
-    if(v.active)equal([v.background,v.color],['rgb(243, 239, 255)','rgb(112, 66, 255)'],'selected tone '+label+' '+i);
-    else equal(v.color,'rgb(96, 113, 142)','readable gray-blue menu label '+label+' '+i);
+    if(v.active)equal([v.background,v.color],['rgb(243, 239, 255)','rgb(91, 33, 182)'],'selected tone '+label+' '+i);
+    else equal(v.color,'rgb(51, 65, 85)','high-contrast slate menu label '+label+' '+i);
   }
-  equal(await p.locator('.wb-nav-group>span').evaluateAll(elements=>elements.map(e=>{const s=getComputedStyle(e);return [s.fontSize,s.lineHeight,s.fontWeight,s.color];})),Array(2).fill(['12px','20px','400','rgb(107, 114, 128)']),'two task-based group captions '+label);
+  const captions=await p.locator('.wb-nav-group>span').evaluateAll(elements=>elements.map(e=>{const s=getComputedStyle(e);return [s.fontSize,s.lineHeight,s.fontWeight,s.color];}));
+  equal(captions,Array(2).fill(['13px','20px','500','rgb(71, 85, 105)']),'two readable task-based group captions '+label);
+  check(captions.every(value=>contrast(value[3],'rgb(255, 255, 255)')>=7),'group caption contrast on actual sidebar '+label);
 };
 
 try{
   const c=await context(),p=await c.newPage();await ready(p);await width(p,248,'new desktop default');
   equal(await pref(p),{mode:'expanded',width:248},'new default is saved without changing the storage key');
-  await typography(p,'desktop');await p.screenshot({path:path.join(out,'sidebar-desktop-1440.png'),fullPage:false});
+  await typography(p,'desktop');await p.screenshot({path:path.join(out,'sidebar-desktop-1440.png'),fullPage:false});await p.screenshot({path:path.join(out,'sidebar-readable-navigation.png'),clip:{x:0,y:0,width:248,height:640}});
   await p.setViewportSize({width:1366,height:768});
   check(await nav(p).evaluate(e=>e.scrollHeight<=e.clientHeight+1),'all ten menus fit above the collapsed course information at 1366×768');
   check((await p.locator('.ws-course-offer').boundingBox()).height<=130,'default course invitation stays compact');
@@ -93,7 +95,7 @@ try{
   const stable=await geometry(item(p,'工作台'));await sidebar(p).evaluate(e=>{e.dataset.acceptanceIdentity='same-sidebar';});
   for(const [label,destination] of routes){
     await item(p,label).click();await p.waitForURL(base+destination);equal(await nav(p).locator('[aria-current="page"]').getAttribute('aria-label'),label,'exact selected destination '+destination);
-    equal(await item(p,label).evaluate(e=>{const s=getComputedStyle(e),icon=getComputedStyle(e.querySelector('svg'));return [s.fontSize,s.lineHeight,s.fontWeight,icon.width,s.color,icon.color];}),['15px','22px','500','18px','rgb(112, 66, 255)','rgb(112, 66, 255)'],'every selected destination retains the same reference typography '+destination);
+    equal(await item(p,label).evaluate(e=>{const s=getComputedStyle(e),icon=getComputedStyle(e.querySelector('svg'));return [s.fontSize,s.lineHeight,s.fontWeight,icon.width,s.color,icon.color];}),['17px','24px','600','18px','rgb(91, 33, 182)','rgb(91, 33, 182)'],'every selected destination retains the larger typography '+destination);
     equal(await geometry(item(p,label)),stable,'selection does not resize menu row '+destination);
     equal(await sidebar(p).getAttribute('data-acceptance-identity'),'same-sidebar','persistent sidebar '+destination);
     check(Math.abs((await sidebar(p).boundingBox()).width-248)<1,'stable sidebar width '+destination);
@@ -137,7 +139,7 @@ try{
   for(const savedWidth of [228,360])for(const mode of ['expanded','icons','hidden']){
     const saved=await context({preference:{mode,width:savedWidth}}),sp=await saved.newPage();await ready(sp);
     equal(await shell(sp).getAttribute('data-sidebar'),mode,'existing mode '+mode+' '+savedWidth);equal(await pref(sp),{mode,width:savedWidth},'existing saved width preserved '+mode+' '+savedWidth);
-    if(mode==='expanded')await width(sp,savedWidth,'existing expanded '+savedWidth);
+    if(mode==='expanded'){await width(sp,savedWidth,'existing expanded '+savedWidth);await typography(sp,'saved expanded '+savedWidth);}
     await sp.setViewportSize({width:390,height:844});await sp.getByRole('button',{name:'打开工作空间导航'}).click();check(Math.abs((await sidebar(sp).boundingBox()).width-228)<1,'saved preference does not widen mobile drawer '+mode+' '+savedWidth);
     await sp.getByRole('button',{name:'关闭侧边导航'}).last().click();await sp.setViewportSize({width:1440,height:1100});
     equal(await pref(sp),{mode,width:savedWidth},'responsive resize never overwrites stored mode/width '+mode+' '+savedWidth);

@@ -125,9 +125,10 @@ const routeAppearance=async(p,heading,theme,label)=>{
   // colors are instead compared byte-for-byte with their pre-switch baseline;
   // this task must not silently redesign unrelated original light typography.
   if(theme==='dark')await contrast(p.locator(headingSelectors(heading)[1]).first(),label+' body description');
-  await contrast(nav(p).locator('[aria-current="page"]').first(),label+' selected navigation');
-  await contrast(nav(p).locator('button:not([aria-current])').first(),label+' normal navigation');
-  await contrast(p.locator('.wb-nav-group>span').first(),label+' navigation caption');
+  await contrast(nav(p).locator('[aria-current="page"]').first(),label+' selected navigation',7);
+  await contrast(nav(p).locator('button:not([aria-current])').first(),label+' normal navigation',7);
+  await contrast(p.locator('.wb-nav-group>span').first(),label+' navigation caption',7);
+  check(await nav(p).locator('button').evaluateAll(buttons=>buttons.length===10&&buttons.every(button=>{const s=getComputedStyle(button);return s.fontSize==='17px'&&s.lineHeight==='24px'&&s.fontWeight===(button.hasAttribute('aria-current')?'600':'500')&&button.getBoundingClientRect().height>=48;})),label+' larger menu typography in both themes');
   for(const selector of ['#workspace-sidebar','.ws-topbar','.ws-content']){
     const value=await colors(p.locator(selector));check(theme==='dark'?luminance(value.background)<.2:luminance(value.background)>.7,label+' '+selector+' surface follows theme');
   }
@@ -187,7 +188,7 @@ try{
     await p.setViewportSize({width,height:900});await p.waitForTimeout(80);await fit(p,'preferences '+width);check(await radio(p,'dark').isVisible()&&await radio(p,'light').isVisible(),'both theme choices visible '+width);
     check(await p.locator('.as-theme-option').evaluateAll(items=>items.every(e=>{const r=e.getBoundingClientRect();return r.width>=100&&r.height>=44;})),'appearance options are usable targets '+width);
     if(width===390)await p.screenshot({path:path.join(out,'settings-dark-390.png'),fullPage:true});
-    if(width<=1000){await p.getByRole('button',{name:'打开工作空间导航'}).click();await contrast(nav(p).locator('[aria-current="page"]'),'dark mobile selected menu '+width);await contrast(p.locator('.wb-nav-group>span').first(),'dark mobile caption '+width);await p.getByRole('button',{name:'关闭侧边导航'}).last().click();}
+    if(width<=1000){await p.getByRole('button',{name:'打开工作空间导航'}).click();await contrast(nav(p).locator('[aria-current="page"]'),'dark mobile selected menu '+width,7);await contrast(p.locator('.wb-nav-group>span').first(),'dark mobile caption '+width,7);await p.getByRole('button',{name:'关闭侧边导航'}).last().click();}
   }
   await p.setViewportSize({width:390,height:360});await radio(p,'light').check();await themeIs(p,'light','short screen light');await fit(p,'short screen preferences');await radio(p,'dark').check();await themeIs(p,'dark','short screen dark');
   await p.setViewportSize({width:1440,height:1000});await p.getByRole('button',{name:'恢复默认偏好',exact:true}).click();await themeIs(p,'light','reset restores light explicitly');equal(await p.evaluate(key=>localStorage.getItem(key),key),'light','reset stores light');equal(await p.getByLabel('默认播放速度',{exact:true}).inputValue(),'1','existing playback reset retained');equal(await p.evaluate(key=>JSON.parse(localStorage.getItem(key)),sidebarKey),{mode:'expanded',width:248},'existing sidebar default retained');

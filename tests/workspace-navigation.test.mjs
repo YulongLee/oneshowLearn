@@ -6,15 +6,25 @@ import {sidebarPreferences,sidebarWidth,readSidebarPreferences,saveSidebarPrefer
 
 test('learner navigation typography stays legible and does not jump on selection',()=>{
   const css=readFileSync(new URL('../src/workspace-shell.css',import.meta.url),'utf8');
-  assert.match(css,/\.ws-unified-layout \.wb-nav-group > button \{[^}]*min-height:48px;[^}]*padding:13px 14px;[^}]*gap:12px;[^}]*color:#60718e; font-size:15px; line-height:22px; font-weight:400/);
+  assert.match(css,/\.ws-unified-layout \.wb-nav-group > button \{[^}]*min-height:48px;[^}]*padding:12px 14px;[^}]*gap:12px;[^}]*color:#334155; font-size:17px; line-height:24px; font-weight:500/);
   assert.match(css,/\.wb-nav-group > button \{[^}]*border-radius:10px/);
-  assert.match(css,/\.ws-unified-layout \.wb-nav-group > button\.is-active \{[^}]*background:#f3efff;[^}]*color:#7042ff; font-weight:500/);
-  assert.match(css,/\.ws-unified-layout \.wb-nav-group > span \{[^}]*font-size:12px; line-height:20px; font-weight:400; color:#6b7280/);
+  assert.match(css,/\.ws-unified-layout \.wb-nav-group > button\.is-active \{[^}]*background:#f3efff;[^}]*color:#5b21b6; font-weight:600/);
+  assert.match(css,/\.ws-unified-layout \.wb-nav-group > span \{[^}]*font-size:13px; line-height:20px; font-weight:500; color:#475569/);
   assert.match(css,/\.ws-unified-layout \.wb-settings>svg \{ width:18px; height:18px;[^}]*color:inherit/);
   assert.match(css,/\.ws-layout\.ws-unified-layout \.ws-sidebar nav button>svg,/);
-  assert.match(css,/\.ws-unified-layout \.wb-settings \{[^}]*font-size:15px; line-height:22px; font-weight:400/);
+  assert.match(css,/\.ws-unified-layout \.wb-settings \{[^}]*font-size:17px; line-height:24px; font-weight:500/);
   assert.match(css,/\.ws-unified-layout \.wb-nav-group \{ margin-top:8px/);
   assert.match(css,/\.ws-layout\.ws-unified-layout \{ grid-template-columns:var\(--sidebar-width,248px\)/);
+});
+
+test('sidebar menu colors retain enhanced light and dark reading contrast',()=>{
+  const css=readFileSync(new URL('../src/workspace-shell.css',import.meta.url),'utf8'),theme=readFileSync(new URL('../src/workspace-theme.css',import.meta.url),'utf8');
+  const declaration=(source,selector)=>{const start=source.indexOf(selector);assert.ok(start>=0,selector);return source.slice(start,source.indexOf('}',start)+1);};
+  const color=(rule,key='color')=>{const value=new RegExp('(?:[;{]\\s*)'+key+':(#([0-9a-f]{6}))\\b').exec(rule);assert.ok(value,key);return value[2];};
+  const luminance=value=>value.match(/../g).map(part=>parseInt(part,16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
+  const ratio=(front,back)=>{const a=luminance(front),b=luminance(back);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);};
+  const normal=declaration(css,'.ws-unified-layout .wb-nav-group > button {'),active=declaration(css,'.ws-unified-layout .wb-nav-group > button.is-active {'),caption=declaration(css,'.ws-unified-layout .wb-nav-group > span {'),dark=declaration(theme,'.ws-layout.ws-unified-layout[data-theme=dark] {');
+  for(const [front,back]of[[color(normal),'ffffff'],[color(active),color(active,'background')],[color(caption),'ffffff'],[color(dark,'--wt-text'),color(dark,'--wt-surface')],[color(dark,'--wt-muted'),color(dark,'--wt-surface')],[color(dark,'--wt-accent'),color(dark,'--wt-selected')]])assert.ok(ratio(front,back)>=7,'navigation contrast '+ratio(front,back).toFixed(2));
 });
 
 test('sidebar preferences validate modes, bounds and unavailable storage',()=>{

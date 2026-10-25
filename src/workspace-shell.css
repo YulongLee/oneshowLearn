@@ -56,14 +56,14 @@ html:has(.ws-unified-layout) { scrollbar-gutter:stable; }
 .ws-unified-layout .ws-brand { font-size:18px; gap:10px; }
 .ws-unified-layout .ws-sidebar { padding:10px 13px 16px; gap:16px; }
 .ws-unified-layout .ws-sidebar nav > button,
-.ws-unified-layout .wb-nav-group > button { min-height:48px; padding:13px 14px; gap:12px; border-radius:10px; color:#60718e; font-size:15px; line-height:22px; font-weight:400; }
+.ws-unified-layout .wb-nav-group > button { min-height:48px; padding:12px 14px; gap:12px; border-radius:10px; color:#334155; font-size:17px; line-height:24px; font-weight:500; }
 .ws-unified-layout .ws-sidebar nav > button.is-active,
-.ws-unified-layout .wb-nav-group > button.is-active { background:#f3efff; color:#7042ff; font-weight:500; }
+.ws-unified-layout .wb-nav-group > button.is-active { background:#f3efff; color:#5b21b6; font-weight:600; }
 .ws-unified-layout .wb-nav-group { margin-top:8px; }
-.ws-unified-layout .wb-nav-group > span { display:block; margin-bottom:4px; font-size:12px; line-height:20px; font-weight:400; color:#6b7280; }
+.ws-unified-layout .wb-nav-group > span { display:block; margin-bottom:4px; font-size:13px; line-height:20px; font-weight:500; color:#475569; }
 .ws-layout.ws-unified-layout .ws-sidebar nav button>svg,
 .ws-unified-layout .wb-settings>svg { width:18px; height:18px; flex-shrink:0; color:inherit; }
-.ws-unified-layout .wb-settings { min-height:48px; padding:13px 29px; font-size:15px; line-height:22px; font-weight:400; }
+.ws-unified-layout .wb-settings { min-height:48px; padding:12px 29px; color:#334155; font-size:17px; line-height:24px; font-weight:500; }
 .ws-unified-layout .ws-topbar { height:58px; padding:0 24px; }
 .ws-unified-layout .ws-content { width:100%; max-width:1840px; margin-inline:auto; padding:28px clamp(20px,2vw,40px) 40px; container:learner / inline-size; }
 /* Course tools fill the workspace; public/admin and discovery pages keep their geometry. */
@@ -103,7 +103,7 @@ html:has(.ws-unified-layout) { scrollbar-gutter:stable; }
   .ws-unified-layout[data-sidebar="icons"] nav button,
   .ws-unified-layout[data-sidebar="icons"] .wb-settings,
   .ws-unified-layout[data-sidebar="icons"] .ws-compact-access { display:flex; justify-content:center; align-items:center; padding:10px; min-height:48px; border:0; border-radius:10px; background:transparent; color:#6551a2; }
-  .ws-unified-layout[data-sidebar="icons"] nav button.is-active { background:#f3efff; color:#7042ff; }
+  .ws-unified-layout[data-sidebar="icons"] nav button.is-active { background:#f3efff; color:#5b21b6; }
   .ws-unified-layout[data-sidebar="icons"] nav button:not(.is-active):hover { background:#f7f6fc; }
   .ws-unified-layout[data-sidebar="icons"] .wb-nav-group { margin-top:12px; padding-top:10px; border-top:1px solid #f0eef7; }
 }

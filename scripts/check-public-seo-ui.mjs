@@ -10,6 +10,13 @@ export function seoRequestAllowed(url,method,base) {
   try{return new URL(url).origin===new URL(base).origin;}catch{return false;}
 }
 
+export async function waitForSeoNativeDocument(page,expected) {
+  // A context page event can expose the new tab's already-loaded about:blank.
+  // Observe the exact original href before checking the real document's state.
+  await page.waitForURL(expected,{waitUntil:'domcontentloaded'});
+  await page.waitForLoadState('domcontentloaded');
+}
+
 // Parse data, never execute a CMS value or a script. The browser also parses these exact blocks.
 export function seoJsonBlocks(html,{id,type}={}) {
   const result=[];
@@ -138,7 +145,7 @@ export async function checkPublicSeoUi() {
     await q.setViewportSize({width:1440,height:1000});const link=q.locator('.sales-hero-buttons a').first();const target=await link.getAttribute('href');check(Boolean(target?.startsWith('/')),'primary CTA has a real same-site href');await link.focus();await q.keyboard.press('Enter');await q.waitForURL(base+target);await q.waitForFunction(()=>document.querySelector('meta[name="robots"]')?.content.includes('noindex'));await metadata(q,{indexed:false,label:'SPA destination removes public indexing metadata'});check(!graph((await facts(q)).json).some(n=>safeTypes(n).includes('Course')),'SPA private destination removes prior course schema');await q.goBack();await q.locator('.sales-page').waitFor();await metadata(q,{canonical:origin+'/',indexed:true,label:'back restores public homepage metadata'});
     // Modifier/new-tab behavior must keep the guarded SPA's source document untouched.
     // Native modifier tabs have no window.opener; observe the context page, not window.open's popup event.
-    await q.evaluate(()=>window.__seoSourceDocument='preserved');let popupPromise=js.waitForEvent('page');await q.locator('.sales-hero-buttons a').first().click({modifiers:[process.platform==='darwin'?'Meta':'Control']});const popup=await popupPromise;await popup.waitForLoadState('domcontentloaded');check(popup.url().startsWith(base+target),'modifier click retains native new tab');equal(q.url(),base+'/','modifier click does not navigate source document');equal(await q.evaluate(()=>window.__seoSourceDocument),'preserved','modifier click leaves current source state intact');await popup.close();popupPromise=js.waitForEvent('page');await q.locator('.sales-hero-buttons a').first().click({button:'middle'});const middle=await popupPromise;await middle.waitForLoadState('domcontentloaded');check(middle.url().startsWith(base+target),'middle click opens original href natively');equal(q.url(),base+'/','middle click keeps original route');await middle.close();
+    await q.evaluate(()=>window.__seoSourceDocument='preserved');let popupPromise=js.waitForEvent('page');await q.locator('.sales-hero-buttons a').first().click({modifiers:[process.platform==='darwin'?'Meta':'Control']});const popup=await popupPromise;await waitForSeoNativeDocument(popup,base+target);check(popup.url().startsWith(base+target),'modifier click retains native new tab');equal(q.url(),base+'/','modifier click does not navigate source document');equal(await q.evaluate(()=>window.__seoSourceDocument),'preserved','modifier click leaves current source state intact');await popup.close();popupPromise=js.waitForEvent('page');await q.locator('.sales-hero-buttons a').first().click({button:'middle'});const middle=await popupPromise;await waitForSeoNativeDocument(middle,base+target);check(middle.url().startsWith(base+target),'middle click opens original href natively');equal(q.url(),base+'/','middle click keeps original route');await middle.close();
     // A canceled draft guard must not commit a route. No fixture save or provider call is used.
     await q.evaluate(()=>{window.__seoGuard=e=>e.preventDefault();window.addEventListener('oneshowlearn:before-navigate',window.__seoGuard);});await q.locator('.sales-hero-buttons a').first().click();equal(q.url(),base+'/','canceled departure retains original route');equal(await q.evaluate(()=>window.__seoSourceDocument),'preserved','canceled departure retains unsaved source state');await q.evaluate(()=>window.removeEventListener('oneshowlearn:before-navigate',window.__seoGuard));
     await q.goto(base+'/course-offer?course=seo-public-course');await q.locator('.co-purchase h2').getByText('SEO公开课程',{exact:true}).waitFor();await metadata(q,{canonical:origin+'/course-offer?course=seo-public-course',indexed:true,label:'hydrated actual course'});

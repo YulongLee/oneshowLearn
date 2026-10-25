@@ -1,6 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {seoJsonBlocks,seoRequestAllowed} from '../scripts/check-public-seo-ui.mjs';
+import {seoJsonBlocks,seoRequestAllowed,waitForSeoNativeDocument} from '../scripts/check-public-seo-ui.mjs';
+
+test('native SEO tab readiness waits for the exact original URL before its document state, not the initial blank document',async()=>{
+  const expected='http://127.0.0.1:4186/membership',calls=[];let acknowledge,complete=false;
+  const page={waitForURL(url,options){calls.push(['url',url,options]);return new Promise(resolve=>{acknowledge=resolve;});},async waitForLoadState(state){calls.push(['load',state]);}};
+  const pending=waitForSeoNativeDocument(page,expected).then(()=>{complete=true;});
+  await Promise.resolve();assert.equal(complete,false);assert.deepEqual(calls,[['url',expected,{waitUntil:'domcontentloaded'}]]);
+  acknowledge();await pending;assert.equal(complete,true);assert.deepEqual(calls,[['url',expected,{waitUntil:'domcontentloaded'}],['load','domcontentloaded']]);
+});
+
+test('native SEO readiness preserves the original URL/load failures without retry or a fallback navigation',async()=>{
+  const expected='http://127.0.0.1:4186/membership';
+  for(const failed of ['url','load']){const error=Error('isolated '+failed+' failure'),calls=[];const page={async waitForURL(url,options){calls.push(['url',url,options]);if(failed==='url')throw error;},async waitForLoadState(state){calls.push(['load',state]);throw error;}};
+    await assert.rejects(waitForSeoNativeDocument(page,expected),actual=>actual===error);assert.deepEqual(calls,failed==='url'?[['url',expected,{waitUntil:'domcontentloaded'}]]:[['url',expected,{waitUntil:'domcontentloaded'}],['load','domcontentloaded']]);
+  }
+});
 
 test('SEO browser acceptance allows only exact-origin GET/HEAD and does not mistake a prefix for loopback',()=>{
   const base='http://127.0.0.1:4186';

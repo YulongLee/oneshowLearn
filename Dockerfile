@@ -4,7 +4,7 @@ ARG NGINX_IMAGE=nginx:stable-alpine
 FROM ${NODE_IMAGE} AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN node -e "if(process.versions.node.split('.')[0]!=='22'||Number(process.versions.node.split('.')[1])<14)throw Error('Node 22.14+ / 22.x required')" && npm ci --no-audit --no-fund
+RUN --mount=type=cache,id=oneshowlearn-security-runtime-npm,target=/root/.npm node -e "if(process.versions.node.split('.')[0]!=='22'||Number(process.versions.node.split('.')[1])<14)throw Error('Node 22.14+ / 22.x required')" && npm ci --no-audit --no-fund
 COPY index.html vite.config.mjs vite.public.config.mjs ./
 COPY src ./src
 COPY public/assets ./public/assets
@@ -39,7 +39,7 @@ LABEL org.opencontainers.image.revision=$REVISION io.oneshowlearn.source-hash=$S
 WORKDIR /app
 ENV NODE_ENV=production API_HOST=0.0.0.0 API_PORT=8787 DATABASE_AUTO_MIGRATE=false
 COPY package.json package-lock.json ./
-RUN node -e "if(process.versions.node.split('.')[0]!=='22'||Number(process.versions.node.split('.')[1])<14)throw Error('Node 22.14+ / 22.x required')" && npm ci --omit=dev --no-audit --no-fund && mkdir -p data uploads uploads-private uploads-staging && chown -R node:node data uploads uploads-private uploads-staging
+RUN --mount=type=cache,id=oneshowlearn-security-runtime-npm,target=/root/.npm node -e "if(process.versions.node.split('.')[0]!=='22'||Number(process.versions.node.split('.')[1])<14)throw Error('Node 22.14+ / 22.x required')" && npm ci --omit=dev --no-audit --no-fund && mkdir -p data uploads uploads-private uploads-staging && chown -R node:node data uploads uploads-private uploads-staging
 COPY server ./server
 COPY deploy/portable ./deploy/portable
 USER node

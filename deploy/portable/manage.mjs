@@ -74,6 +74,7 @@ function releaseSourceHash() {
   const hash=createHash('sha256');
   hash.update('vite.public.config.mjs\0').update(readFileSync(path.join(sourceRoot,'vite.public.config.mjs')));
   hash.update('scripts/check-public-seo-ui.mjs\0').update(readFileSync(path.join(sourceRoot,'scripts/check-public-seo-ui.mjs')));
+  hash.update('scripts/check-homepage-promotion-live.mjs\0').update(readFileSync(path.join(sourceRoot,'scripts/check-homepage-promotion-live.mjs')));
   for(const name of ['scripts/check-auth-commercial-ui.mjs','scripts/check-sidebar-refinement-ui.mjs','scripts/check-workspace-theme-ui.mjs','scripts/run-browser-checks.mjs','scripts/run-acceptance-with-diagnostics.mjs'])hash.update(name+'\0').update(readFileSync(path.join(sourceRoot,name)));
   for(const name of ['deploy/check-public-seo-release.mjs','deploy/update-public-seo.sh'])hash.update(name+'\0').update(readFileSync(path.join(sourceRoot,name)));
   for(const name of ['deploy/check-security-dependency-release.mjs','deploy/update-security-dependencies.sh','deploy/security-dependency-policy.mjs','deploy/security-runtime.Dockerfile','deploy/inspect-security-runtime.mjs'])hash.update(name+'\0').update(readFileSync(path.join(sourceRoot,name)));

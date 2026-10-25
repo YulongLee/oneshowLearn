@@ -21,6 +21,7 @@ COPY deploy/import-demo-materials.mjs deploy/publish-demo-projects.mjs deploy/im
 COPY scripts/prepare-opc-curriculum.mjs ./scripts/prepare-opc-curriculum.mjs
 COPY scripts/check-operations.mjs ./scripts/check-operations.mjs
 COPY scripts/check-public-seo-ui.mjs ./scripts/check-public-seo-ui.mjs
+COPY scripts/check-homepage-promotion-live.mjs ./scripts/check-homepage-promotion-live.mjs
 COPY scripts/check-auth-commercial-ui.mjs scripts/check-sidebar-refinement-ui.mjs scripts/check-workspace-theme-ui.mjs scripts/run-browser-checks.mjs scripts/run-acceptance-with-diagnostics.mjs ./scripts/
 COPY deploy/configure-mineru.mjs deploy/update-commercial-completion.sh deploy/nginx-oneshowlearn.conf deploy/nginx-oneshowlearn-https.conf deploy/nginx-oneshowlearn-app.conf ./deploy/
 COPY deploy/check-commercial-refinement.mjs deploy/package-commercial-refinement.mjs deploy/update-commercial-refinement.sh ./deploy/

@@ -33,6 +33,7 @@
 !scripts/prepare-opc-curriculum.mjs
 !scripts/check-operations.mjs
 !scripts/check-public-seo-ui.mjs
+!scripts/check-homepage-promotion-live.mjs
 !scripts/check-auth-commercial-ui.mjs
 !scripts/check-sidebar-refinement-ui.mjs
 !scripts/check-workspace-theme-ui.mjs

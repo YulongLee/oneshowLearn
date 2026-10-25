@@ -22,6 +22,8 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run check:engineering
       - run: npm run test:engineering
+      - name: Security dependency and paired-recovery regressions
+        run: node --test tests/dependency-security.test.mjs tests/security-dependency-release.test.mjs
       # Registry or TLS errors fail this check; never disable certificate validation.
       - name: Dependency audit with actionable failure diagnostics
         run: node scripts/run-acceptance-with-diagnostics.mjs check:dependencies

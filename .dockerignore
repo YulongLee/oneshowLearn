@@ -55,6 +55,11 @@
 !deploy/update-commercial-refinement.sh
 !deploy/check-public-seo-release.mjs
 !deploy/update-public-seo.sh
+!deploy/update-security-dependencies.sh
+!deploy/check-security-dependency-release.mjs
+!deploy/security-dependency-policy.mjs
+!deploy/security-runtime.Dockerfile
+!deploy/inspect-security-runtime.mjs
 !deploy/nginx-oneshowlearn.conf
 !deploy/nginx-oneshowlearn-https.conf
 !deploy/nginx-oneshowlearn-app.conf

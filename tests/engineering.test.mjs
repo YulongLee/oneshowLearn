@@ -56,8 +56,12 @@ test('CI dependency failures annotate bounded stderr first without retrying or c
   assert.deepEqual(observed.annotations,[expected]);assert.ok(observed.annotations[0].indexOf('Original stderr')<observed.annotations[0].indexOf('Last stdout'));assert.ok(observed.annotations[0].includes('25%25%0D%0A'));assert.ok(!observed.annotations[0].includes('A'.repeat(80)));
  }
 });
-test('security dependency release accepts only the reviewed versions and obsolete upload removals',()=>{
- const next=JSON.parse(readFileSync('package-lock.json')),old=structuredClone(next);
+test('historical security dependency release accepts only its reviewed versions and obsolete upload removals',()=>{
+ // This is the older release's closed contract, not a validator for future
+ // security updates. Keep its fixture independent of the current lock file.
+ const next={packages:{'':{dependencies:{multer:'2.4.0',nodemailer:'10.0.16',vite:'6.4.4'},devDependencies:{playwright:'historical-fixture'}},'node_modules/express':{version:'5.2.1'}}};
+ for(const [name,version] of Object.entries(patchedVersions))next.packages['node_modules/'+name]={version,resolved:'https://registry.npmjs.org/'+name+'/-/historical-fixture.tgz',integrity:'sha512-historical-fixture'};
+ const old=structuredClone(next);
  old.packages[''].dependencies={...next.packages[''].dependencies,multer:'^2.2.0',nodemailer:'^9.0.5',vite:'6.4.2'};
  for(const name of Object.keys(patchedVersions))old.packages['node_modules/'+name].version='isolated-old-version';
  old.packages['node_modules/concat-stream']={version:'2.0.0'};

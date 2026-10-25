@@ -25,11 +25,12 @@ COPY scripts/check-auth-commercial-ui.mjs scripts/check-sidebar-refinement-ui.mj
 COPY deploy/configure-mineru.mjs deploy/update-commercial-completion.sh deploy/nginx-oneshowlearn.conf deploy/nginx-oneshowlearn-https.conf deploy/nginx-oneshowlearn-app.conf ./deploy/
 COPY deploy/check-commercial-refinement.mjs deploy/package-commercial-refinement.mjs deploy/update-commercial-refinement.sh ./deploy/
 COPY deploy/check-public-seo-release.mjs deploy/update-public-seo.sh ./deploy/
+COPY deploy/check-security-dependency-release.mjs deploy/update-security-dependencies.sh deploy/security-dependency-policy.mjs deploy/security-runtime.Dockerfile deploy/inspect-security-runtime.mjs ./deploy/
 COPY docs/curriculum/ai-opc-20261001.json ./docs/curriculum/ai-opc-20261001.json
 COPY tests ./tests
 COPY Dockerfile .dockerignore ./
 COPY .github/workflows/ci.yml ./.github/workflows/ci.yml
-RUN npm run test:engineering && npm test
+RUN npm run test:engineering && node --test tests/dependency-security.test.mjs tests/security-dependency-release.test.mjs && npm test
 
 FROM ${NODE_IMAGE} AS api
 ARG REVISION=unknown
